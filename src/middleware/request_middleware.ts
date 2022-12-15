@@ -2,6 +2,7 @@ import { Request,Response,NextFunction } from "express";
 import {StatusCodes} from 'http-status-codes'
 import {BaseError} from '../exception'
 import {HttpRequest,HttpResponse} from '../common'
+import  {PrismaClientKnownRequestError} from "@prisma/client/runtime";
 
 export default function req_middleware(controller:Function){
     return function call(req:Request,res:Response,next:NextFunction){
@@ -26,6 +27,10 @@ export default function req_middleware(controller:Function){
             if (err instanceof BaseError){
                 res.status(err.status)
                 return res.send(err)       
+            }
+            if(err instanceof PrismaClientKnownRequestError){
+                res.status(StatusCodes.EXPECTATION_FAILED)
+                return res.send({status:StatusCodes.EXPECTATION_FAILED,message:err.message})
             }
             console.log(err);
             res.status(StatusCodes.INTERNAL_SERVER_ERROR)

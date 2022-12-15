@@ -7,7 +7,7 @@ export default function make_product_service(db_connection:PrismaClient){
         getProduct
     });
     async function getProducts(req:HttpRequest){
-        let{skip=0,take=30}={...req.body}
+        let{skip=0,take=30}={...req.query}
         return {
             status:StatusCodes.OK,
             message:"success",
@@ -23,12 +23,18 @@ export default function make_product_service(db_connection:PrismaClient){
         }
     }
     async function getProduct(req:HttpRequest){
-        let id = {...req.body};
-        db_connection.product.findFirst({
+        let {id=0} = {...req.params};
+        
+        let product = await db_connection.product.findFirstOrThrow({
             where:{
-                id:id
+                id:Number(id)
             }
         })
+        return {
+            status:StatusCodes.OK,
+            message:"success", 
+            content: product
+        }
     }
 
 }
