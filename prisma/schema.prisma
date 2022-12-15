@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id    Int    @id @default(autoincrement())
+  path String @unique
+  slug String
+  tags ProductsTags[]
+  images ProductsImages[]
+  fields Field[]
+}
+
+model Tag{
+  id Int  @id @default(autoincrement())
+  tag String
+  products ProductsTags[]
+}
+
+model Language {
+  id        Int     @id @default(autoincrement())
+  symbol    String  @unique
+  fields Field[]
+}
+
+model Image {
+  id Int  @id @default(autoincrement())
+  url String
+  products ProductsImages[]
+}
+
+model Option {
+  id String  @id
+  fields Field[]
+  values OptionsValues[]
+}
+model OptionValue{
+  id Int  @id
+  fieldName String
+  fieldValue String
+  options OptionsValues[]
+}
+model Field {
+  id Int  @id @default(autoincrement())
+  fieldName String
+  fieldValue String
+  language Language @relation(fields: [languageId], references: [id])
+  languageId Int
+  modelFields ModelsFields[]
+  optins Option[]
+  products Product[]
+}
+// many to many
+model OptionsValues{
+  option  Option @relation(fields: [optiontId], references: [id])
+  optiontId   String
+  value       OptionValue     @relation(fields: [valueId], references: [id])
+  valueId     Int
+  
+  @@id([valueId,optiontId])
+}
+model ProductsTags{
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int 
+  tag       Tag     @relation(fields: [tagId], references: [id])
+  tagId     Int
+  
+  @@id([productId, tagId])
+}
+
+model ProductsImages{
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int 
+  tag       Image     @relation(fields: [imageId], references: [id])
+  imageId     Int
+  
+  @@id([productId, imageId])
+}
+
+model ModelsFields{
+  objectId   Int 
+  objectType String
+  field       Field     @relation(fields: [fieldId], references: [id])
+  fieldId     Int
+  
+  @@id([objectId, fieldId,objectType])
+}
