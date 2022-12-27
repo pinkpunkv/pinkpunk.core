@@ -1,3 +1,5 @@
+import { FileArray } from "express-fileupload";
+
 export default class HttpRequest{
     ip: string;
     path: string;
@@ -7,6 +9,7 @@ export default class HttpRequest{
     params: object;
     method: string;
     headers: object;
+    files: FileArray
 
     constructor( 
         ip: string,
@@ -16,8 +19,10 @@ export default class HttpRequest{
         cookie: Object,
         params: Object,
         method: string,
-        headers: Object){
+        headers: Object,
+        files:FileArray=null){
 
+        this.files= files;
         this.body=body;
         this.cookie=cookie;
         this.query=query;

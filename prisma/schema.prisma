@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,85 +8,162 @@ datasource db {
 }
 
 model Product {
-  id    Int    @id @default(autoincrement())
-  path String @unique
-  slug String
-  tags ProductsTags[]
-  images ProductsImages[]
-  fields Field[]
+  id          Int              @id @default(autoincrement())
+  path        String           @unique
+  slug        String
+  price Decimal @default(0)
+  active Boolean @default(false)
+  sex String @default("uni")
+  currencySymbol String?        
+  currency Currency? @relation(fields: [currencySymbol], references: [symbol])
+  collectionId Int?
+  collection  Collection?      @relation(fields: [collectionId], references: [id])
+  images      ProductsImages[]
+  tags        Tag[]
+  variants    Variant[]
+  categories  Category[]       @relation("CategoryToProduct")
+  fields      Field[]          @relation("FieldToProduct")
 }
 
-model Tag{
-  id Int  @id @default(autoincrement())
-  tag String
-  products ProductsTags[]
+model Category {
+  id       Int        @id @default(autoincrement())
+  parentId Int?
+  mainSliderImages Image[]
+  isMain Boolean @default(false)
+  parent   Category?  @relation("parent", fields: [parentId], references: [id])
+  childs   Category[] @relation("parent")
+  fields   Field[]    @relation("CategoryToField")
+  products Product[]  @relation("CategoryToProduct")
+}
+
+model Tag {
+  tag      String         @id
+  products Product[]
 }
 
 model Language {
-  id        Int     @id @default(autoincrement())
-  symbol    String  @unique
+  id     Int     @id @default(autoincrement())
+  name String @default("")
+  symbol String  @unique
   fields Field[]
+  imageId  Int?
+  image    Image?     @relation(fields: [imageId], references: [id])
 }
 
 model Image {
-  id Int  @id @default(autoincrement())
-  url String
+  id       Int              @id @default(autoincrement())
+  url      String
   products ProductsImages[]
+  languages Language[]
+  currencies Currency[]
+  variants Variant[]
+  categories Category[]
 }
 
-model Option {
-  id String  @id
-  fields Field[]
-  values OptionsValues[]
-}
-model OptionValue{
-  id Int  @id
-  fieldName String
-  fieldValue String
-  options OptionsValues[]
-}
 model Field {
-  id Int  @id @default(autoincrement())
-  fieldName String
-  fieldValue String
-  language Language @relation(fields: [languageId], references: [id])
-  languageId Int
-  modelFields ModelsFields[]
-  optins Option[]
-  products Product[]
-}
-// many to many
-model OptionsValues{
-  option  Option @relation(fields: [optiontId], references: [id])
-  optiontId   String
-  value       OptionValue     @relation(fields: [valueId], references: [id])
-  valueId     Int
-  
-  @@id([valueId,optiontId])
-}
-model ProductsTags{
-  product   Product @relation(fields: [productId], references: [id])
-  productId Int 
-  tag       Tag     @relation(fields: [tagId], references: [id])
-  tagId     Int
-  
-  @@id([productId, tagId])
+  id          Int          @id @default(autoincrement())
+  fieldName   String
+  fieldValue  String
+  languageId  Int
+  language    Language     @relation(fields: [languageId], references: [id])
+  categories  Category[]   @relation("CategoryToField")
+  collections Collection[] @relation("CollectionToField")
+  products    Product[]    @relation("FieldToProduct")
 }
 
-model ProductsImages{
+model Collection {
+  id       Int       @id @default(autoincrement())
+  products Product[]
+  fields   Field[]   @relation("CollectionToField")
+}
+
+model Currency {
+  symbol String @id
+  products Product[]
+  imageId  Int?
+  image    Image?     @relation(fields: [imageId], references: [id])
+}
+
+model ProductsImages {
+  productId Int
+  imageId   Int
+  number    Int
+  isMain    Boolean @default(false)
+  image       Image   @relation(fields: [imageId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
-  productId Int 
-  tag       Image     @relation(fields: [imageId], references: [id])
-  imageId     Int
-  
+
   @@id([productId, imageId])
 }
 
-model ModelsFields{
-  objectId   Int 
-  objectType String
-  field       Field     @relation(fields: [fieldId], references: [id])
-  fieldId     Int
-  
-  @@id([objectId, fieldId,objectType])
+model OauthAccessToken {
+  id                    String    @id
+  userId                String
+  applicationId         String
+  token                 String    @unique
+  refreshToken          String?   @unique
+  tokenExpiresAt        DateTime? @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
+  scopes                Json      @default("[]")
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user                  User      @relation(fields: [userId], references: [id])
+
+  @@index([applicationId])
+  @@index([userId])
+}
+
+model User {
+  id                String             @id
+  name              String
+  email             String             @unique
+  encryptedPassword String
+  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  accessTokens      OauthAccessToken[]
+  identities        UserIdentity[]
+}
+
+model UserIdentity {
+  id        String   @id
+  userId    String
+  provider  String
+  uid       String
+  name      String?
+  email     String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([provider, uid])
+  @@index([userId])
+}
+
+model Variant {
+  id           Int           @id @default(autoincrement())
+  productId    Int
+  size         String
+  color        String
+  images Image[]
+  count Int @default(0)
+  transactions Transaction[]
+  product      Product       @relation(fields: [productId], references: [id])
+  @@unique([size,color])
+}
+model VariantTemplate{
+  id Int @id @default(autoincrement())
+  size String
+  color String 
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  variantId Int
+  userId    String
+  status    String
+  amount    Decimal
+  entryDate DateTime
+  startDate DateTime
+  endDate   DateTime
+  details   String
+  variant   Variant  @relation(fields: [variantId], references: [id])
 }

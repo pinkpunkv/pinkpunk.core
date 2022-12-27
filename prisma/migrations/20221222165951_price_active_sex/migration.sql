@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "active" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "price" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "sex" TEXT NOT NULL DEFAULT 'uni';
