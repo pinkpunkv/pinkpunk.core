@@ -72,6 +72,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
         let {path=null,slug=null,collectionId=0,tags=[],categories={}[0], fields = [],images={}[0],currency=null,price=0} = {...req.body}
        
         return await db_connection.$transaction(async()=>{
+            
             let product = await db_connection.product.create({
                 data:{
                     path:path,

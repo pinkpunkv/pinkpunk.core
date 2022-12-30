@@ -14,7 +14,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
         let{skip=0,take=10,lang="ru",sex="",minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],orderBy='{"id":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
        
-         let products = await db_connection.product.findMany({
+        let products = await db_connection.product.findMany({
             skip:Number(skip),
             take:Number(take),
             where:{

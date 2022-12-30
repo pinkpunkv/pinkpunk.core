@@ -1,5 +1,6 @@
 import express,{Express} from "express";
 import {config} from './config'
+import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import {product_router,product_admin_router,category_admin_router,category_router,
     variant_admin_router,collection_admin_router,collection_router,image_admin_router,
@@ -8,6 +9,7 @@ import {product_router,product_admin_router,category_admin_router,category_route
 
 let app:Express = express();
 app.use(express.json());
+app.use(morgan('combined'))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 

@@ -5,7 +5,7 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && DEBUG=express:application node ."
+    "start": "npm run build && node ."
   },
   "repository": {
     "type": "git",
