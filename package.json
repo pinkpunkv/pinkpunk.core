@@ -5,7 +5,7 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node ."
+    "start": "npm run build && node .",
     "migrate": "npx prisma generate && npx prisma db push  && npx prisma db seed"
   },
   "repository": {
