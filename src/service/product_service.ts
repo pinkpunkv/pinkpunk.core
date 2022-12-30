@@ -78,7 +78,15 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         fields:true
                     }
                 },
-                images:true,
+                images:{
+                    include:{
+                        image:{
+                            select:{
+                                url:true
+                            }
+                        }
+                    }
+                },
                 variants:true
             }
         });
@@ -97,6 +105,10 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 })
                 x.collection?.fields.forEach((field)=>{
                     x.collection[field.fieldName] = field.fieldValue
+                })
+                x.images?.forEach((image)=>{
+                    image['url'] = image.image.url;
+                    delete image.image
                 })
                 delete x.collection?.fields
                 delete x.fields
