@@ -5,12 +5,98 @@ import {StatusCodes} from 'http-status-codes'
 export default function make_client_product_service(db_connection:PrismaClient){
     return Object.freeze({
         getProducts,
-        getProduct
+        getProductsPathes,
+        getProduct,
+        getProductByPath
     });
-
-    async function getProducts(req:HttpRequest){
-        console.log(req.query);
+    async function getProductByPath(req:HttpRequest) {
+        let {path=''} = {...req.params};
+        let{lang="ru"}={...req.params}
         
+        let product = await db_connection.product.findFirstOrThrow({
+            where:{
+                path:'/'+path
+            },
+            include:{
+                fields:{
+                    where:{
+                        language:{symbol:lang}
+                    }
+                },
+                categories:{
+                    include:{
+                        fields:{
+                            where:{
+                                language:{
+                                    symbol:lang
+                                }
+                            }
+                        }
+                    }
+                },
+                tags:true,
+                collection:{
+                    include:{
+                        fields:true
+                    }
+                },
+                images:{
+                    select:{
+                        image:{
+                            select:{
+                                url:true
+                            }
+                        },
+                        isMain:true,
+                        number:true
+                    },
+                    orderBy:{number:"asc"},
+                },
+               
+                variants:{
+                    include:{
+                        images:true
+                    }
+                }
+            }
+        })
+        product.fields.forEach(async(field)=>{
+            product[field.fieldName]=field.fieldValue
+
+        })
+        delete product.fields
+        product.categories.forEach(async(cat)=>{
+            cat.fields.forEach(async(field)=>{
+                cat[field.fieldName]=field.fieldValue
+            })
+            delete cat.fields
+        })
+        product.collection?.fields.forEach((field)=>{
+            product.collection[field.fieldName] = field.fieldValue
+        })
+        product.images?.forEach((image)=>{
+            image['ur']=image.image.url
+            delete image.image
+        })
+        delete product.collection?.fields
+        return {
+            status:StatusCodes.OK,
+            message:"success", 
+            content: product
+        }
+    }
+    async function getProductsPathes(req:HttpRequest){
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content:(await db_connection.product.findMany({
+                select:{
+                    path:true
+                }
+            })).map(x=>x.path)
+        }
+    }
+    async function getProducts(req:HttpRequest){
         let{skip=0,take=10,lang="ru",sex="",minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],orderBy='{"id":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
        

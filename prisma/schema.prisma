@@ -23,6 +23,7 @@ model Product {
   variants    Variant[]
   categories  Category[]       @relation("CategoryToProduct")
   fields      Field[]          @relation("FieldToProduct")
+  @@index([path])
 }
 
 model Category {
