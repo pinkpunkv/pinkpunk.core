@@ -9,7 +9,8 @@ export default function make_category_service(db_connection:PrismaClient){
 
 
     async function getCategories(req:HttpRequest) {
-        let {lang="ru",parentId=null} = {...req.params};
+        let {lang="ru",parentId=null} = {...req.query};
+        
         let categories;
         if(parentId!=null)
         categories = await db_connection.category.findMany({
@@ -54,9 +55,10 @@ export default function make_category_service(db_connection:PrismaClient){
         }
     }
     async function getMainCategoriesWithProductImages(req:HttpRequest) {
-        let {lang="ru"} = {...req.params};
-        let categories;
-        categories = await db_connection.category.findMany({
+        let {lang="ru"} = {...req.query};
+        console.log(lang);
+        
+        let categories = await db_connection.category.findMany({
             where:{
                 isMain:true
             },

@@ -11,7 +11,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
     });
     async function getProductByPath(req:HttpRequest) {
         let {path=''} = {...req.params};
-        let{lang="ru"}={...req.params}
+        let{lang="ru"}={...req.query}
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{
@@ -204,7 +204,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
     }
     async function getProduct(req:HttpRequest){
         let {id=0} = {...req.params};
-        let{lang="ru"}={...req.params}
+        let{lang="ru"}={...req.query}
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{

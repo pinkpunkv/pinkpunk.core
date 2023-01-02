@@ -8,7 +8,8 @@ export default function make_collection_service(db_connection:PrismaClient){
     });
 
     async function getCollection(req:HttpRequest) {
-        let {id=0,lang="ru"} = {...req.params};
+        let {id=0} = {...req.params};
+        let {lang="ru"}={...req.query};
         return {
             status:StatusCodes.OK,
             message:"success",
@@ -30,7 +31,7 @@ export default function make_collection_service(db_connection:PrismaClient){
     }
     
     async function getCollections(req:HttpRequest) {
-        let {take=10,skip=0} = {...req.params};
+        let {take=10,skip=0} = {...req.query};
         return {
             status:StatusCodes.OK,
             message:"success",
