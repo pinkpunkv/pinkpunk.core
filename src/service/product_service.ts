@@ -75,7 +75,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             product.collection[field.fieldName] = field.fieldValue
         })
         product.images?.forEach((image)=>{
-            image['ur']=image.image.url
+            image['url']=image.image.url
             delete image.image
         })
         delete product.collection?.fields
