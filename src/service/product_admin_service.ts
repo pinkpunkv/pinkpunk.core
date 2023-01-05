@@ -75,7 +75,6 @@ export default function make_admin_product_service(db_connection:PrismaClient){
             
             let product = await db_connection.product.create({
                 data:{
-                    path:path,
                     slug:slug,
                     categories:{
                         connect:categories
@@ -130,7 +129,6 @@ export default function make_admin_product_service(db_connection:PrismaClient){
             let product = await db_connection.product.update({
                 where:{id:productData.id},
                 data:{
-                    path:path,
                     slug:slug,
                     categories:{
                         connect:categories

@@ -9,8 +9,7 @@ datasource db {
 
 model Product {
   id          Int              @id @default(autoincrement())
-  path        String           @unique
-  slug        String
+  slug        String           @unique
   price Decimal @default(0)
   active Boolean @default(false)
   sex String @default("uni")
@@ -23,7 +22,7 @@ model Product {
   variants    Variant[]
   categories  Category[]       @relation("CategoryToProduct")
   fields      Field[]          @relation("FieldToProduct")
-  @@index([path])
+  @@index([slug])
 }
 
 model Category {
@@ -31,7 +30,7 @@ model Category {
   parentId Int?
   mainSliderImages Image[]
   isMain Boolean @default(false)
-  parent   Category?  @relation("parent", fields: [parentId], references: [id])
+  parent   Category?  @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
   childs   Category[] @relation("parent")
   fields   Field[]    @relation("CategoryToField")
   products Product[]  @relation("CategoryToProduct")
@@ -82,7 +81,7 @@ model Currency {
   symbol String @id
   products Product[]
   imageId  Int?
-  image    Image?     @relation(fields: [imageId], references: [id])
+  image    Image?     @relation(fields: [imageId], references: [id], onDelete: Cascade)
 }
 
 model ProductsImages {
@@ -90,8 +89,8 @@ model ProductsImages {
   imageId   Int
   number    Int
   isMain    Boolean @default(false)
-  image       Image   @relation(fields: [imageId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  image       Image   @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([productId, imageId])
 }

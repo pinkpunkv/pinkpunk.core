@@ -15,7 +15,12 @@ export default function make_client_product_service(db_connection:PrismaClient){
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{
-                path:'/'+path,
+                fields:{
+                  some:{
+                    fieldName:"path",
+                    fieldValue:"/"+path
+                  }  
+                },
                 active:true
             },
             include:{
@@ -98,9 +103,13 @@ export default function make_client_product_service(db_connection:PrismaClient){
             message:"success",
             content:(await db_connection.product.findMany({
                 select:{
-                    path:true
+                    fields:{
+                        where:{
+                            fieldName:"path"
+                        }
+                    }
                 }
-            })).map(x=>x.path)
+            })).map(x=>x.fields[0].fieldValue)
         }
     }
     async function getProducts(req:HttpRequest){

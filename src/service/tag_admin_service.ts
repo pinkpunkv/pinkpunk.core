@@ -16,13 +16,7 @@ export default function make_tag_admin_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.tag.findMany({
-                include:{
-                    products:{
-                        select:{
-                            path:true
-                        }
-                    }
-                },
+               
                 take:take,
                 skip:skip
             })

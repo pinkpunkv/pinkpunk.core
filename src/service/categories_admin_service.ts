@@ -96,14 +96,6 @@ export default function make_admin_category_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.category.findMany({
-                include:{
-                    fields:true,
-                    products:{
-                        select:{
-                            path:true
-                        }
-                    }
-                },
                 orderBy:{
                     id:"desc"
                 },

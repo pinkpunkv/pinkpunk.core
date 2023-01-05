@@ -1,9 +1,12 @@
 -- CreateTable
 CREATE TABLE "Product" (
     "id" SERIAL NOT NULL,
-    "path" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "collctionId" INTEGER,
+    "price" DECIMAL(65,30) NOT NULL DEFAULT 0,
+    "active" BOOLEAN NOT NULL DEFAULT false,
+    "sex" TEXT NOT NULL DEFAULT 'uni',
+    "currencySymbol" TEXT,
+    "collectionId" INTEGER,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
@@ -12,22 +15,24 @@ CREATE TABLE "Product" (
 CREATE TABLE "Category" (
     "id" SERIAL NOT NULL,
     "parentId" INTEGER,
+    "isMain" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Tag" (
-    "id" SERIAL NOT NULL,
     "tag" TEXT NOT NULL,
 
-    CONSTRAINT "Tag_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Tag_pkey" PRIMARY KEY ("tag")
 );
 
 -- CreateTable
 CREATE TABLE "Language" (
     "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL DEFAULT '',
     "symbol" TEXT NOT NULL,
+    "imageId" INTEGER,
 
     CONSTRAINT "Language_pkey" PRIMARY KEY ("id")
 );
@@ -58,17 +63,19 @@ CREATE TABLE "Collection" (
 );
 
 -- CreateTable
-CREATE TABLE "ProductsTags" (
-    "productId" INTEGER NOT NULL,
-    "tagId" INTEGER NOT NULL,
+CREATE TABLE "Currency" (
+    "symbol" TEXT NOT NULL,
+    "imageId" INTEGER,
 
-    CONSTRAINT "ProductsTags_pkey" PRIMARY KEY ("productId","tagId")
+    CONSTRAINT "Currency_pkey" PRIMARY KEY ("symbol")
 );
 
 -- CreateTable
 CREATE TABLE "ProductsImages" (
     "productId" INTEGER NOT NULL,
     "imageId" INTEGER NOT NULL,
+    "number" INTEGER NOT NULL,
+    "isMain" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "ProductsImages_pkey" PRIMARY KEY ("productId","imageId")
 );
@@ -121,9 +128,18 @@ CREATE TABLE "Variant" (
     "productId" INTEGER NOT NULL,
     "size" TEXT NOT NULL,
     "color" TEXT NOT NULL,
-    "isBought" INTEGER NOT NULL DEFAULT 0,
+    "count" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Variant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VariantTemplate" (
+    "id" SERIAL NOT NULL,
+    "size" TEXT NOT NULL,
+    "color" TEXT NOT NULL,
+
+    CONSTRAINT "VariantTemplate_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -142,6 +158,18 @@ CREATE TABLE "Transaction" (
 );
 
 -- CreateTable
+CREATE TABLE "_ProductToTag" (
+    "A" INTEGER NOT NULL,
+    "B" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "_CategoryToImage" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "_CategoryToField" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL
@@ -154,19 +182,28 @@ CREATE TABLE "_CategoryToProduct" (
 );
 
 -- CreateTable
+CREATE TABLE "_ImageToVariant" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "_FieldToProduct" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL
 );
 
 -- CreateTable
-CREATE TABLE "_FieldToTag" (
+CREATE TABLE "_CollectionToField" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Product_path_key" ON "Product"("path");
+CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
+
+-- CreateIndex
+CREATE INDEX "Product_slug_idx" ON "Product"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Language_symbol_key" ON "Language"("symbol");
@@ -193,6 +230,21 @@ CREATE INDEX "UserIdentity_userId_idx" ON "UserIdentity"("userId");
 CREATE UNIQUE INDEX "UserIdentity_provider_uid_key" ON "UserIdentity"("provider", "uid");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Variant_size_color_key" ON "Variant"("size", "color");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_ProductToTag_AB_unique" ON "_ProductToTag"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ProductToTag_B_index" ON "_ProductToTag"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_CategoryToImage_AB_unique" ON "_CategoryToImage"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_CategoryToImage_B_index" ON "_CategoryToImage"("B");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_CategoryToField_AB_unique" ON "_CategoryToField"("A", "B");
 
 -- CreateIndex
@@ -205,37 +257,46 @@ CREATE UNIQUE INDEX "_CategoryToProduct_AB_unique" ON "_CategoryToProduct"("A", 
 CREATE INDEX "_CategoryToProduct_B_index" ON "_CategoryToProduct"("B");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "_ImageToVariant_AB_unique" ON "_ImageToVariant"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ImageToVariant_B_index" ON "_ImageToVariant"("B");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_FieldToProduct_AB_unique" ON "_FieldToProduct"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_FieldToProduct_B_index" ON "_FieldToProduct"("B");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "_FieldToTag_AB_unique" ON "_FieldToTag"("A", "B");
+CREATE UNIQUE INDEX "_CollectionToField_AB_unique" ON "_CollectionToField"("A", "B");
 
 -- CreateIndex
-CREATE INDEX "_FieldToTag_B_index" ON "_FieldToTag"("B");
+CREATE INDEX "_CollectionToField_B_index" ON "_CollectionToField"("B");
 
 -- AddForeignKey
-ALTER TABLE "Product" ADD CONSTRAINT "Product_collctionId_fkey" FOREIGN KEY ("collctionId") REFERENCES "Collection"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Product" ADD CONSTRAINT "Product_currencySymbol_fkey" FOREIGN KEY ("currencySymbol") REFERENCES "Currency"("symbol") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Category" ADD CONSTRAINT "Category_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Product" ADD CONSTRAINT "Product_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES "Collection"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Category" ADD CONSTRAINT "Category_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Language" ADD CONSTRAINT "Language_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Image"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Field" ADD CONSTRAINT "Field_languageId_fkey" FOREIGN KEY ("languageId") REFERENCES "Language"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ProductsTags" ADD CONSTRAINT "ProductsTags_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Currency" ADD CONSTRAINT "Currency_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Image"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ProductsTags" ADD CONSTRAINT "ProductsTags_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "Tag"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ProductsImages" ADD CONSTRAINT "ProductsImages_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Image"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ProductsImages" ADD CONSTRAINT "ProductsImages_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Image"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ProductsImages" ADD CONSTRAINT "ProductsImages_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ProductsImages" ADD CONSTRAINT "ProductsImages_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OauthAccessToken" ADD CONSTRAINT "OauthAccessToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -250,6 +311,18 @@ ALTER TABLE "Variant" ADD CONSTRAINT "Variant_productId_fkey" FOREIGN KEY ("prod
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "Variant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "_ProductToTag" ADD CONSTRAINT "_ProductToTag_A_fkey" FOREIGN KEY ("A") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ProductToTag" ADD CONSTRAINT "_ProductToTag_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("tag") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CategoryToImage" ADD CONSTRAINT "_CategoryToImage_A_fkey" FOREIGN KEY ("A") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CategoryToImage" ADD CONSTRAINT "_CategoryToImage_B_fkey" FOREIGN KEY ("B") REFERENCES "Image"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_CategoryToField" ADD CONSTRAINT "_CategoryToField_A_fkey" FOREIGN KEY ("A") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -262,13 +335,19 @@ ALTER TABLE "_CategoryToProduct" ADD CONSTRAINT "_CategoryToProduct_A_fkey" FORE
 ALTER TABLE "_CategoryToProduct" ADD CONSTRAINT "_CategoryToProduct_B_fkey" FOREIGN KEY ("B") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "_ImageToVariant" ADD CONSTRAINT "_ImageToVariant_A_fkey" FOREIGN KEY ("A") REFERENCES "Image"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ImageToVariant" ADD CONSTRAINT "_ImageToVariant_B_fkey" FOREIGN KEY ("B") REFERENCES "Variant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_FieldToProduct" ADD CONSTRAINT "_FieldToProduct_A_fkey" FOREIGN KEY ("A") REFERENCES "Field"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_FieldToProduct" ADD CONSTRAINT "_FieldToProduct_B_fkey" FOREIGN KEY ("B") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_FieldToTag" ADD CONSTRAINT "_FieldToTag_A_fkey" FOREIGN KEY ("A") REFERENCES "Field"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_CollectionToField" ADD CONSTRAINT "_CollectionToField_A_fkey" FOREIGN KEY ("A") REFERENCES "Collection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_FieldToTag" ADD CONSTRAINT "_FieldToTag_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_CollectionToField" ADD CONSTRAINT "_CollectionToField_B_fkey" FOREIGN KEY ("B") REFERENCES "Field"("id") ON DELETE CASCADE ON UPDATE CASCADE;

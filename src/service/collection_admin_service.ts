@@ -45,8 +45,7 @@ export default function make_collection_admin_service(db_connection:PrismaClient
                 products:{
                     select:{
                         id:true,
-                        collectionId:false,
-                        path:false
+                        collectionId:false
                     }
                 }
             }
