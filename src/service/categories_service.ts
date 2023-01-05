@@ -85,8 +85,7 @@ export default function make_category_service(db_connection:PrismaClient){
                 mainSliderImages:true
             }
         })
-        console.log(categories);
-        
+
         return {
             status:StatusCodes.OK,
             message:"success",
