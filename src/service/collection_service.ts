@@ -21,7 +21,10 @@ export default function make_collection_service(db_connection:PrismaClient){
                     fields:{
                         where:{
                             language:{
-                                symbol:lang
+                                symbol:{
+                                    equals: lang,
+                                    mode: 'insensitive'
+                                }
                             }
                         }
                     }

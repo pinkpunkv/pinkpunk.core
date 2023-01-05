@@ -24,7 +24,10 @@ export default function make_category_service(db_connection:PrismaClient){
                 fields:{
                     where:{
                         language:{
-                            symbol:lang
+                            symbol:{
+                                equals: lang,
+                                mode: 'insensitive'
+                            }
                         }
                     }
                 }
@@ -36,7 +39,10 @@ export default function make_category_service(db_connection:PrismaClient){
                 fields:{
                     where:{
                         language:{
-                            symbol:lang
+                            symbol:{
+                                equals: lang,
+                                mode: 'insensitive'
+                            }
                         }
                     }
                 }
@@ -69,23 +75,28 @@ export default function make_category_service(db_connection:PrismaClient){
                 fields:{
                     where:{
                         language:{
-                            symbol:lang
+                            symbol:{
+                                equals: lang,
+                                mode: 'insensitive'
+                            }
                         }
                     }
                 },
                 mainSliderImages:true
             }
         })
+        console.log(categories);
+        
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: await Promise.all(categories.map(async(cat)=>{
+            content: categories.map((cat)=>{
                 cat.fields.forEach(x=>{
                     cat[x.fieldName] = x.fieldValue
                 })
                 delete cat.fields
                 return cat;
-            }))
+            })
         }
     }
 }
