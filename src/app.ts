@@ -5,13 +5,15 @@ import cookieParser from 'cookie-parser'
 import {product_router,product_admin_router,category_admin_router,category_router,
     variant_admin_router,collection_admin_router,collection_router,image_admin_router,
     language_admin_router,language_router,tag_admin_router,tag_router} from './routes'
-
+import cors from 'cors'
 
 let app:Express = express();
 app.use(express.json());
 app.use(morgan('combined'))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(cors({origin:"localhost:3000"}))
 
 app.use('/api/v1/product', product_router)
 app.use('/api/v1/admin/product', product_admin_router)
