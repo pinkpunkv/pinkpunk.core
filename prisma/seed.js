@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+const { PrismaClient } = require('@prisma/client')
+
 const prisma = new PrismaClient()
 
 const langData = [
@@ -269,12 +270,23 @@ async function main() {
     },
   ]
 
+  console.log(`Start seeding Categories...`)
+
+  for (const u of categoryData) {
+    const data = await prisma.Category.create({
+      data: u,
+    })
+    console.log(`Created event with id: ${data.id}`)
+  }
+  console.log(`Start seeding Products...`)
+
   const productData = [
     {
       path: 'best_hoodie',
       slug: 'best_hoodie',
       price: 23.4,
       active: true,
+
       currencySymbol: byn.symbol,
       images: {
         create: [{ imageId: 1, number: 0, isMain: true }],
@@ -303,18 +315,59 @@ async function main() {
           },
         ],
       },
+      variants: {
+        create: [
+          {
+            size: 'M',
+            color: 'red',
+
+            count: 4,
+          },
+          {
+            size: 'S',
+            color: 'green',
+
+            count: 2,
+          },
+        ],
+      },
+    },
+    {
+      path: 'best_hoodie2',
+      slug: 'best_hoodie2',
+      price: 43.4,
+      active: true,
+
+      currencySymbol: byn.symbol,
+      images: {
+        create: [{ imageId: 2, number: 0, isMain: true }],
+      },
+      fields: {
+        create: [
+          {
+            fieldName: 'name',
+            fieldValue: 'Самый крутой нового образца',
+            languageId: ru.id,
+          },
+          {
+            fieldName: 'name',
+            fieldValue: 'The best hoodie new',
+            languageId: en.id,
+          },
+          {
+            fieldName: 'description',
+            fieldValue: 'Самый крутой нового образца и его описание тут',
+            languageId: ru.id,
+          },
+          {
+            fieldName: 'decription',
+            fieldValue: 'The best hoodie new and his description is here',
+            languageId: en.id,
+          },
+        ],
+      },
     },
   ]
-
-  console.log(`Start seeding Categories...`)
-
-  for (const u of categoryData) {
-    const data = await prisma.Category.create({
-      data: u,
-    })
-    console.log(`Created event with id: ${data.id}`)
-  }
-  console.log(`Start seeding Products...`)
 
   for (const u of productData) {
     const data = await prisma.Product.create({
