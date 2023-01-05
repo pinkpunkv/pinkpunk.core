@@ -298,7 +298,7 @@ async function main() {
           },
           {
             fieldName: 'path',
-            fieldValue: 'лучший_худи',
+            fieldValue: '/лучший_худи',
             languageId: ru.id,
           },
           {
@@ -308,7 +308,7 @@ async function main() {
           },
           {
             fieldName: 'path',
-            fieldValue: 'best_hoodie',
+            fieldValue: '/best_hoodie',
             languageId: en.id,
           },
           {
@@ -339,7 +339,6 @@ async function main() {
       },
     },
     {
-      path: 'best_hoodie2',
       slug: 'best_hoodie2',
       price: 43.4,
       active: true,
@@ -368,8 +367,18 @@ async function main() {
             languageId: ru.id,
           },
           {
+            fieldName: 'path',
+            fieldValue: '/лучший_худи2',
+            languageId: ru.id,
+          },
+          {
             fieldName: 'decription',
             fieldValue: 'The best hoodie new and his description is here',
+            languageId: en.id,
+          },
+          {
+            fieldName: 'path',
+            fieldValue: '/best_hoodie2',
             languageId: en.id,
           },
         ],
