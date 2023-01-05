@@ -98,6 +98,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
         }
     }
     async function getProductsPathes(req:HttpRequest){
+        let{lang="ru"}={...req.query}
         return {
             status:StatusCodes.OK,
             message:"success",
@@ -105,7 +106,13 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 select:{
                     fields:{
                         where:{
-                            fieldName:"path"
+                            fieldName:"path",
+                            language:{
+                                symbol:{
+                                    equals:lang,
+                                    mode: 'insensitive'
+                                }
+                            }
                         }
                     }
                 }

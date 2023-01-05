@@ -13,7 +13,7 @@ app.use(morgan('combined'))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(cors({origin:"localhost:3000"}))
+app.use(cors({origin:["localhost:3000","localhost:3001","localhost:3002"]}))
 
 app.use('/api/v1/product', product_router)
 app.use('/api/v1/admin/product', product_admin_router)

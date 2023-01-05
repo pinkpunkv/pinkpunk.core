@@ -69,6 +69,7 @@ model Field {
   categories  Category[]   @relation("CategoryToField")
   collections Collection[] @relation("CollectionToField")
   products    Product[]    @relation("FieldToProduct")
+  @@index([fieldName,fieldValue])
 }
 
 model Collection {

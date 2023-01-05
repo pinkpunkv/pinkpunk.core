@@ -342,6 +342,9 @@ async function main() {
       images: {
         create: [{ imageId: 2, number: 0, isMain: true }],
       },
+      categories:{
+        connect:[{"id":13}]
+      },
       fields: {
         create: [
           {
