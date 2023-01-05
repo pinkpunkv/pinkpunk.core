@@ -15,7 +15,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{
-                path:'/'+path
+                path:'/'+path,
+                active:true
             },
             include:{
                 fields:{
@@ -110,6 +111,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             skip:Number(skip),
             take:Number(take),
             where:{
+                active:true,
                 sex:{
                     contains:sex
                 },
@@ -220,6 +222,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{
+                active:true,
                 id:Number(id)
             },
             include:{
