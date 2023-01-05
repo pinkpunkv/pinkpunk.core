@@ -282,11 +282,9 @@ async function main() {
 
   const productData = [
     {
-      path: 'best_hoodie',
       slug: 'best_hoodie',
       price: 23.4,
       active: true,
-
       currencySymbol: byn.symbol,
       images: {
         create: [{ imageId: 1, number: 0, isMain: true }],
@@ -299,8 +297,18 @@ async function main() {
             languageId: ru.id,
           },
           {
+            fieldName: 'path',
+            fieldValue: 'лучший_худи',
+            languageId: ru.id,
+          },
+          {
             fieldName: 'name',
             fieldValue: 'The best hoodie',
+            languageId: en.id,
+          },
+          {
+            fieldName: 'path',
+            fieldValue: 'best_hoodie',
             languageId: en.id,
           },
           {
@@ -320,13 +328,11 @@ async function main() {
           {
             size: 'M',
             color: 'red',
-
             count: 4,
           },
           {
             size: 'S',
             color: 'green',
-
             count: 2,
           },
         ],
@@ -337,10 +343,9 @@ async function main() {
       slug: 'best_hoodie2',
       price: 43.4,
       active: true,
-
       currencySymbol: byn.symbol,
       images: {
-        create: [{ imageId: 2, number: 0, isMain: true }],
+        create: [{ imageId: 1, number: 0, isMain: true }],
       },
       categories:{
         connect:[{"id":13}]
