@@ -13,7 +13,19 @@ app.use(morgan('combined'))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(cors({origin:["localhost:3000","localhost:3001","localhost:3002"]}))
+
+var whitelist = ["localhost:3000","localhost:3001","localhost:3002"]
+var corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    }
+}
+
+app.use(cors(corsOptions))
 
 app.use('/api/v1/product', product_router)
 app.use('/api/v1/admin/product', product_admin_router)
