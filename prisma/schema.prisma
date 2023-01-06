@@ -30,6 +30,7 @@ model Category {
   parentId Int?
   mainSliderImages Image[]
   isMain Boolean @default(false)
+  slug String @unique @default("")
   parent   Category?  @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
   childs   Category[] @relation("parent")
   fields   Field[]    @relation("CategoryToField")
