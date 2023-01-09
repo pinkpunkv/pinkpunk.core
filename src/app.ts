@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
-var whitelist = ["http://localhost:3000","http://localhost:3001","http://localhost:3002"]
+var whitelist = ["http://localhost:3000","http://localhost:3001","http://localhost:3002","http://localhost:33555"]
 var corsOptions = {
     origin: function (origin, callback) {
         console.log(origin);
