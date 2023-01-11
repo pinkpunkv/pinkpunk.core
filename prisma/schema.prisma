@@ -11,6 +11,7 @@ model Product {
   id          Int              @id @default(autoincrement())
   slug        String           @unique
   price Decimal @default(0)
+  basePrice Decimal @default(0)
   active Boolean @default(false)
   sex String @default("uni")
   currencySymbol String?        
@@ -22,6 +23,7 @@ model Product {
   variants    Variant[]
   categories  Category[]       @relation("CategoryToProduct")
   fields      Field[]          @relation("FieldToProduct")
+  wishLists WishList[]
   @@index([slug])
 }
 
@@ -97,47 +99,48 @@ model ProductsImages {
   @@id([productId, imageId])
 }
 
-model OauthAccessToken {
-  id                    String    @id
-  userId                String
-  applicationId         String
-  token                 String    @unique
-  refreshToken          String?   @unique
-  tokenExpiresAt        DateTime? @db.Timestamptz(6)
-  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
-  scopes                Json      @default("[]")
-  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
-  user                  User      @relation(fields: [userId], references: [id])
 
-  @@index([applicationId])
-  @@index([userId])
+
+model User{
+  @@map(name: "users")
+
+  id String  @id @default(uuid())
+  name String  @db.VarChar(255)
+  email String @unique
+  photo String? @default("default.png")
+  verified Boolean? @default(false) 
+  
+  password String
+  role RoleEnumType? @default(user)
+
+  verificationCode String? @db.Text @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cartId Int? @unique
+  cart Cart? @relation(fields: [cartId], references: [id])
+  wishlistId Int? @unique
+  wishList WishList? @relation(fields: [wishlistId], references: [id])
+  @@unique([email, verificationCode])
+  @@index([email, verificationCode])
 }
 
-model User {
-  id                String             @id
-  name              String
-  email             String             @unique
-  encryptedPassword String
-  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
-  accessTokens      OauthAccessToken[]
-  identities        UserIdentity[]
+enum RoleEnumType {
+  user
+  admin
 }
 
-model UserIdentity {
-  id        String   @id
-  userId    String
-  provider  String
-  uid       String
-  name      String?
-  email     String?
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  user      User     @relation(fields: [userId], references: [id])
+model Cart{
+  id           Int           @id @default(autoincrement())
+  user User?
+  variants Variant[]
+}
 
-  @@unique([provider, uid])
-  @@index([userId])
+model WishList{
+  id           Int           @id @default(autoincrement())
+  user User? 
+  products Product[]
 }
 
 model Variant {
@@ -145,12 +148,14 @@ model Variant {
   productId    Int
   size         String
   color        String
-  images Image[]
+  images        Image[]
   count Int @default(0)
   transactions Transaction[]
   product      Product       @relation(fields: [productId], references: [id])
+  carts Cart[]
   @@unique([size,color])
 }
+
 model VariantTemplate{
   id Int @id @default(autoincrement())
   size String

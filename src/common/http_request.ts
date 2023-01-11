@@ -1,5 +1,5 @@
 import { FileArray } from "express-fileupload";
-
+import UserAttr from './user_attr'
 export default class HttpRequest{
     ip: string;
     path: string;
@@ -10,6 +10,7 @@ export default class HttpRequest{
     method: string;
     headers: object;
     files: FileArray
+    user: UserAttr
 
     constructor( 
         ip: string,
@@ -20,8 +21,9 @@ export default class HttpRequest{
         params: Object,
         method: string,
         headers: Object,
+        user: any,
         files:FileArray=null){
-
+        this.user = user
         this.files= files;
         this.body=body;
         this.cookie=cookie;

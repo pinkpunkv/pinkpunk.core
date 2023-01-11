@@ -69,7 +69,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
     }
 
     async function createProduct(req:HttpRequest) {
-        let {path=null,slug=null,collectionId=0,tags=[],categories={}[0], fields = [],images={}[0],currency=null,price=0} = {...req.body}
+        let {path=null,slug=null,collectionId=0,tags=[],categories={}[0],active=false, fields = [],images={}[0],currencySymbol=null,price=0,basePrice=0,sex='uni'} = {...req.body}
        
         return await db_connection.$transaction(async()=>{
             
@@ -86,7 +86,11 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     tags:{
                         connect:tags
                     },
-                    currencySymbol:currency
+                    currencySymbol:currencySymbol,
+                    price:price,
+                    basePrice:basePrice,
+                    sex:sex,
+                    active:active
                 },
                 include:{
                     categories:true,
@@ -102,8 +106,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 }
             })
             for (let image of images) {
-                image.imageId=image.id;
-                delete image.id;
+               
                 image.productId=product.id
             }
             await db_connection.productsImages.createMany({data:images})

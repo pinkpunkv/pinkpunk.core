@@ -4,8 +4,10 @@ import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import {product_router,product_admin_router,category_admin_router,category_router,
     variant_admin_router,collection_admin_router,collection_router,image_admin_router,
-    language_admin_router,language_router,tag_admin_router,tag_router} from './routes'
+    language_admin_router,language_router,tag_admin_router,tag_router,user_router, 
+    cart_router, wish_list_router} from './routes'
 import cors from 'cors'
+import { user_status_middleware } from "./middleware";
 
 let app:Express = express();
 app.use(express.json());
@@ -29,7 +31,7 @@ var corsOptions = {
 }
 
 app.use(cors(corsOptions))
-
+app.use(user_status_middleware)
 app.use('/api/v1/product', product_router)
 app.use('/api/v1/admin/product', product_admin_router)
 
@@ -48,6 +50,12 @@ app.use('/api/v1/admin/language', language_admin_router)
 
 app.use('/api/v1/tag', tag_router)
 app.use('/api/v1/admin/tag', tag_admin_router)
+
+app.use('/api/v1/user',user_router)
+
+app.use('/api/v1/cart',cart_router)
+
+app.use('/api/v1/wishList',wish_list_router)
 
 app.listen(config.PORT,()=>{
     console.log(`app listening on port ${config.PORT}`)

@@ -7,8 +7,33 @@ export default function make_client_product_service(db_connection:PrismaClient){
         getProducts,
         getProductsPathes,
         getProduct,
-        getProductByPath
+        getProductByPath,
+        getFilters
     });
+    async function getFilters(req:HttpRequest) {
+        class SizesColors{
+            sizes:String[]
+            colors:String[]
+        }
+        class Prices{
+            min:Number
+            max:Number
+        }
+        let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct color)as colors  from "Variant" v`
+        let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p`
+        
+        console.log(sc_s[0].sizes);
+        return {
+            status:StatusCodes.OK,
+            message:"success", 
+            content: {
+                sizes:sc_s[0].sizes,
+                colors:sc_s[0].colors,
+                min:prices[0].min,
+                max:prices[0].max
+            }
+        }  
+    }
     async function getProductByPath(req:HttpRequest) {
         let {path=''} = {...req.params};
         let{lang="ru"}={...req.query}

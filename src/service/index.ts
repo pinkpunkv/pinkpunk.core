@@ -17,6 +17,11 @@ import make_tag_service from './tag_service';
 import make_language_admin_service from './language_admin_service';
 import make_language_service from './language_service';
 
+import make_user_service from './user_service';
+
+import make_cart_service from './cart_service';
+import make_wish_list_service from './wish_list_service'
+
 import {db} from '../database'
 import {connectS3} from '../helper'
 
@@ -35,7 +40,9 @@ const category_admin_service = make_admin_category_service(db_connection)
 const image_admin_service = make_image_admin_service(db_connection,s3storage)
 const language_service = make_language_service(db_connection)
 const language_admin_service = make_language_admin_service(db_connection)
-
+const user_service = make_user_service(db_connection)
+const cart_service = make_cart_service(db_connection)
+const wish_list_service = make_wish_list_service(db_connection)
 export {
     product_service,
     collection_service,
@@ -48,5 +55,8 @@ export {
     tag_admin_service,
     tag_service,
     language_service,
-    language_admin_service
+    language_admin_service,
+    user_service,
+    cart_service,
+    wish_list_service
 }
