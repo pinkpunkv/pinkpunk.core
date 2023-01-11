@@ -73,13 +73,21 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function addToCart(req:HttpRequest) {
         let{cartId=null}={...req.params}
         let {variantId=0} = {...req.query};
+        let cart  = await db_connection.cart.findFirstOrThrow({
+            where:req.user.isAnonimus?{
+                id:Number(cartId),
+                user:null
+            }:{
+                user:{
+                    id:req.user.id
+                }
+            },
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.cart.update({
-                where:{
-                    id:Number(cartId)
-                },
+                where:{id:cart.id},
                 data:{
                     variants:{
                         connect:[{id:Number(variantId)}]
@@ -91,13 +99,21 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function removeFromCart(req:HttpRequest) {
         let{cartId=null}={...req.params}
         let {variants=[]} = {...req.query};
+        let cart  = await db_connection.cart.findFirstOrThrow({
+            where:req.user.isAnonimus?{
+                id:Number(cartId),
+                user:null
+            }:{
+                user:{
+                    id:req.user.id
+                }
+            },
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.cart.update({
-                where:{
-                    id:Number(cartId)
-                },
+                where:{id:cart.id},
                 data:{
                     variants:{
                         

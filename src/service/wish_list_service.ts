@@ -68,12 +68,22 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     async function addWish(req:HttpRequest) {
         let{wishListId=null}={...req.params}
         let {productId=0} = {...req.query};
+        let wishList = await db_connection.wishList.findFirstOrThrow({
+            where:req.user.isAnonimus?{
+                id:Number(wishListId),
+                user:null
+            }:{
+                user:{
+                    id:req.user.id
+                }
+            }
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.wishList.update({
                 where:{
-                    id:Number(wishListId)
+                    id:wishList.id
                 },
                 data:{
                     products:{
@@ -86,12 +96,22 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     async function removeFromWish(req:HttpRequest) {
         let{wishListId=null}={...req.params}
         let {products=[]} = {...req.query};
+        let wishList = await db_connection.wishList.findFirstOrThrow({
+            where:req.user.isAnonimus?{
+                id:Number(wishListId),
+                user:null
+            }:{
+                user:{
+                    id:req.user.id
+                }
+            }
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.cart.update({
                 where:{
-                    id:Number(wishListId)
+                    id:wishList.id
                 },
                 data:{
                     variants:{   
