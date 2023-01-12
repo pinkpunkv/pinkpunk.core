@@ -154,9 +154,9 @@ export default function make_client_product_service(db_connection:PrismaClient){
             take:Number(take),
             where:{
                 active:true,
-                sex:{
+                sex:sex.length>0?{
                     in:sex
-                },
+                }:{},
                 price:{
                     gte:minPrice,
                     lte:maxPrice
