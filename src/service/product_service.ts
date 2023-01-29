@@ -97,6 +97,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
+        console.log(product);
+        
         product.fields.forEach(async(field)=>{
             product[field.fieldName]=field.fieldValue
 
@@ -141,7 +143,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         }
                     }
                 }
-            })).map(x=>x.fields[0].fieldValue)
+            })).filter(x=>x.fields.length>0).map(x=> x.fields[0].fieldValue)
         }
     }
     async function getProducts(req:HttpRequest){
