@@ -1,5 +1,5 @@
 import { object, string, TypeOf, z } from 'zod';
-
+import {CustomerErrorCode} from '../common'
 enum RoleEnumType {
   ADMIN = 'admin',
   USER = 'user',
@@ -11,31 +11,24 @@ export const createUserSchema = object({
       required_error: 'Name is required',
     }),
     email: string({
-      required_error: 'Email address is required',
-    }).email('Invalid email address'),
-    password: string({
-      required_error: 'Password is required',
+      required_error: CustomerErrorCode.Blank,
+    }).email(CustomerErrorCode.Invalid),
+    password: string({  
+      required_error: CustomerErrorCode.Blank,
     })
-      .min(8, 'Password must be more than 8 characters')
-      .max(32, 'Password must be less than 32 characters'),
-    passwordConfirm: string({
-      required_error: 'Please confirm your password',
-    }),
-    role: z.optional(z.nativeEnum(RoleEnumType)),
-  }).refine((data) => data.password === data.passwordConfirm, {
-    path: ['passwordConfirm'],
-    message: 'Passwords do not match',
-  }),
+      .min(8, CustomerErrorCode.TooShort)
+      .max(32, CustomerErrorCode.TooLong),
+  })
 });
 
 export const loginUserSchema = object({
   body: object({
     email: string({
-      required_error: 'Email address is required',
-    }).email('Invalid email address'),
+      required_error: CustomerErrorCode.Blank,
+    }).email(CustomerErrorCode.Invalid),
     password: string({
-      required_error: 'Password is required',
-    }).min(8, 'Invalid email or password'),
+      required_error: CustomerErrorCode.Blank,
+    }).min(8, CustomerErrorCode.Invalid),
   }),
 });
 

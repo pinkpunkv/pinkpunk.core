@@ -109,7 +109,8 @@ model User{
   email String @unique
   photo String? @default("default.png")
   verified Boolean? @default(false) 
-  
+  sex String @default("")
+  country String @default("")
   password String
   role RoleEnumType? @default(user)
 

@@ -22,7 +22,6 @@ export default function make_client_product_service(db_connection:PrismaClient){
         let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct color)as colors  from "Variant" v`
         let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p`
         
-        console.log(sc_s[0].sizes);
         return {
             status:StatusCodes.OK,
             message:"success", 
@@ -97,8 +96,6 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
-        console.log(product);
-        
         product.fields.forEach(async(field)=>{
             product[field.fieldName]=field.fieldValue
 

@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { BaseError } from '../exception';
 import {StatusCodes} from 'http-status-codes'
-
+import {CustomerErrorCode} from '../common'
 export const excludedFields = ['password', 'verified', 'verificationCode'];
 
 
@@ -19,6 +19,10 @@ export default function make_user_service(db_connection:PrismaClient){
     })
 
     async function registerUser(req:HttpRequest) {
+        let password:String = req.body['password'];
+        if (password.includes(" ")){
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,CustomerErrorCode.PasswordStartsOrEndsWithWhitespace,'Invalid password',null)
+        }
         const hashedPassword = await bcrypt.hash(req.body['password'],config.SECRET)
 
         const verifyCode = crypto.randomBytes(32).toString('hex');
@@ -27,11 +31,22 @@ export default function make_user_service(db_connection:PrismaClient){
           .createHash('sha256')
           .update(verifyCode)
           .digest('hex');
-    
+        let user_ = await db_connection.user.findFirst({
+            where:{
+                email:{
+                    equals:req.body['email']
+                }
+                
+            }
+        })
+        if (user_!=null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,CustomerErrorCode.Taken,'',null)
         const user = await db_connection.user.create({
             data:{
                 name: req.body['name'],
                 email: req.body['email'],
+                sex: req.body['sex'],
+                country:req.body['country'],
                 password: hashedPassword,
                 verificationCode:verificationCode,
                 cart:{
@@ -49,7 +64,7 @@ export default function make_user_service(db_connection:PrismaClient){
     
         return {
             status: StatusCodes.CREATED,
-            message:"sucess",
+            message:"success",
             content: user
         }
     }
@@ -69,14 +84,15 @@ export default function make_user_service(db_connection:PrismaClient){
 
     async function loginUser(req:HttpRequest) {
         const { email='', password='' } = {...req.body};
-
+        
         const user = await findUniqueUser(
             { email: email },
             { id: true, email: true, verified: true, password: true,role:true }
         );
-
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            throw new BaseError(StatusCodes.EXPECTATION_FAILED,"Invalid email or password",{})
+        if(user==null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,CustomerErrorCode.UnidentifiedCustomer,'',{})
+        if (!(await bcrypt.compare(password, user.password))) {
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,CustomerErrorCode.Invalid,'',{})
         }
 
         // Sign Tokens
@@ -84,13 +100,14 @@ export default function make_user_service(db_connection:PrismaClient){
         
         return {
             status: StatusCodes.CREATED,
-            message:"sucess",
+            message:"success",
             cookies:{
                 access_token:access_token,
                 refresh_token:refresh_token
             },
             content: {
-                access_token:access_token
+                access_token:access_token,
+                refresh_token:refresh_token
             }
         }
 

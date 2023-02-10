@@ -4,3 +4,6 @@ export {
     HttpRequest,
     HttpResponse
 }
+
+export * from './chackout_enum'
+export * from './customer_enum'
