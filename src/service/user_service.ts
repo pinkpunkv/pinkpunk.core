@@ -2,7 +2,7 @@ import { PrismaClient, Prisma, User } from '@prisma/client';
 import { HttpRequest } from "../common";
 import {config} from '../config';
 //import redisClient from '../utils/connectRedis';
-import { signJwt } from '../utils/jwt';
+import { signJwt, verifyJwt } from '../utils/jwt';
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { BaseError } from '../exception';
@@ -15,7 +15,8 @@ export default function make_user_service(db_connection:PrismaClient){
 
     return Object.freeze({
         registerUser,
-        loginUser
+        loginUser,
+        getUserInfo
     })
 
     async function registerUser(req:HttpRequest) {
@@ -71,6 +72,7 @@ export default function make_user_service(db_connection:PrismaClient){
 
     async function signTokens(user:User) {
         let accessToken = "bearer "+signJwt({id:user.id,role:user.role},"accessTokenPrivateKey",{expiresIn:config.accessTokenExpiresIn*24*60*60*1000})
+        verifyJwt(accessToken.split(" ")[1],"accessTokenPrivateKey")
         return {access_token:accessToken,refresh_token:"bearer "+signJwt({id:user.id},"refreshTokenPrivateKey",{expiresIn:config.refreshTokenExpiresIn*24*60*60*1000})}
     }
 
@@ -109,6 +111,22 @@ export default function make_user_service(db_connection:PrismaClient){
                 access_token:access_token,
                 refresh_token:refresh_token
             }
+        }
+
+    }
+
+
+    async function getUserInfo(req:HttpRequest) {
+        
+        let user = await findUniqueUser(
+            { id: req.user.id }
+        );
+
+        return {
+            status: StatusCodes.CREATED,
+            message:"success",
+            content: user
+            
         }
 
     }
