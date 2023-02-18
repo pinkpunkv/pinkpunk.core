@@ -8,27 +8,29 @@ enum RoleEnumType {
 export const createUserSchema = object({
   body: object({
     name: string({
-      required_error: 'Name is required',
+      required_error: `{"code":"${CustomerErrorCode.Blank}","message":"Name is required"}`,
+      
     }),
     email: string({
-      required_error: CustomerErrorCode.Blank,
-    }).email(CustomerErrorCode.Invalid),
+      required_error: `{"code":"${CustomerErrorCode.Blank}","message":"email is required"}`,
+    }).email(`{"code":"${CustomerErrorCode.Invalid}","message":"invalid email"}`),
     password: string({  
-      required_error: CustomerErrorCode.Blank,
+      required_error: `{"code":"${CustomerErrorCode.Blank}","message":"password is required"}`
     })
-      .min(8, CustomerErrorCode.TooShort)
-      .max(32, CustomerErrorCode.TooLong),
+      .min(8, `{"code":"${CustomerErrorCode.TooShort}","message":"password is too short"}`)
+      .max(32, `{"code":"${CustomerErrorCode.TooLong}","message":"password is too long"}`),
   })
 });
 
 export const loginUserSchema = object({
   body: object({
     email: string({
-      required_error: CustomerErrorCode.Blank,
+      required_error: `{"code":"${CustomerErrorCode.Blank}","message":"email is required"}`,
     }).email(CustomerErrorCode.Invalid),
     password: string({
-      required_error: CustomerErrorCode.Blank,
-    }).min(8, CustomerErrorCode.Invalid),
+      required_error: `{"code":"${CustomerErrorCode.Blank}","message":"password is required"}`,
+    }).min(8, `{"code":"${CustomerErrorCode.TooShort}","message":"password is too short"}`)
+      .max(32, `{"code":"${CustomerErrorCode.TooLong}","message":"password is too long"}`),
   }),
 });
 

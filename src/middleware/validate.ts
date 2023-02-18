@@ -18,9 +18,8 @@ export default function validate (schema: AnyZodObject) {
             
             return res.status(417).json({
             status: 417,
-            code:error.issues[0].message,
             message: "validation error",
-            content:error.issues
+            errors:error.issues.map(x=> JSON.parse(x.message))
             });
         }
         next(error);
