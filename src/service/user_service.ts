@@ -16,7 +16,8 @@ export default function make_user_service(db_connection:PrismaClient){
     return Object.freeze({
         registerUser,
         loginUser,
-        getUserInfo
+        getUserInfo,
+        updateUserInfo
     })
 
     async function registerUser(req:HttpRequest) {
@@ -86,7 +87,23 @@ export default function make_user_service(db_connection:PrismaClient){
             select,
           })) as User;
     }
+    async function updateUserInfo(req:HttpRequest) {
+        let user = db_connection.user.update({
+            where:{id: req.user.id },
+            data:{
+                firstName: req.body['firstName'],
+                lastName: req.body['lastName'],
+                phone: req.body['phone'],
+        }})
+        // Sign Tokens
+        
+        return {
+            status: StatusCodes.CREATED,
+            message:"success",
+            content: user
+        }
 
+    }
     async function loginUser(req:HttpRequest) {
         const { email='', password='' } = {...req.body};
         

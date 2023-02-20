@@ -6,10 +6,97 @@ export default function make_client_product_service(db_connection:PrismaClient){
     return Object.freeze({
         getProducts,
         getProductsPathes,
+        searchProducts,
         getProduct,
         getProductByPath,
         getFilters
     });
+    async function searchProducts(req:HttpRequest){
+        let{skip=0,take=5,search="",lang="ru"}={...req.query}
+
+        let products = await db_connection.product.findMany({
+            where:{
+                fields:{
+                    some:{
+                        fieldName:"name",
+                        fieldValue:{
+                            contains:search,
+                            mode: 'insensitive'
+                        }
+                    }
+                }
+            },
+            skip:skip,
+            take:take,
+            include:{
+                fields:{
+                    where:{
+                        language:{
+                            symbol:{
+                                equals: lang,
+                                mode: 'insensitive'
+                            }
+                        }
+                    }
+                },
+                categories:{
+                    include:{
+                        fields:{
+                            where:{
+                                language:{
+                                    symbol:{
+                                        equals: lang,
+                                        mode: 'insensitive'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                tags:true,
+                collection:{
+                    include:{
+                        fields:true
+                    }
+                },
+                images:{
+                    include:{
+                        image:{
+                            select:{
+                                url:true
+                            }
+                        }
+                    }
+                },
+                variants:true
+            }
+        });
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content:await Promise.all(products.map(async (x)=>{
+                x.fields.forEach(async(field)=>{
+                    x[field.fieldName]=field.fieldValue
+                })
+                x.categories.forEach(async(cat)=>{
+                    cat.fields.forEach(async(field)=>{
+                        cat[field.fieldName]=field.fieldValue
+                    })
+                    delete cat.fields
+                })
+                x.collection?.fields.forEach((field)=>{
+                    x.collection[field.fieldName] = field.fieldValue
+                })
+                x.images?.forEach((image)=>{
+                    image['url'] = image.image.url;
+                    delete image.image
+                })
+                delete x.collection?.fields
+                delete x.fields
+                return x;
+            }))
+        }
+    }
     async function getFilters(req:HttpRequest) {
         class SizesColors{
             sizes:String[]
