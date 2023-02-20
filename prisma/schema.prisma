@@ -105,9 +105,12 @@ model User{
   @@map(name: "users")
 
   id String  @id @default(uuid())
-  name String  @db.VarChar(255)
+  username String  @db.VarChar(255)
   email String @unique
   photo String? @default("default.png")
+  phone String?
+  firstName String?
+  lastName String?
   verified Boolean? @default(false) 
   sex String @default("")
   country String @default("")

@@ -44,12 +44,15 @@ export default function make_user_service(db_connection:PrismaClient){
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'exists',[{code:CustomerErrorCode.Taken,message:"user already exists"}])
         const user = await db_connection.user.create({
             data:{
-                name: req.body['name'],
+                username: req.body['username'],
+                firstName: req.body['firstName'],
+                lastName: req.body['lastName'],
+                phone: req.body['phone'],
                 email: req.body['email'],
                 sex: req.body['sex'],
                 country:req.body['country'],
                 password: hashedPassword,
-                verificationCode:verificationCode,
+                verificationCode: verificationCode,
                 cart:{
                     create:{
 
