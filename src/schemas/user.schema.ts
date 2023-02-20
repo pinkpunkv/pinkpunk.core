@@ -7,10 +7,10 @@ enum RoleEnumType {
 
 export const createUserSchema = object({
   body: object({
-    username: string({
-      required_error: `{"code":"${CustomerErrorCode.Blank}","message":"username is required"}`,
+    // username: string({
+    //   required_error: `{"code":"${CustomerErrorCode.Blank}","message":"username is required"}`,
       
-    }),
+    // }),
     
     email: string({
       required_error: `{"code":"${CustomerErrorCode.Blank}","message":"email is required"}`,
