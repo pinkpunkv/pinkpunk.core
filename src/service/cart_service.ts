@@ -48,9 +48,23 @@ export default function make_cart_service(db_connection:PrismaClient){
                                         }
                                     }
                                 },
-                                tags:true
+                                tags:true,
+                                images:{
+                                    where:{
+                                        isMain:true
+                                    },
+                                    select:{
+                                        image:{
+                                            select:{
+                                                url:true
+                                            }
+                                        }
+                                    },
+                                    take:1
+                                }
                             }
-                        }
+                        },
+                        
                     },
                     take:take,
                     skip:skip
@@ -65,6 +79,11 @@ export default function make_cart_service(db_connection:PrismaClient){
                 x.product.fields.forEach(async(field)=>{
                     x.product[field.fieldName]=field.fieldValue
                 })
+                x.product.images?.forEach((image)=>{
+                    x.product['image'] = image.image;
+                    delete image.image
+                })
+                delete x.product.images
                 delete x.product.fields
                 return x
             })
