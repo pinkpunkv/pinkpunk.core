@@ -80,7 +80,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     x.product[field.fieldName]=field.fieldValue
                 })
                 x.product.images?.forEach((image)=>{
-                    x.product['url'] = image.image.url;
+                    x.product['image'] = image.image;
                 })
                 delete x.product.images
                 delete x.product.fields
@@ -154,7 +154,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     x.product[field.fieldName]=field.fieldValue
                 })
                 x.product.images?.forEach((image)=>{
-                    x.product['url'] = image.image.url;
+                    x.product['image'] = image.image;
                 })
                 delete x.product.images
                 delete x.product.fields
@@ -213,8 +213,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                                     take:1
                                 }
                             }
-                        },
-                        
+                        },  
                     },
                     take:take,
                     skip:skip
@@ -229,7 +228,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     x.product[field.fieldName]=field.fieldValue
                 })
                 x.product.images?.forEach((image)=>{
-                    x.product['url'] = image.image.url;
+                    x.product['image'] = image.image;
                 })
                 delete x.product.images
                 delete x.product.fields
