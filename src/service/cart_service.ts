@@ -80,8 +80,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     x.product[field.fieldName]=field.fieldValue
                 })
                 x.product.images?.forEach((image)=>{
-                    x.product['image'] = image.image;
-                    delete image.image
+                    x.product['url'] = image.image.url;
                 })
                 delete x.product.images
                 delete x.product.fields
