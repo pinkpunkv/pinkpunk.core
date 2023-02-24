@@ -51,6 +51,52 @@ export default function make_cart_service(db_connection:PrismaClient){
             }
         })
     }
+    async function createCart(lang,user:UserAttr) {
+        return await db_connection.cart.create({
+            data:user.isAnonimus?{}:{
+                user:{
+                    connect:{
+                        id:user.id
+                    }
+                }
+            },
+            include:{
+                variants:{
+                    include:{
+                        product:{
+                            include:{
+                                fields:{
+                                    where:{
+                                        language:{
+                                            symbol:{
+                                                equals: lang,
+                                                mode: 'insensitive'
+                                            }
+                                        }
+                                    }
+                                },
+                                tags:true,
+                                images:{
+                                    where:{
+                                        isMain:true
+                                    },
+                                    select:{
+                                        image:{
+                                            select:{
+                                                url:true
+                                            }
+                                        }
+                                    },
+                                    take:1
+                                }
+                            }
+                        },
+                        
+                    }
+                }
+            }
+        })
+    }
     async function getUserCartWithoutVariants(cartId,user:UserAttr) {
         return db_connection.cart.findFirst({
             where:!user||user.isAnonimus?{
@@ -82,21 +128,8 @@ export default function make_cart_service(db_connection:PrismaClient){
         let {lang="ru",cartId=null} = {...req.query};
         let cart = await getUserCart(lang,cartId,req.user);
             
-        if (cart==null) return {
-            status:StatusCodes.OK,
-            message:"success",
-            content: await db_connection.cart.create({
-                data:req.user.isAnonimus?{}:{
-                    user:{
-                        connect:{
-                            id:req.user.id
-                        }
-                    }
-                },
-                include:{
-                    variants:true
-                }
-            })
+        if (cart==null) {
+            cart = await createCart(lang,req.user)
         }
         
         if(cart.id!=cartId){
@@ -146,21 +179,20 @@ export default function make_cart_service(db_connection:PrismaClient){
                 }
             })
         }
-        
+        cart.variants.forEach(x=>{
+            x.product.fields.forEach(async(field)=>{
+                x.product[field.fieldName]=field.fieldValue
+            })
+            x.product.images?.forEach((image)=>{
+                x.product['image'] = image.image;
+            })
+            delete x.product.images
+            delete x.product.fields
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: cart.variants.map(x=>{
-                x.product.fields.forEach(async(field)=>{
-                    x.product[field.fieldName]=field.fieldValue
-                })
-                x.product.images?.forEach((image)=>{
-                    x.product['image'] = image.image;
-                })
-                delete x.product.images
-                delete x.product.fields
-                return x
-            })
+            content: cart
         }
     }
     async function addToCart(req:HttpRequest) {
@@ -210,20 +242,20 @@ export default function make_cart_service(db_connection:PrismaClient){
                 }
             }
         });
+        variantsData.variants.forEach(x=>{
+            x.product.fields.forEach(async(field)=>{
+                x.product[field.fieldName]=field.fieldValue
+            })
+            x.product.images?.forEach((image)=>{
+                x.product['image'] = image.image;
+            })
+            delete x.product.images
+            delete x.product.fields
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: variantsData.variants.map(x=>{
-                x.product.fields.forEach(async(field)=>{
-                    x.product[field.fieldName]=field.fieldValue
-                })
-                x.product.images?.forEach((image)=>{
-                    x.product['image'] = image.image;
-                })
-                delete x.product.images
-                delete x.product.fields
-                return x
-            })
+            content: variantsData
         }
     }
     async function removeFromCart(req:HttpRequest) {
@@ -272,20 +304,20 @@ export default function make_cart_service(db_connection:PrismaClient){
                 }
             }
         })
+        variantsData.variants.forEach(x=>{
+            x.product.fields.forEach(async(field)=>{
+                x.product[field.fieldName]=field.fieldValue
+            })
+            x.product.images?.forEach((image)=>{
+                x.product['image'] = image.image;
+            })
+            delete x.product.images
+            delete x.product.fields
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: variantsData.variants.map(x=>{
-                x.product.fields.forEach(async(field)=>{
-                    x.product[field.fieldName]=field.fieldValue
-                })
-                x.product.images?.forEach((image)=>{
-                    x.product['image'] = image.image;
-                })
-                delete x.product.images
-                delete x.product.fields
-                return x
-            })
+            content: variantsData
         }
     }
 }

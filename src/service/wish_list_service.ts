@@ -9,6 +9,47 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         removeFromWish,
         getWish
     });
+    async function createWishList(lang,user:UserAttr) {
+        return  await db_connection.wishList.create({
+            data:user.isAnonimus?{}:{
+                user:{
+                    connect:{
+                        id:user.id
+                    }
+                }
+            },
+            include:{
+                products:{
+                    include:{
+                        fields:{
+                            where:{
+                                language:{
+                                    symbol:{
+                                        equals: lang,
+                                        mode: 'insensitive'
+                                    }
+                                }
+                            }
+                        },
+                        tags:true,
+                        images:{
+                            where:{
+                                isMain:true
+                            },
+                            select:{
+                                image:{
+                                    select:{
+                                        url:true
+                                    }
+                                }
+                            },
+                            take:1
+                        }
+                    }
+                }
+            }
+        })
+    }
     async function getWishListData(lang,wishId,user:UserAttr) {
         return await db_connection.wishList.findFirst({
             where:user.isAnonimus?{
@@ -32,7 +73,20 @@ export default function make_wish_list_service(db_connection:PrismaClient){
                                 }
                             }
                         },
-                        tags:true
+                        tags:true,
+                        images:{
+                            where:{
+                                isMain:true
+                            },
+                            select:{
+                                image:{
+                                    select:{
+                                        url:true
+                                    }
+                                }
+                            },
+                            take:1
+                        }
                     }
                 }
             }
@@ -42,36 +96,29 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     async function getWishList(wishId) {
         return  await db_connection.wishList.findFirst({
             where:{
-                id:wishId
+                id:Number(wishId)
             },
             include:{
                 products:{
                     select:{
                         id:true
-                    }
+                    },
+                    
                 }
             }
         })
     }
 
     async function getWish(req:HttpRequest) {
-        let {lang="ru",wishId=null} = {...req.query};
-        if (wishId==null) return {
-            status:StatusCodes.OK,
-            message:"success",
-            content: await db_connection.cart.create({
-                data:{
-
-                },
-                include:{
-                    variants:true
-                }
-            })
+        let {wishListId=null,lang="ru"} = {...req.query}
+        let wishList = await getWishListData(lang,wishListId,req.user);
+        if (wishList==null) {
+            wishList = await createWishList(lang,req.user);
         }
-        let wishList = await getWishListData(lang,wishId,req.user);
-        if(wishList.id!=wishId){
+        
+        if(wishList.id!=wishListId){
             let exists = wishList.products.map(x=>x.id);
-            let wish = await getWishList(wishId);
+            let wish = await getWishList(wishListId);
             wishList = await db_connection.wishList.update({
                 where:{
                     id:wishList.id
@@ -94,27 +141,44 @@ export default function make_wish_list_service(db_connection:PrismaClient){
                                     }
                                 }
                             },
-                            tags:true
+                            tags:true,
+                            images:{
+                                where:{
+                                    isMain:true
+                                },
+                                select:{
+                                    image:{
+                                        select:{
+                                            url:true
+                                        }
+                                    }
+                                },
+                                take:1
+                            }
                         }
                     }
                 }
             })
         }
+        wishList.products.forEach(x=>{
+            x.fields.forEach(async(field)=>{
+                x[field.fieldName]=field.fieldValue
+            })
+            x.images?.forEach((image)=>{
+                x['image'] = image.image;
+            })
+            delete x.images
+            delete x.fields
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: wishList.products.map(x=>{
-                x.fields.forEach(async(field)=>{
-                    x[field.fieldName]=field.fieldValue
-                })
-                delete x.fields
-                return x
-            })
+            content: wishList
         }
     }
     async function addWish(req:HttpRequest) {
-        let{lang="ru",wishId=null}={...req.params}
-        let {productId=0} = {...req.query};
+        let{wishId=null}={...req.params}
+        let {lang="ru",productId=0} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
         wishList = await db_connection.wishList.update({
             where:{
@@ -138,26 +202,43 @@ export default function make_wish_list_service(db_connection:PrismaClient){
                                 }
                             }
                         },
-                        tags:true
+                        tags:true,
+                        images:{
+                            where:{
+                                isMain:true
+                            },
+                            select:{
+                                image:{
+                                    select:{
+                                        url:true
+                                    }
+                                }
+                            },
+                            take:1
+                        }
                     }
                 }
             }
         })
+        wishList.products.forEach(x=>{
+            x.fields.forEach(async(field)=>{
+                x[field.fieldName]=field.fieldValue
+            })
+            x.images?.forEach((image)=>{
+                x['image'] = image.image;
+            })
+            delete x.images
+            delete x.fields
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: wishList.products.map(x=>{
-                x.fields.forEach(async(field)=>{
-                    x[field.fieldName]=field.fieldValue
-                })
-                delete x.fields
-                return x
-            })
+            content: wishList
         }
     }
     async function removeFromWish(req:HttpRequest) {
-        let{lang="ru",wishId=null}={...req.params}
-        let {products=[]} = {...req.query};
+        let{wishId=null}={...req.params}
+        let {lang="ru",products=[]} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
         wishList = await db_connection.wishList.update({
             where:{
@@ -181,21 +262,38 @@ export default function make_wish_list_service(db_connection:PrismaClient){
                                 }
                             }
                         },
-                        tags:true
+                        tags:true,
+                        images:{
+                            where:{
+                                isMain:true
+                            },
+                            select:{
+                                image:{
+                                    select:{
+                                        url:true
+                                    }
+                                }
+                            },
+                            take:1
+                        }
                     }
                 }
             }
         })
+        wishList.products.forEach(x=>{
+            x.fields.forEach(async(field)=>{
+                x[field.fieldName]=field.fieldValue
+            })
+            x.images?.forEach((image)=>{
+                x['image'] = image.image;
+            })
+            delete x.images
+            delete x.fields
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: wishList.products.map(x=>{
-                x.fields.forEach(async(field)=>{
-                    x[field.fieldName]=field.fieldValue
-                })
-                delete x.fields
-                return x
-            })
+            content: wishList
         }
     }
 }
