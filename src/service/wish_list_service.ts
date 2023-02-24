@@ -238,7 +238,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     }
     async function removeFromWish(req:HttpRequest) {
         let{wishId=null}={...req.params}
-        let {lang="ru",products=[]} = {...req.query};
+        let {lang="ru",productId=null} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
         wishList = await db_connection.wishList.update({
             where:{
@@ -246,7 +246,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
             },
             data:{
                 products:{   
-                    disconnect:products.map(x=>{return {id:Number(x)}})
+                    disconnect:{id:Number(productId)}
                 }
             },
             include:{
