@@ -19,7 +19,7 @@ export default function make_cart_service(db_connection:PrismaClient){
 
     function mapCartToResponse(cart) {
         cart['variants'].forEach(x=>{
-            x.id=x.variant.id
+            x.id=x.variantId
             x.product = x.variant.product
             x.variant.product.fields.forEach(async(field)=>{
                 x.product[field.fieldName]=field.fieldValue
@@ -27,6 +27,8 @@ export default function make_cart_service(db_connection:PrismaClient){
             x.variant.product.images?.forEach((image)=>{
                 x.product['image'] = image.image;
             })
+            delete x.variantId
+            delete x.cartId
             delete x.variant
             delete x.product.fields
             delete x.product.images
