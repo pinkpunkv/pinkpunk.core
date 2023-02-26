@@ -20,20 +20,16 @@ export default function make_cart_service(db_connection:PrismaClient){
     function mapCartToResponse(cart) {
         cart['variants'].forEach(x=>{
             x.id=x.variant.id
-            x.tags = x.variant.product.tags;
-            x.price = x.variant.product.price;
-            x.basePrice = x.variant.product.basePrice;
-            x.collectionId = x.variant.product.collectionId;
-            x.currencySymbol = x.variant.product.basePrice;
-            x.slug = x.variant.product.slug;
-            x.productId = x.variant.product.id
+            x.product = x.variant.product
             x.variant.product.fields.forEach(async(field)=>{
-                x[field.fieldName]=field.fieldValue
+                x.product[field.fieldName]=field.fieldValue
             })
             x.variant.product.images?.forEach((image)=>{
-                x['image'] = image.image;
+                x.product['image'] = image.image;
             })
-            delete x['variant']
+            delete x.variant
+            delete x.product.fields
+            delete x.product.images
         })
         return cart;
     }
