@@ -6,6 +6,7 @@ let cart_router = express.Router();
 
 cart_router.get('/',m(cart_service.getCart))
 cart_router.post('/:cartId',m(cart_service.addToCart))
+cart_router.delete("/decrease/:cartId",m(cart_service.decreaseCountFromCart))
 cart_router.delete('/:cartId',m(cart_service.removeFromCart))
 
 export default cart_router;

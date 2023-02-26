@@ -8,7 +8,8 @@ export default function make_cart_service(db_connection:PrismaClient){
     return Object.freeze({
         addToCart,
         removeFromCart,
-        getCart
+        getCart,
+        decreaseCountFromCart
     });
 
 
@@ -117,10 +118,11 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function addToCart(req:HttpRequest) {
         let{cartId=null}={...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        let cartVariant = await getCartVariant(cartId,variantId)
         let variantsData = await getUserCart(lang,cartId,req.user)
+        let cartVariant = await getCartVariant(variantsData.id,variantId)
+        
         if (cartVariant==null){
-            let cart  = await getUserCartWithoutVariants(cartId,req.user)
+            let cart  = await getUserCartWithoutVariants(variantsData.id,req.user)
             variantsData = await db_connection.cart.update({
                 where:{id:cart.id},
                 data:{
@@ -159,9 +161,35 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function removeFromCart(req:HttpRequest) {
         let {cartId=null} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-
-        let cartVariant = await getCartVariant(cartId,variantId)
         let variantsData = await getUserCart(lang,cartId,req.user)
+        variantsData = await db_connection.cart.update({
+            where:{id:variantsData.id},
+            data:{
+                variants:{
+                    delete:{
+                        variantId_cartId:{
+                            variantId:Number(variantId),
+                            cartId:Number(variantsData.id)
+                        }
+                    }
+                }
+            },
+            include:{variants:getInclude(lang)}
+        })
+         
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: mapCartToResponse(variantsData)
+        }
+    }
+
+    async function decreaseCountFromCart(req:HttpRequest) {
+        let {cartId=null} = {...req.params}
+        let {variantId=0,lang="ru"} = {...req.query};
+        let variantsData = await getUserCart(lang,cartId,req.user)
+        let cartVariant = await getCartVariant(variantsData.id,variantId)
+       
         if(cartVariant!=null&&cartVariant.count==1){
             variantsData = await db_connection.cart.update({
                 where:{id:variantsData.id},
