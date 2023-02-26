@@ -111,7 +111,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function getCartWithProducts(cartId) {
         return await db_connection.cart.findFirst({
             where:{
-                id:cartId
+                id:Number(cartId)
             },
             include:{
                 variants:true
@@ -196,8 +196,8 @@ export default function make_cart_service(db_connection:PrismaClient){
         }
     }
     async function addToCart(req:HttpRequest) {
-        let{cartId=null,lang="ru"}={...req.params}
-        let {variantId=0} = {...req.query};
+        let{cartId=null}={...req.params}
+        let {variantId=0,lang="ru"} = {...req.query};
         let cart  = await getUserCartWithoutVariants(cartId,req.user)
         let variantsData = await db_connection.cart.update({
             where:{id:cart.id},
@@ -259,14 +259,16 @@ export default function make_cart_service(db_connection:PrismaClient){
         }
     }
     async function removeFromCart(req:HttpRequest) {
-        let {cartId=null,lang="ru"} = {...req.params}
-        let {variants=[]} = {...req.query};
+        let {cartId=null} = {...req.params}
+        let {variantId=0,lang="ru"} = {...req.query};
         let cart  = await getUserCartWithoutVariants(cartId,req.user)
         let variantsData = await db_connection.cart.update({
             where:{id:cart.id},
             data:{
                 variants:{
-                    disconnect:variants.map(x=>{return {id:Number(x)}})
+                    disconnect:{
+                        id:Number(variantId)
+                    }
                 }
             },
             include:{

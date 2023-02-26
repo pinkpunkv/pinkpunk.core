@@ -39,20 +39,6 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                categories:{
-                    include:{
-                        fields:{
-                            where:{
-                                language:{
-                                    symbol:{
-                                        equals: lang,
-                                        mode: 'insensitive'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
                 tags:true,
                 collection:{
                     include:{
@@ -71,30 +57,58 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 variants:true
             }
         });
+        let categories = await db_connection.category.findMany({
+            where:{
+                fields:{
+                    some:{
+                        fieldName:"name",
+                        fieldValue:{
+                            contains:search,
+                            mode: 'insensitive'
+                        }
+                    }
+                }
+            },
+            include:{
+                fields:{
+                    where:{
+                        language:{
+                            symbol:{
+                                equals: lang,
+                                mode: 'insensitive'
+                            }
+                        }
+                    }
+                }
+            }
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
-            content:await Promise.all(products.map(async (x)=>{
-                x.fields.forEach(async(field)=>{
-                    x[field.fieldName]=field.fieldValue
-                })
-                x.categories.forEach(async(cat)=>{
+            content:{
+                products:await Promise.all(products.map(async (x)=>{
+                    x.fields.forEach(async(field)=>{
+                        x[field.fieldName]=field.fieldValue
+                    })
+                    x.collection?.fields.forEach((field)=>{
+                        x.collection[field.fieldName] = field.fieldValue
+                    })
+                    x.images?.forEach((image)=>{
+                        image['url'] = image.image.url;
+                        delete image.image
+                    })
+                    delete x.collection?.fields
+                    delete x.fields
+                    return x;
+                })),
+                categories:await Promise.all(categories.map(async(cat)=>{
                     cat.fields.forEach(async(field)=>{
                         cat[field.fieldName]=field.fieldValue
                     })
                     delete cat.fields
-                })
-                x.collection?.fields.forEach((field)=>{
-                    x.collection[field.fieldName] = field.fieldValue
-                })
-                x.images?.forEach((image)=>{
-                    image['url'] = image.image.url;
-                    delete image.image
-                })
-                delete x.collection?.fields
-                delete x.fields
-                return x;
-            }))
+                    return cat;
+                }))
+            }
         }
     }
     async function getFilters(req:HttpRequest) {
