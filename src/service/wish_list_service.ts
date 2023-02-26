@@ -125,7 +125,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
                 },
                 data:{
                     products:{
-                        connect:wish.products.filter(x=>!exists.includes(x.id))
+                        connect:wish.products.filter(x=>!exists.includes(x.id)).map(x=>{return{id:x.id}})
                     }
                 },
                 include:{
