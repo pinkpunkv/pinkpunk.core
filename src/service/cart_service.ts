@@ -26,7 +26,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             x.collectionId = x.variant.product.collectionId;
             x.currencySymbol = x.variant.product.basePrice;
             x.slug = x.variant.product.slug;
-           
+            x.productId = x.variant.product.id
             x.variant.product.fields.forEach(async(field)=>{
                 x[field.fieldName]=field.fieldValue
             })
