@@ -2,6 +2,7 @@ import { PrismaClient,Prisma, Cart, CartVariants } from '@prisma/client'
 import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
 import UserAttr from '../common/user_attr'
+import Decimal from 'decimal.js';
 
 export default function make_cart_service(db_connection:PrismaClient){
     
@@ -53,7 +54,7 @@ export default function make_cart_service(db_connection:PrismaClient){
 
     function mapCartToResponse(cart) {
         cart.total = 0;
-        cart.totalAmount =  Number(0);
+        let totalAmount = new Decimal(0);
         cart['variants'].forEach(x=>{
             x.id=x.variantId
             x.product = x.variant.product
@@ -64,7 +65,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                 x.product['image'] = image.image;
             })
             cart.total+=x.count
-            cart.totalAmount+=Number(x.count)*Number(x.product.price)
+            totalAmount = totalAmount.add(new Decimal(x.count).mul(new Decimal(x.product.price)))
             x.maxCount = x.variant.count
             x.size = x.variant.size
             x.color = x.variant.color
@@ -74,6 +75,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             delete x.product.fields
             delete x.product.images
         })
+        cart.totalAmount = totalAmount;
         return cart;
     }
 
