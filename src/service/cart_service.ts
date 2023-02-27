@@ -15,10 +15,45 @@ export default function make_cart_service(db_connection:PrismaClient){
 
 
     function getInclude(lang){
-        return {include:{variant:{include:{product:{include:{fields:{where:{language:{ symbol:{equals: lang,mode: 'insensitive'}}}},tags:true,images:{where:{isMain:true},select:{image:{select:{url:true}}},take:1}}},}}}} as Prisma.CartVariantsFindManyArgs
+        return {include:
+            {
+                variant:{
+                    include:{
+                        product:{
+                            include:{
+                                fields:{
+                                    where:{
+                                        language:{ 
+                                            symbol:{equals: lang,mode: 'insensitive'}
+                                        }
+                                    }
+                                },
+                                tags:true,
+                                images:{
+                                    where:{
+                                        isMain:true
+                                    },
+                                    select:{
+                                        image:{
+                                            select:{
+                                                url:true
+                                            }
+                                        }
+                                    },
+                                    take:1
+                                }
+                            }
+                        },
+                        
+                    },
+                }
+            }
+        } as Prisma.CartVariantsFindManyArgs
     }
 
     function mapCartToResponse(cart) {
+        cart.total = cart._count?.variants
+        delete cart._count
         cart['variants'].forEach(x=>{
             x.id=x.variantId
             x.product = x.variant.product
@@ -45,7 +80,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             {id:Number(cartId),user:null}
             :
             {user:{id:user.id}},
-            include:{variants:getInclude(lang)}
+            include:{variants:getInclude(lang),_count:true}
         })
     }
     async function getCartVariant(cartId,variantId) {
@@ -66,7 +101,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             {}
             :
             {user:{connect:{id:user.id}}},
-            include:{variants:getInclude(lang)}
+            include:{variants:getInclude(lang),_count:true}
         })
     }
     
@@ -89,7 +124,8 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function getCart(req:HttpRequest) {
         let {lang="ru",cartId=null} = {...req.query};
         let cart = await getUserCart(lang,cartId,req.user);
-            
+        console.log(cart);
+         
         if (cart==null) {
             cart = await createCart(lang,req.user)
         }
@@ -107,7 +143,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{variants:getInclude(lang)}
+                include:{variants:getInclude(lang),_count:true}
             })
         }
        
@@ -132,7 +168,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         create: {variantId:Number(variantId)}
                     }
                 },
-                include:{variants:getInclude(lang)}
+                include:{variants:getInclude(lang),_count:true}
             });
         }
         else{
@@ -176,7 +212,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     }
                 }
             },
-            include:{variants:getInclude(lang)}
+            include:{variants:getInclude(lang),_count:true}
         })
          
         return {
@@ -205,7 +241,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{variants:getInclude(lang)}
+                include:{variants:getInclude(lang),_count:true}
             })
         }
         else{
