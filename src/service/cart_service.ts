@@ -28,6 +28,8 @@ export default function make_cart_service(db_connection:PrismaClient){
             x.variant.product.images?.forEach((image)=>{
                 x.product['image'] = image.image;
             })
+            x.size = x.variant.size
+            x.color = x.variant.color
             delete x.variantId
             delete x.cartId
             delete x.variant
