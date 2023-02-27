@@ -53,11 +53,9 @@ export default function make_cart_service(db_connection:PrismaClient){
 
     function mapCartToResponse(cart) {
         cart.total = 0;
-        
+        cart.totalAmount = 0;
         cart['variants'].forEach(x=>{
             x.id=x.variantId
-            console.log(x);
-            
             x.product = x.variant.product
             x.variant.product.fields.forEach(async(field)=>{
                 x.product[field.fieldName]=field.fieldValue
@@ -66,6 +64,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                 x.product['image'] = image.image;
             })
             cart.total+=x.count
+            cart.totalAmount+=x.count*x.product.price
             x.maxCount = x.variant.count
             x.size = x.variant.size
             x.color = x.variant.color
