@@ -52,10 +52,12 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
 
     function mapCartToResponse(cart) {
-        cart.total = cart._count?.variants
-        delete cart._count
+        cart.total = 0;
+        
         cart['variants'].forEach(x=>{
             x.id=x.variantId
+            console.log(x);
+            
             x.product = x.variant.product
             x.variant.product.fields.forEach(async(field)=>{
                 x.product[field.fieldName]=field.fieldValue
@@ -63,6 +65,8 @@ export default function make_cart_service(db_connection:PrismaClient){
             x.variant.product.images?.forEach((image)=>{
                 x.product['image'] = image.image;
             })
+            cart.total+=x.count
+            x.maxCount = x.variant.count
             x.size = x.variant.size
             x.color = x.variant.color
             delete x.variantId
@@ -80,7 +84,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             {id:Number(cartId),user:null}
             :
             {user:{id:user.id}},
-            include:{variants:getInclude(lang),_count:true}
+            include:{variants:getInclude(lang) }
         })
     }
     async function getCartVariant(cartId,variantId) {
@@ -101,7 +105,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             {}
             :
             {user:{connect:{id:user.id}}},
-            include:{variants:getInclude(lang),_count:true}
+            include:{variants:getInclude(lang) }
         })
     }
     
@@ -143,7 +147,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{variants:getInclude(lang),_count:true}
+                include:{variants:getInclude(lang) }
             })
         }
        
@@ -168,7 +172,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         create: {variantId:Number(variantId)}
                     }
                 },
-                include:{variants:getInclude(lang),_count:true}
+                include:{variants:getInclude(lang) }
             });
         }
         else{
@@ -212,7 +216,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     }
                 }
             },
-            include:{variants:getInclude(lang),_count:true}
+            include:{variants:getInclude(lang) }
         })
          
         return {
@@ -241,7 +245,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{variants:getInclude(lang),_count:true}
+                include:{variants:getInclude(lang) }
             })
         }
         else{
