@@ -82,7 +82,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function getUserCart(lang,cartId,user:UserAttr) {
         return db_connection.cart.findFirst({
             where:!user||user.isAnonimus?
-            {id:Number(cartId),user:null}
+            {id:cartId,user:null}
             :
             {user:{id:user.id}},
             include:{variants:getInclude(lang) }
@@ -90,7 +90,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
     async function getCartVariant(cartId,variantId) {
         return await db_connection.cartVariants.findFirst({
-            where:{cartId:Number(cartId),variantId:Number(variantId)},
+            where:{cartId:cartId,variantId:Number(variantId)},
             include:{
                 variant:{
                     select:{
@@ -113,7 +113,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function getUserCartWithoutVariants(cartId,user:UserAttr) {
         return db_connection.cart.findFirst({
             where:!user||user.isAnonimus?
-            {id:Number(cartId),user:null}
+            {id:cartId,user:null}
             :
             {user:{id:user.id}}
         })
@@ -121,7 +121,7 @@ export default function make_cart_service(db_connection:PrismaClient){
 
     async function getCartWithVariants(cartId) {
         return await db_connection.cart.findFirst({
-            where:{id:Number(cartId)},
+            where:{id:cartId},
             include:{variants:true}
         })
     }
@@ -212,7 +212,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     delete:{
                         variantId_cartId:{
                             variantId:Number(variantId),
-                            cartId:Number(variantsData.id)
+                            cartId:variantsData.id
                         }
                     }
                 }
@@ -241,7 +241,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         delete:{
                             variantId_cartId:{
                                 variantId:Number(variantId),
-                                cartId:Number(cartId)
+                                cartId:cartId
                             }
                         }
                     }

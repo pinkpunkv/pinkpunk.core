@@ -122,9 +122,9 @@ model User{
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cartId Int? @unique
+  cartId String? @unique
   cart Cart? @relation(fields: [cartId], references: [id])
-  wishlistId Int? @unique
+  wishlistId String? @unique
   wishList WishList? @relation(fields: [wishlistId], references: [id])
   @@unique([email, verificationCode])
   @@index([email, verificationCode])
@@ -136,12 +136,12 @@ enum RoleEnumType {
 }
 
 model Cart{
-  id           Int           @id @default(autoincrement())
+  id           String  @id @default(uuid())
   user User?
   variants CartVariants[]
 }
 model CartVariants{
-  cartId   Int
+  cartId   String
   count     Int @default(1)
   variantId   Int
   cart       Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
@@ -150,7 +150,7 @@ model CartVariants{
   @@id([variantId, cartId])
 }
 model WishList{
-  id           Int           @id @default(autoincrement())
+  id            String  @id @default(uuid())
   user User? 
   products Product[]
 }
