@@ -69,6 +69,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         })
     }
     async function getWishListData(lang,wishId,user:UserAttr) {
+        
         return await db_connection.wishList.findFirst({
             where:user.isAnonimus?{
                 id:wishId,
@@ -87,7 +88,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     async function getWishList(wishId) {
         return  await db_connection.wishList.findFirst({
             where:{
-                id:wishId
+                id:String(wishId)
             },
             include:{
                 products:{
@@ -101,8 +102,10 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     }
 
     async function getWish(req:HttpRequest) {
-        let {wishListId=undefined,lang="ru"} = {...req.query}
+        let {wishListId="",lang="ru"} = {...req.query}
         let wishList = await getWishListData(lang,wishListId,req.user);
+        console.log(wishList);
+        
         if (wishList==null) {
             wishList = await createWishList(lang,req.user);
         }
@@ -133,7 +136,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         }
     }
     async function addWish(req:HttpRequest) {
-        let{wishId=undefined}={...req.params}
+        let{wishId=""}={...req.params}
         let {lang="ru",productId=0} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
         wishList = await db_connection.wishList.update({
@@ -157,7 +160,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         }
     }
     async function removeFromWish(req:HttpRequest) {
-        let{wishId=undefined}={...req.params}
+        let{wishId=""}={...req.params}
         let {lang="ru",productId=null} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
         wishList = await db_connection.wishList.update({

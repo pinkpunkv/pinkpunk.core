@@ -127,7 +127,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
    
     async function getCart(req:HttpRequest) {
-        let {lang="ru",cartId=undefined} = {...req.query};
+        let {lang="ru",cartId=""} = {...req.query};
         let cart = await getUserCart(lang,cartId,req.user);
         console.log(cart);
          
@@ -161,7 +161,7 @@ export default function make_cart_service(db_connection:PrismaClient){
         }
     }
     async function addToCart(req:HttpRequest) {
-        let{cartId=undefined}={...req.params}
+        let{cartId=""}={...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
         let cartVariant = await getCartVariant(variantsData.id,variantId)
@@ -204,7 +204,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
 
     async function removeFromCart(req:HttpRequest) {
-        let {cartId=undefined} = {...req.params}
+        let {cartId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
         variantsData = await db_connection.cart.update({
@@ -230,7 +230,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
 
     async function decreaseCountFromCart(req:HttpRequest) {
-        let {cartId=undefined} = {...req.params}
+        let {cartId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
         let cartVariant = await getCartVariant(variantsData.id,variantId)
