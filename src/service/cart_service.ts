@@ -3,6 +3,7 @@ import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
 import UserAttr from '../common/user_attr'
 import Decimal from 'decimal.js';
+import { BaseError } from '../exception';
 
 export default function make_cart_service(db_connection:PrismaClient){
     
@@ -165,7 +166,8 @@ export default function make_cart_service(db_connection:PrismaClient){
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
         let cartVariant = await getCartVariant(variantsData.id,variantId)
-        
+        if(variantsData==null)
+            throw new BaseError(417,"cart with this id not found",[]);
         if (cartVariant==null){
             let cart  = await getUserCartWithoutVariants(variantsData.id,req.user)
             variantsData = await db_connection.cart.update({
@@ -207,6 +209,8 @@ export default function make_cart_service(db_connection:PrismaClient){
         let {cartId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
+        if(variantsData==null)
+            throw new BaseError(417,"cart with this id not found",[]);
         variantsData = await db_connection.cart.update({
             where:{id:variantsData.id},
             data:{

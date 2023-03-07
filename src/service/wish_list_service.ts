@@ -3,6 +3,8 @@ import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
 import UserAttr from 'src/common/user_attr';
 
+import { BaseError } from '../exception';
+
 export default function make_wish_list_service(db_connection:PrismaClient){
     return Object.freeze({
         addWish,
@@ -13,7 +15,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         wishList.total = 0;
         wishList.products.forEach(x=>{
             wishList.total++
-            x.fields.forEach(async(field)=>{
+            x.fields.forEach((field)=>{
                 x[field.fieldName]=field.fieldValue
             })
             x.images?.forEach((image)=>{
@@ -88,7 +90,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     async function getWishList(wishId) {
         return  await db_connection.wishList.findFirst({
             where:{
-                id:String(wishId)
+                id:wishId
             },
             include:{
                 products:{
@@ -139,6 +141,8 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         let{wishId=""}={...req.params}
         let {lang="ru",productId=0} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
+        if(wishList==null)
+            throw new BaseError(417,"wish list with this id not found",[]);
         wishList = await db_connection.wishList.update({
             where:{
                 id:wishList.id
@@ -163,6 +167,8 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         let{wishId=""}={...req.params}
         let {lang="ru",productId=null} = {...req.query};
         let wishList = await getWishListData(lang,wishId,req.user);
+        if(wishList==null)
+            throw new BaseError(417,"wish list with this id not found",[]);
         wishList = await db_connection.wishList.update({
             where:{
                 id:wishList.id
