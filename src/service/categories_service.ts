@@ -4,7 +4,8 @@ import {StatusCodes} from 'http-status-codes'
 export default function make_category_service(db_connection:PrismaClient){
     return Object.freeze({
         getCategories,
-        getMainCategoriesWithProductImages
+        getMainCategoriesWithProductImages,
+        getFiltersInfo
     });
 
 
@@ -58,6 +59,25 @@ export default function make_category_service(db_connection:PrismaClient){
                 delete cat.fields
                 return cat
             }))
+        }
+    }
+    async function getFiltersInfo() {
+        let filters = await db_connection.product.groupBy({
+            by:["sex"],
+            where:{active:true},
+            _count:{
+                _all:true
+            }    
+        })
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: filters.map((fil)=>{
+                
+                fil['count'] = fil._count._all 
+                delete fil._count
+                return fil
+            })
         }
     }
     async function getMainCategoriesWithProductImages(req:HttpRequest) {
