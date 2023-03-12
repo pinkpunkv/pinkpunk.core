@@ -14,7 +14,7 @@ model Product {
   basePrice Decimal @default(0)
   active Boolean @default(false)
   sex String @default("uni")
-  views BigInt @default(0)
+  views Decimal @default(0)
   currencySymbol String?        
   currency Currency? @relation(fields: [currencySymbol], references: [symbol])
   collectionId Int?
