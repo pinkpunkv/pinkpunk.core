@@ -87,7 +87,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                         connect:tags
                     },
                     currencySymbol:currencySymbol,
-                    price:price,
+                    price:Number(price),
                     basePrice:basePrice,
                     sex:sex,
                     active:active
@@ -122,7 +122,6 @@ export default function make_admin_product_service(db_connection:PrismaClient){
     async function updateProduct(req:HttpRequest) {
         let {id=0} = {...req.params};
         let {path=null,slug=null,collectionId=null,tags=[],categories={}[0], fields = [],images={}[0],currencySymbol=null,price=0,sex="uni"} = {...req.body}
-        console.log(req.body);
         
         return await db_connection.$transaction(async()=>{
             let productData = await db_connection.product.findFirstOrThrow({
@@ -156,7 +155,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                             data:images
                         }
                     },
-                    price:price,
+                    price:Number(price),
                     currencySymbol:currencySymbol,
                     sex:sex
                 },
