@@ -32,6 +32,8 @@ const refreshTokenCookieOptions: CookieOptions = {
 
 
 export default function req_middleware(controller:Function){
+    
+    
     return function call(req:Request,res:Response,next:NextFunction){
         
         let httpRequest = new HttpRequest(req.ip,req.path,req.body,req.query,req.cookies,req.params,req.method,{

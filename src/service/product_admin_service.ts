@@ -121,7 +121,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
 
     async function updateProduct(req:HttpRequest) {
         let {id=0} = {...req.params};
-        let {path=null,slug=null,collectionId=null,tags=[],categories={}[0], fields = [],images={}[0],currencySymbol=null,price=0,sex="uni"} = {...req.body}
+        let {slug=null,collectionId=null,tags=[],categories={}[0], fields = [],images={}[0],currencySymbol=null,price=0,sex="uni"} = {...req.body}
         
         return await db_connection.$transaction(async()=>{
             let productData = await db_connection.product.findFirstOrThrow({

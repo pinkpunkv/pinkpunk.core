@@ -46,10 +46,11 @@ export default function make_cart_service(db_connection:PrismaClient){
                                 }
                             }
                         },
-                        
+                      
                     },
-                }
-            }
+                },
+            },
+            orderBy:{variantId:"desc"}
         } as Prisma.CartVariantsFindManyArgs
     }
 
@@ -86,6 +87,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             {id:cartId,user:null}
             :
             {user:{id:user.id}},
+            
             include:{variants:getInclude(lang) }
         })
     }
@@ -165,8 +167,10 @@ export default function make_cart_service(db_connection:PrismaClient){
         let{cartId=""}={...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
+
         if(variantsData==null)
             throw new BaseError(417,"cart with this id not found",[]);
+            
         let cartVariant = await getCartVariant(variantsData.id,variantId)
        
         if (cartVariant==null){
@@ -210,8 +214,10 @@ export default function make_cart_service(db_connection:PrismaClient){
         let {cartId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variantsData = await getUserCart(lang,cartId,req.user)
+
         if(variantsData==null)
             throw new BaseError(417,"cart with this id not found",[]);
+
         variantsData = await db_connection.cart.update({
             where:{id:variantsData.id},
             data:{

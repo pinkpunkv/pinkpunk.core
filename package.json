@@ -2,7 +2,7 @@
   "name": "pinkpunk.core",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/app.js",
+  "main": "dist/src/app.js",
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node .",

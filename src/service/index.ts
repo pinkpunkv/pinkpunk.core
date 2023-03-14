@@ -22,12 +22,15 @@ import make_user_service from './user_service';
 import make_cart_service from './cart_service';
 import make_wish_list_service from './wish_list_service'
 
+import make_address_service from './address_service'
+
 import {db} from '../database'
 import {connectS3} from '../helper'
 
 let db_connection = db();
 let s3storage = connectS3(process.env.storage);
 
+const address_service = make_address_service(db_connection)
 const tag_service = make_tag_service(db_connection)
 const tag_admin_service = make_tag_admin_service(db_connection)
 const product_service = make_product_service(db_connection)
@@ -43,7 +46,9 @@ const language_admin_service = make_language_admin_service(db_connection)
 const user_service = make_user_service(db_connection)
 const cart_service = make_cart_service(db_connection)
 const wish_list_service = make_wish_list_service(db_connection)
+
 export {
+    address_service,
     product_service,
     collection_service,
     product_admin_service,

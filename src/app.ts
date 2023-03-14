@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser'
 import {product_router,product_admin_router,category_admin_router,category_router,
     variant_admin_router,collection_admin_router,collection_router,image_admin_router,
     language_admin_router,language_router,tag_admin_router,tag_router,user_router, 
-    cart_router, wish_list_router} from './routes'
+    cart_router, wish_list_router,address_router} from './routes'
 import cors from 'cors'
 import { user_status_middleware } from "./middleware";
 
@@ -32,6 +32,9 @@ var corsOptions = {
 
 app.use(cors(corsOptions))
 app.use(user_status_middleware)
+
+app.use('/api/v1/address', address_router)
+
 app.use('/api/v1/product', product_router)
 app.use('/api/v1/admin/product', product_admin_router)
 
@@ -56,6 +59,8 @@ app.use('/api/v1/user',user_router)
 app.use('/api/v1/cart',cart_router)
 
 app.use('/api/v1/wishList',wish_list_router)
+
+
 
 app.listen(config.PORT,()=>{
     console.log(`app listening on port ${config.PORT}`)
