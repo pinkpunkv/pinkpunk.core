@@ -128,6 +128,7 @@ export default function make_user_service(db_connection:PrismaClient){
                 refresh_token:refresh_token
             },
             content: {
+                user:user,
                 access_token:access_token,
                 refresh_token:refresh_token
             }

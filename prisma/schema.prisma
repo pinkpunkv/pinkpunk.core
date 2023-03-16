@@ -122,7 +122,7 @@ model User{
   addresses Address[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  checkouts Checkout[] 
   cartId String? @unique
   cart Cart? @relation(fields: [cartId], references: [id])
   wishlistId String? @unique
@@ -166,7 +166,7 @@ model Variant {
   transactions Transaction[]
   product      Product       @relation(fields: [productId], references: [id])
   carts CartVariants[]
-  orders CheckoutVariants[] @ignore
+  orders CheckoutVariants[]
   @@unique([size,color])
 }
 
@@ -205,21 +205,37 @@ model AddressFields{
   city String
   country String
 }
-
-
+enum CheckoutStatus {
+  preprocess
+  pending
+  completed
+  declined
+}
+model CheckoutInfo {
+  id    Int    @id @default(autoincrement())
+  email String 
+  phone String
+  checkout Checkout[]
+}
 model Checkout {
-  id        Int      @id @default(autoincrement())
+  id        String      @id @default(uuid())
+  status CheckoutStatus
   deliveryType DeliveryType @default(pickup)
-  transactionId Int
+  transactionId Int?
+  infoId Int?
+  info CheckoutInfo? @relation(fields: [infoId], references: [id])
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
   variants CheckoutVariants[]
   addressId String 
   address Address @relation(fields: [addressId], references: [id])
 }
 
 model CheckoutVariants {
-  checkoutId   Int
+  checkoutId   String
   count     Int @default(1)
   variantId   Int
+
   checkout  Checkout   @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
   variant   Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
