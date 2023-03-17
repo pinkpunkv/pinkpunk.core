@@ -91,7 +91,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 data:{
                     slug:slug,
                     categories:{
-                        connect:categories.map(x=>{return { id:x}})
+                        connect:categories.map(x=>{return { id:Number(x)}})
                     },
                     collectionId:collectionId,
                     fields:{
@@ -165,7 +165,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 data:{
                     slug:slug,
                     categories:{
-                        connect:categories.map(x=>{return { id:x}})
+                        connect:categories.map(x=>{return { id:Number(x)}})
                     },
                     collectionId:collectionId,
                     fields:{
