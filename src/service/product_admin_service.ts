@@ -13,6 +13,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
 
     async function getProducts(req:HttpRequest){
         let{skip=0,take=50}={...req.query}
+        let total = await db_connection.product.aggregate({
+            _count:true
+        })
         let products = await db_connection.product.findMany({
             skip:Number(skip),
             take:Number(take),
@@ -37,7 +40,10 @@ export default function make_admin_product_service(db_connection:PrismaClient){
         return {
             status:StatusCodes.OK,
             message:"success",
-            content:products
+            content:{
+                total:total._count,
+                products:products
+            }
         }
     }
     async function getProduct(req:HttpRequest){
