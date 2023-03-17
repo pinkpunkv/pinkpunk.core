@@ -163,6 +163,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             content: mapCartToResponse(cart)
         }
     }
+    
     async function addToCart(req:HttpRequest) {
         let{cartId=""}={...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
@@ -174,9 +175,9 @@ export default function make_cart_service(db_connection:PrismaClient){
         let cartVariant = await getCartVariant(variantsData.id,variantId)
        
         if (cartVariant==null){
-            let cart  = await getUserCartWithoutVariants(variantsData.id,req.user)
+            //let cart  = await getUserCartWithoutVariants(variantsData.id,req.user)
             variantsData = await db_connection.cart.update({
-                where:{id:cart.id},
+                where:{id:variantsData.id},
                 data:{
                     variants:{
                         create: {variantId:Number(variantId)}

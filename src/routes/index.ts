@@ -14,6 +14,7 @@ import user_router from "./user_router";
 import cart_router from './cart_router'
 import wish_list_router from "./wish_list_router";
 import address_router from './address_router'
+import checkout_router from './checkout_router'
 export {language_admin_router,language_router,product_router,product_admin_router, tag_admin_router, tag_router,
     category_admin_router,category_router,variant_admin_router,collection_admin_router,collection_router,image_admin_router,
-    user_router, cart_router, wish_list_router,address_router}
+    user_router, cart_router, wish_list_router,address_router, checkout_router}

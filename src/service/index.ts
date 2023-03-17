@@ -24,6 +24,9 @@ import make_wish_list_service from './wish_list_service'
 
 import make_address_service from './address_service'
 
+import make_checkout_service from './checkout_service'
+
+
 import {db} from '../database'
 import {connectS3} from '../helper'
 
@@ -46,7 +49,7 @@ const language_admin_service = make_language_admin_service(db_connection)
 const user_service = make_user_service(db_connection)
 const cart_service = make_cart_service(db_connection)
 const wish_list_service = make_wish_list_service(db_connection)
-
+const checkout_service = make_checkout_service(db_connection)
 export {
     address_service,
     product_service,
@@ -63,5 +66,6 @@ export {
     language_admin_service,
     user_service,
     cart_service,
-    wish_list_service
+    wish_list_service,
+    checkout_service
 }

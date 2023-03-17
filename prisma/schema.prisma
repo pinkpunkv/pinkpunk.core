@@ -188,7 +188,7 @@ model Address{
   userId String? 
   mask String
   fields AddressFields[]
-  orders Checkout[] @ignore
+  orders Checkout[]
 }
 
 model AddressFields{
@@ -227,8 +227,8 @@ model Checkout {
   userId String?
   user User? @relation(fields: [userId], references: [id])
   variants CheckoutVariants[]
-  addressId String 
-  address Address @relation(fields: [addressId], references: [id])
+  addressId String? 
+  address Address? @relation(fields: [addressId], references: [id])
 }
 
 model CheckoutVariants {
