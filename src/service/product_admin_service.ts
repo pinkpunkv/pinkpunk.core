@@ -72,7 +72,21 @@ export default function make_admin_product_service(db_connection:PrismaClient){
         let {path=null,slug=null,collectionId=0,tags=[],categories={}[0],active=false, fields = [],images={}[0],currencySymbol=null,price=0,basePrice=0,sex='uni'} = {...req.body}
        
         return await db_connection.$transaction(async()=>{
-            
+            let tagsEntities = await db_connection.tag.findMany({
+                where:{
+                    tag:{
+                        in:tags
+                    }
+                }
+            })
+            let tags_ = tagsEntities.map(x=>x.tag)
+            await tags.filter(x=>!tags_.includes(x)).forEach(async (x)=>{
+                tagsEntities.push(await db_connection.tag.create({
+                    data:{
+                        tag:x
+                    }
+                }))
+            })
             let product = await db_connection.product.create({
                 data:{
                     slug:slug,
@@ -83,9 +97,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     fields:{
                         create:fields
                     },
-                    tags:tags.length>0?{
-                        connect:tags    
-                     }:{},
+                    tags:{
+                        connect:tagsEntities
+                    },
                     currencySymbol:currencySymbol,
                     price:Number(price),
                     basePrice:basePrice,
@@ -131,6 +145,21 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     fields:true
                 }
             })
+            let tagsEntities = await db_connection.tag.findMany({
+                where:{
+                    tag:{
+                        in:tags
+                    }
+                }
+            })
+            let tags_ = tagsEntities.map(x=>x.tag)
+            await tags.filter(x=>!tags_.includes(x)).forEach(async (x)=>{
+                tagsEntities.push(await db_connection.tag.create({
+                    data:{
+                        tag:x
+                    }
+                }))
+            })
             let product = await db_connection.product.update({
                 where:{id:productData.id},
                 data:{
@@ -145,9 +174,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                         }},
                         create:fields
                     },
-                    tags:tags.length>0?{
-                       connect:tags    
-                    }:{},
+                    tags:{
+                        connect:tagsEntities
+                    },
                     images:{
                         deleteMany:{
                             productId:productData.id
