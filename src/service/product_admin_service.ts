@@ -12,10 +12,13 @@ export default function make_admin_product_service(db_connection:PrismaClient){
     });
 
     async function getProducts(req:HttpRequest){
-        let{skip=0,take=10}={...req.query}
+        let{skip=0,take=50}={...req.query}
         let products = await db_connection.product.findMany({
             skip:Number(skip),
             take:Number(take),
+            orderBy:{
+                id:"desc"
+            },
             include:{
                 fields:true,
                 categories:true,
