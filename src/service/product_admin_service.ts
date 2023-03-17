@@ -83,9 +83,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     fields:{
                         create:fields
                     },
-                    tags:{
-                        connect:tags
-                    },
+                    tags:tags.length>0?{
+                        connect:tags    
+                     }:{},
                     currencySymbol:currencySymbol,
                     price:Number(price),
                     basePrice:basePrice,
@@ -124,6 +124,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
         let {slug=null,collectionId=null,tags=[],categories={}[0], fields = [],images={}[0],currencySymbol=null,price=0,sex="uni"} = {...req.body}
         
         return await db_connection.$transaction(async()=>{
+            
             let productData = await db_connection.product.findFirstOrThrow({
                 where:{id:Number(id)},
                 include:{
@@ -144,9 +145,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                         }},
                         create:fields
                     },
-                    tags:{
+                    tags:tags.length>0?{
                        connect:tags    
-                    },
+                    }:{},
                     images:{
                         deleteMany:{
                             productId:productData.id
