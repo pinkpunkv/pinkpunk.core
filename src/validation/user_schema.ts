@@ -1,6 +1,8 @@
 import validator from 'validator';
 
-export const validateUser = function validate() {
+export const validateUser = (data)=> {
+    let errors = []
+
     validator.isEmail("")
     
 }

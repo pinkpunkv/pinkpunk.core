@@ -55,11 +55,16 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: await db_connection.image.findMany({
-                orderBy:{id:"desc"},
-                skip:Number(skip),
-                take:Number(take),
-            })
+            content: {
+                images:await db_connection.image.findMany({
+                    orderBy:{id:"desc"},
+                    skip:Number(skip),
+                    take:Number(take),
+                }),
+                total: (await db_connection.image.aggregate({
+                    _count:true
+                }))._count
+            }
         }
     }
 
