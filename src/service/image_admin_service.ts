@@ -30,7 +30,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         })
     }
     async function getImages(req:HttpRequest) {
-        let{skip=0,take=10}={...req.query}
+        let{skip=0,take=20}={...req.query}
         return {
             status:StatusCodes.OK,
             message:"success",

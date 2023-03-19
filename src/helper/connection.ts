@@ -11,6 +11,7 @@ export default function connectS3(path: string | null = ''): S3 {
         conection = new S3({
             forcePathStyle: true,
             endpoint: `${config.S3_ENDPOINT_URL}`,
+            region:'us-east-1',
             credentials: {
                 accessKeyId: config.S3_ACCESS_KEY,
                 secretAccessKey: config.S3_SECRET_KEY,
