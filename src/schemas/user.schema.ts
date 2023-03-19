@@ -1,4 +1,4 @@
-import { object, string, TypeOf, z } from 'zod';
+import { object, string, TypeOf } from 'zod';
 import {CustomerErrorCode} from '../common'
 enum RoleEnumType {
   ADMIN = 'admin',
@@ -7,11 +7,6 @@ enum RoleEnumType {
 
 export const createUserSchema = object({
   body: object({
-    // username: string({
-    //   required_error: `{"code":"${CustomerErrorCode.Blank}","message":"username is required"}`,
-      
-    // }),
-    
     email: string({
       required_error: `{"code":"${CustomerErrorCode.Blank}","message":"email is required"}`,
     }).email(`{"code":"${CustomerErrorCode.Invalid}","message":"invalid email"}`),
@@ -35,10 +30,4 @@ export const loginUserSchema = object({
   }),
 });
 
-export type CreateUserInput = Omit<
-  TypeOf<typeof createUserSchema>['body'],
-  'passwordConfirm'
->;
-
-export type LoginUserInput = TypeOf<typeof loginUserSchema>['body'];
 

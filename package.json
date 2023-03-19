@@ -47,6 +47,7 @@
     "passport": "^0.6.0",
     "passport-google-oidc": "^0.1.0",
     "passport-google-oidc-token": "^1.0.3",
+    "passport-http-bearer": "^1.0.1",
     "passport-jwt": "^4.0.1",
     "prisma": "^4.7.1",
     "typescript": "^4.9.4",

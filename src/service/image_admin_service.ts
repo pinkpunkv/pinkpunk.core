@@ -21,15 +21,17 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 let file:any = req.files[i];
                 let file_path = "/uploads/"+file.originalname
                 await s3client.putObject({ Bucket: process.env.S3_BUCKET_NAME, Key: file_path, Body: file.buffer, ACL: 'public-read', ContentType: file.mimetype })
-                images.push({url:file_path})
+                images.push(await db_connection.image.create({
+                    data:{
+                        url:file_path
+                    }
+                }))
             }
-            let images_ = await db_connection.image.createMany({
-                data:images
-            })
+           
             return {
                 status:StatusCodes.OK,
                 message:"success",
-                content: images_
+                content: images
             }
         })
     }
