@@ -7,6 +7,7 @@ import { BaseError } from '../exception';
 export default function make_image_admin_service(db_connection:PrismaClient,s3client:S3){
     return Object.freeze({
         uploadImages,
+        deleteImage,
         getImages
     });
 
@@ -31,6 +32,23 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 content: images_
             }
         })
+    }
+    async function deleteImage(req:HttpRequest) {
+        let imageId = req.query['imageId']
+        let res = await db_connection.$transaction(async()=>{
+            let image = await db_connection.image.delete({
+                where:{
+                    id:Number(imageId)
+                }
+            })
+            await s3client.deleteObject({Bucket: process.env.S3_BUCKET_NAME, Key: image.url})
+            return image;
+        });
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: res
+        }
     }
     async function getImages(req:HttpRequest) {
         let{skip=0,take=20}={...req.query}
