@@ -173,9 +173,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 where:{id:productData.id},
                 data:{
                     slug:slug,
-                    categories:{
+                    categories:categories?{
                         connect:categories.map(x=>{return { id:Number(x)}})
-                    },
+                    }:{},
                     collectionId:collectionId,
                     fields:{
                         deleteMany:{id:{

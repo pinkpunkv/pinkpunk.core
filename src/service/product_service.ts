@@ -291,8 +291,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }:{}
             },
             orderBy:{
-                [orderKey]:orderValue,
-                views:"desc"
+                [orderKey]:orderValue
             },
             include:{
                 fields:{
