@@ -191,6 +191,9 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 },
                
                 variants:{
+                    where:{
+                        deleted:false
+                    },
                     include:{
                         images:true
                     }
@@ -414,6 +417,9 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 },
                
                 variants:{
+                    where:{
+                        deleted:false
+                    },
                     include:{
                         images:true
                     }

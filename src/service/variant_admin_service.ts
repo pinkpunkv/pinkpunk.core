@@ -60,10 +60,24 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
     async function addProductVariants(req:HttpRequest){
         let {productId=-1} = {...req.query};
         let variants = req.body['variants']
-        let variantsData=[]
-        await db_connection.$transaction(async()=>{
-            return await variants.forEach(async x=>{
-                variantsData.push(await db_connection.variant.create({
+        
+        let res = await db_connection.$transaction(async()=>{
+            let variantsData=[]
+            let productVariants = await db_connection.variant.findMany({
+                where:{
+                    productId:Number(productId)
+                }
+            })
+            for (let x of variants) {
+                let productVariantInd = productVariants.findIndex(y=>x.color==y.color&&x.size==y.size)
+            
+                if(productVariantInd!=-1)
+                {
+                    let variant = productVariants.at(productVariantInd)
+                    variantsData.push(await db_connection.variant.update({
+                        where:{
+                            id:variant.id
+                        },
                         data:{
                             size:x.size,
                             color:x.color,
@@ -71,25 +85,50 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                             count:x.count,
                             images:{
                                 connect:x.images
-                            }
-                        },
-                        select:{
-                            images:true,
-                            color:true,
-                            count:true,
-                            productId:true,
-                            size:true
+                            },
+                            deleted:false
                         }
-                    })
-                )
+                    }))
+                    productVariants.splice(productVariantInd,1)
+                }
+                else{
+                    variantsData.push(await db_connection.variant.create({
+                            data:{
+                                size:x.size,
+                                color:x.color,
+                                productId:Number(productId),
+                                count:x.count,
+                                images:{
+                                    connect:x.images
+                                }
+                            },
+                            select:{
+                                images:true,
+                                color:true,
+                                count:true,
+                                productId:true,
+                                size:true
+                            }
+                        })
+                    )
+                }
+            }
+           
+            await db_connection.variant.deleteMany({
+                where:{
+                    id:{
+                        in:productVariants.map(x=>x.id)
+                    }
+                }
             })
+            return variantsData;
         })
         
         
         return {
             status:StatusCodes.OK,
             message:"success", 
-            content: variantsData
+            content: res
         }
     }
 }

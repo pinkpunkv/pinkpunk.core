@@ -32,7 +32,27 @@ import {connectS3} from '../helper'
 
 let db_connection = db();
 let s3storage = connectS3(process.env.storage);
-
+db_connection.$use(async (params, next) => {
+    // Check incoming query type
+    if (params.model == 'Variant') {
+      if (params.action == 'delete') {
+        // Delete queries
+        // Change action to an update
+        params.action = 'update'
+        params.args['data'] = { deleted: true }
+      }
+      if (params.action == 'deleteMany') {
+        // Delete many queries
+        params.action = 'updateMany'
+        if (params.args.data != undefined) {
+          params.args.data['deleted'] = true
+        } else {
+          params.args['data'] = { deleted: true }
+        }
+      }
+    }
+    return next(params)
+  })
 const address_service = make_address_service(db_connection)
 const tag_service = make_tag_service(db_connection)
 const tag_admin_service = make_tag_admin_service(db_connection)

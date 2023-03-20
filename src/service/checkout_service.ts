@@ -83,6 +83,11 @@ export default function make_checkout_service(db_connection:PrismaClient){
             
             include:{
                 variants:{
+                    where:{
+                        variant:{
+                            deleted:false
+                        }
+                    },
                     include:{
                         variant:{
                             include:{

@@ -93,7 +93,7 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
     async function getCartVariant(cartId,variantId) {
         return await db_connection.cartVariants.findFirst({
-            where:{cartId:cartId,variantId:Number(variantId)},
+            where:{cartId:cartId,variantId:Number(variantId),variant:{deleted:false}},
             include:{
                 variant:{
                     select:{

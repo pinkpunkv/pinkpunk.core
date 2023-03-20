@@ -161,13 +161,14 @@ model Variant {
   productId    Int
   size         String
   color        String
+  colorText        String?
   images        Image[]
   count Int @default(0)
   transactions Transaction[]
   product      Product       @relation(fields: [productId], references: [id])
   carts CartVariants[]
   orders CheckoutVariants[]
-  @@unique([size,color])
+  deleted Boolean @default(false)
 }
 
 model VariantTemplate{
