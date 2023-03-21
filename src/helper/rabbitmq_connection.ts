@@ -2,7 +2,7 @@ import * as amqp from 'amqplib';
 import {config} from '../config'
 
 
-export const sendMessage = async (queue:String,message:String)=> {
+export const sendMessage = async (queue:string,message:string)=> {
     const connection = await amqp.connect(config.rabbitMQURL);
     const channel = await connection.createChannel();
   
