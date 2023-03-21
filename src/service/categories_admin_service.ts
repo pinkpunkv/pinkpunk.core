@@ -53,7 +53,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                     deleteMany:{id:{
                         in:category.fields.map(x=>x.id)
                     }},
-                    create:fields
+                    create:fields.map(x=>{return{"fieldName":x.fieldName,"fieldValue":x.fieldValue,"languageId":x.languageId}})
                 },
                 isMain:isMain,
                 mainSliderImages:{
