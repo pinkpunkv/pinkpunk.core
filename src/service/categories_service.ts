@@ -52,13 +52,13 @@ export default function make_category_service(db_connection:PrismaClient){
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: await Promise.all(categories.map(async(cat)=>{
+            content:categories.map((cat)=>{
                 cat.fields.forEach(x=>{
                     cat[x.fieldName] = x.fieldValue
                 })
                 delete cat.fields
                 return cat
-            }))
+            })
         }
     }
     async function getFiltersInfo() {
