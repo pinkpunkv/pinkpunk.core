@@ -19,7 +19,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 },
                 isMain:isMain,
                 mainSliderImages:{
-                    connect:mainSliderImages
+                    connect:mainSliderImages.map(x=>{return{id:x}})
                 }
             },
             include:{
@@ -62,7 +62,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                             in:category.mainSliderImages.map(x=>x.id)
                         }
                     },
-                    connect:mainSliderImages
+                    connect:mainSliderImages.map(x=>{return{id:x}})
                 }
             },
             include:{
