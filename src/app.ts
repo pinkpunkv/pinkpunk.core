@@ -8,7 +8,9 @@ import {product_router,product_admin_router,category_admin_router,category_route
     cart_router, wish_list_router,address_router, checkout_router} from './routes'
 import cors from 'cors'
 import { user_status_middleware } from "./middleware";
-
+// import {sendMessage} from './helper/rabbitmq_connection'
+// sendMessage("test","test").then(()=>{console.log("sended");
+// })
 let app:Express = express();
 app.use(express.json());
 app.use(morgan('combined'))

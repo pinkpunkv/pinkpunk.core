@@ -12,7 +12,8 @@ let config = {
     S3_BUCKET_NAME:process.env.S3_BUCKET_NAME,
     SECRET:process.env.SECRET,
     accessTokenExpiresIn:90,
-    refreshTokenExpiresIn:180
+    refreshTokenExpiresIn:180,
+    rabbitMQURL:process.env.rabbitMQURL
 }
 export {
     config

@@ -42,7 +42,12 @@ export default function make_admin_product_service(db_connection:PrismaClient){
             message:"success",
             content:{
                 total:total._count,
-                products:products
+                products:products.map(x=>{
+                    x.images.forEach(x=>{
+                        x['id']=x.imageId
+                    })
+                    return x
+                })
             }
         }
     }
@@ -69,6 +74,9 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 },
                 currency:true
             }
+        })
+        product.images.forEach(x=>{
+            x['id']=x.imageId
         })
         return {
             status:StatusCodes.OK,
@@ -133,6 +141,10 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 image.productId=product.id
             }
             await db_connection.productsImages.createMany({data:images})
+            product.images.forEach(x=>{
+                x['id']=x.imageId
+                return x
+            })
             return {
                 status:StatusCodes.OK,
                 message:"success", 
@@ -212,7 +224,10 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     }
                 }
             })
-
+            product.images.forEach(x=>{
+                x['id']=x.imageId
+                return x
+            })
             return {
                 status:StatusCodes.OK,
                 message:"success", 
@@ -226,6 +241,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
         let product = await db_connection.product.delete({
             where:{id:Number(id)}
         })
+        
         return {
             status:StatusCodes.OK,
             message:"success", 
