@@ -11,7 +11,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
 
     async function createCategory(req:HttpRequest){
         let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[]}={...req.body}
-        let collection = await db_connection.category.create({
+        let category = await db_connection.category.create({
             data:{
                 parentId:parentId,
                 fields:{
@@ -30,7 +30,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
         return {
             status:StatusCodes.OK,
             message:"success",
-            content:collection
+            content:category
         }
     }
     async function updateCategory(req:HttpRequest){
@@ -98,7 +98,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
             content: await db_connection.category.findMany({
                 include:{
                     fields:true,
-                    
+                    mainSliderImages:true
                 },
                 orderBy:{
                     id:"desc"
