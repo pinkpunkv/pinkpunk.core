@@ -359,7 +359,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
             }
             delete cat.fields
         }
-        for (let field of product.collection?.fields) {
+        if(product.collection)
+        for (let field of product.collection.fields) {
             product.collection[field.fieldName] = field.fieldValue
         }
         for (let image of product.images) {
