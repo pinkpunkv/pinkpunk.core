@@ -46,7 +46,9 @@ export default function make_cart_service(db_connection:PrismaClient){
                                 }
                             }
                         },
-                      
+                        images:{
+                            take:1
+                        }
                     },
                 },
             },
@@ -60,6 +62,7 @@ export default function make_cart_service(db_connection:PrismaClient){
         for (const x of cart['variants']) {
             x.id=x.variantId
             x.product = x.variant.product
+            x.images = x.variant.images
             for (const field of x.variant.product.fields) {
                 x.product[field.fieldName]=field.fieldValue
             }
