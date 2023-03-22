@@ -57,15 +57,15 @@ export default function make_cart_service(db_connection:PrismaClient){
     function mapCartToResponse(cart) {
         cart.total = 0;
         let totalAmount = new Decimal(0);
-        cart['variants'].forEach(x=>{
+        for (const x of cart['variants']) {
             x.id=x.variantId
             x.product = x.variant.product
-            x.variant.product.fields.forEach(async(field)=>{
+            for (const field of x.variant.product.fields) {
                 x.product[field.fieldName]=field.fieldValue
-            })
-            x.variant.product.images?.forEach((image)=>{
+            }
+            for (const image of x.variant.product.images) {
                 x.product['image'] = image.image;
-            })
+            }
             cart.total+=x.count
             totalAmount = totalAmount.add(new Decimal(x.count).mul(new Decimal(x.product.price)))
             x.maxCount = x.variant.count
@@ -76,7 +76,7 @@ export default function make_cart_service(db_connection:PrismaClient){
             delete x.variant
             delete x.product.fields
             delete x.product.images
-        })
+        }
         cart.totalAmount = totalAmount;
         return cart;
     }

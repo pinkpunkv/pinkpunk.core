@@ -350,22 +350,22 @@ export default function make_client_product_service(db_connection:PrismaClient){
         }
     }
     function mapProductToResponse(product){
-        product.fields.forEach(async(field)=>{
+        for (let field of product.fields) {
             product[field.fieldName]=field.fieldValue
-        })
-        product.categories.forEach(async(cat)=>{
-            cat.fields.forEach(async(field)=>{
-                cat[field.fieldName]=field.fieldValue
-            })
+        }
+        for (let cat of product.categories) {
+            for (let field of cat.fields) {
+                cat[field.fieldName]=field.fieldValue 
+            }
             delete cat.fields
-        })
-        product.collection?.fields.forEach((field)=>{
+        }
+        for (let field of product.collection?.fields) {
             product.collection[field.fieldName] = field.fieldValue
-        })
-        product.images?.forEach((image)=>{
+        }
+        for (let image of product.images) {
             image['url'] = image.image.url;
             delete image.image
-        })
+        }
         delete product.collection?.fields
         delete product.fields
         return product;
