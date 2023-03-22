@@ -82,32 +82,32 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
+        let total = await db_connection.product.aggregate({
+            _count:true, where:{
+                fields:{
+                    some:{
+                        fieldName:"name",
+                        fieldValue:{
+                            contains:search,
+                            mode: 'insensitive'
+                        }
+                    }
+                }
+            },
+        })
         return {
             status:StatusCodes.OK,
             message:"success",
             content:{
-                products:await Promise.all(products.map(async (x)=>{
-                    x.fields.forEach(async(field)=>{
-                        x[field.fieldName]=field.fieldValue
-                    })
-                    x.collection?.fields.forEach((field)=>{
-                        x.collection[field.fieldName] = field.fieldValue
-                    })
-                    x.images?.forEach((image)=>{
-                        image['url'] = image.image.url;
-                        delete image.image
-                    })
-                    delete x.collection?.fields
-                    delete x.fields
-                    return x;
-                })),
-                categories:await Promise.all(categories.map(async(cat)=>{
-                    cat.fields.forEach(async(field)=>{
+                products:products.map((x)=>mapProductToResponse(x)),
+                categories:categories.map((cat)=>{
+                    for (const field of cat.fields) {
                         cat[field.fieldName]=field.fieldValue
-                    })
+                    }
                     delete cat.fields
                     return cat;
-                }))
+                }),
+                total:total._count
             }
         }
     }
@@ -200,29 +200,29 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
-        product.fields.forEach(async(field)=>{
-            product[field.fieldName]=field.fieldValue
+        // product.fields.forEach(async(field)=>{
+        //     product[field.fieldName]=field.fieldValue
 
-        })
-        delete product.fields
-        product.categories.forEach(async(cat)=>{
-            cat.fields.forEach(async(field)=>{
-                cat[field.fieldName]=field.fieldValue
-            })
-            delete cat.fields
-        })
-        product.collection?.fields.forEach((field)=>{
-            product.collection[field.fieldName] = field.fieldValue
-        })
-        product.images?.forEach((image)=>{
-            image['url']=image.image.url
-            delete image.image
-        })
-        delete product.collection?.fields
+        // })
+        // delete product.fields
+        // product.categories.forEach(async(cat)=>{
+        //     cat.fields.forEach(async(field)=>{
+        //         cat[field.fieldName]=field.fieldValue
+        //     })
+        //     delete cat.fields
+        // })
+        // product.collection?.fields.forEach((field)=>{
+        //     product.collection[field.fieldName] = field.fieldValue
+        // })
+        // product.images?.forEach((image)=>{
+        //     image['url']=image.image.url
+        //     delete image.image
+        // })
+        // delete product.collection?.fields
         return {
             status:StatusCodes.OK,
             message:"success", 
-            content: product
+            content: mapProductToResponse(product)
         }
     }
     async function getProductsPathes(req:HttpRequest){
@@ -339,31 +339,36 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 variants:true
             }
         });
+        let total = await db_connection.product.aggregate({_count:true})
         return {
             status:StatusCodes.OK,
             message:"success",
-            content:await Promise.all(products.map(async (x)=>{
-                x.fields.forEach(async(field)=>{
-                    x[field.fieldName]=field.fieldValue
-                })
-                x.categories.forEach(async(cat)=>{
-                    cat.fields.forEach(async(field)=>{
-                        cat[field.fieldName]=field.fieldValue
-                    })
-                    delete cat.fields
-                })
-                x.collection?.fields.forEach((field)=>{
-                    x.collection[field.fieldName] = field.fieldValue
-                })
-                x.images?.forEach((image)=>{
-                    image['url'] = image.image.url;
-                    delete image.image
-                })
-                delete x.collection?.fields
-                delete x.fields
-                return x;
-            }))
+            content:{
+                products:products.map(x=>mapProductToResponse(x)),
+                total: total._count
+            }
         }
+    }
+    function mapProductToResponse(product){
+        product.fields.forEach(async(field)=>{
+            product[field.fieldName]=field.fieldValue
+        })
+        product.categories.forEach(async(cat)=>{
+            cat.fields.forEach(async(field)=>{
+                cat[field.fieldName]=field.fieldValue
+            })
+            delete cat.fields
+        })
+        product.collection?.fields.forEach((field)=>{
+            product.collection[field.fieldName] = field.fieldValue
+        })
+        product.images?.forEach((image)=>{
+            image['url'] = image.image.url;
+            delete image.image
+        })
+        delete product.collection?.fields
+        delete product.fields
+        return product;
     }
     async function getProduct(req:HttpRequest){
         let {id=0} = {...req.params};
@@ -436,30 +441,30 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
-        product.fields.forEach(async(field)=>{
-            product[field.fieldName]=field.fieldValue
+        // product.fields.forEach(async(field)=>{
+        //     product[field.fieldName]=field.fieldValue
 
-        })
-        delete product.fields
-        product.categories.forEach(async(cat)=>{
-            cat.fields.forEach(async(field)=>{
-                cat[field.fieldName]=field.fieldValue
-            })
-            delete cat.fields
-        })
-        product.collection?.fields.forEach((field)=>{
-            product.collection[field.fieldName] = field.fieldValue
-        })
-        product.images?.forEach((image)=>{
-            image['url']=image.image.url
-            delete image.image
-        })
+        // })
+        // delete product.fields
+        // product.categories.forEach(async(cat)=>{
+        //     cat.fields.forEach(async(field)=>{
+        //         cat[field.fieldName]=field.fieldValue
+        //     })
+        //     delete cat.fields
+        // })
+        // product.collection?.fields.forEach((field)=>{
+        //     product.collection[field.fieldName] = field.fieldValue
+        // })
+        // product.images?.forEach((image)=>{
+        //     image['url']=image.image.url
+        //     delete image.image
+        // })
         
-        delete product.collection?.fields
+        // delete product.collection?.fields
         return {
             status:StatusCodes.OK,
             message:"success", 
-            content: product
+            content: mapProductToResponse(product)
         }
     }
 }
