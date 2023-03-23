@@ -183,6 +183,12 @@ enum DeliveryType {
   parcel
 }
 
+enum PaymentType {
+  cash
+  card
+  online
+}
+
 model Address{
   id        String      @id @default(uuid())
   user User? @relation(fields: [userId], references: [id])
@@ -216,12 +222,16 @@ model CheckoutInfo {
   id    Int    @id @default(autoincrement())
   email String 
   phone String
+  firstName String?
+  lastName String?
   checkout Checkout[]
 }
 model Checkout {
   id        String      @id @default(uuid())
   status CheckoutStatus
+  orderId Int @default(autoincrement())
   deliveryType DeliveryType @default(pickup)
+  paymentType PaymentType @default(cash)
   transactionId Int?
   infoId Int?
   info CheckoutInfo? @relation(fields: [infoId], references: [id])

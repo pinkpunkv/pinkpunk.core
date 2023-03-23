@@ -253,15 +253,69 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
-        let {addressId="",deliveryType = "pickup",email="",phone="" } = {...req.body} 
-        let address = await getUserAdress(addressId,req.user)
-        if (address==null&&deliveryType!="pickup")
-            throw new BaseError(417,"address not found",[]);
+        let {deliveryType = "pickup",email="",phone="" } = {...req.body}
+        let contactfirstName=req.body['firstName']
+        let contactlastName=req.body['lastName']
+        let {id=undefined,mask="",firstName="", lastName="", company="",streetNumber="",apartments="", zipCode="", city="",country=""} = {...req.body['address']}
+        let address;
+        if(id==null)
+        address = await db_connection.address.create({
+            data:{
+                userId:req.user.id,
+                mask: mask,
+                fields:{
+                    create:{
+                        apartments:apartments,
+                        city:city,
+                        type:"shipping",
+                        company:company,
+                        country:country,
+                        firstName:firstName,
+                        lastName:lastName,
+                        streetNumber:streetNumber,
+                        zipCode:zipCode
+                    } as Prisma.AddressFieldsCreateWithoutAddressInput
+                },
+            },
+            include:{
+                fields:true
+            }
+        })
+        else
+        address = await db_connection.address.update({
+            where:{
+                id:id
+            },
+            data:{
+                mask:mask,
+                fields:{
+                    deleteMany:{
+                        addressId:id
+                    },
+                    create:{
+                        apartments:apartments,
+                        city:city,
+                        type:"shipping",
+                        company:company,
+                        country:country,
+                        firstName:firstName,
+                        lastName:lastName,
+                        streetNumber:streetNumber,
+                        zipCode:zipCode
+                    } as Prisma.AddressFieldsCreateWithoutAddressInput
+                }
+            },
+            include:{
+                fields:true
+            }
+        })
+        // let address = await getUserAdress(addressId,req.user)
+        // if (address==null&&deliveryType!="pickup")
+        //     throw new BaseError(417,"address not found",[]);
         let checkout = await getUserCheckoutWithoutFields(checkoutId,req.user,"preprocess")
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
         let checkout_ = await db_connection.$transaction(async ()=>{
-            
             await db_connection.checkoutInfo.delete({
                 where:{
                     id:checkout.infoId
@@ -277,7 +331,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     info:{
                         create:{
                             email:email,
-                            phone:phone
+                            phone:phone,
+                            firstName:contactfirstName,
+                            lastName:contactlastName
                         }
     
                     }
