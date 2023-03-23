@@ -163,8 +163,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
     }
 
     async function preprocessCheckout(req:HttpRequest) {
-        let {lang="ru",checkoutId=""}= {...req.query}
-        let {email="",phone="", deliveryType = "pickup", addressId = "",cartId=""} = {...req.body} 
+        let {lang="ru",checkoutId="",cartId=""}= {...req.query}
+        
         let checkout = await getUserCheckoutWithoutFields(checkoutId,req.user,"preprocess")
         let isUpdate=false;
         if(checkout!=null){
@@ -175,22 +175,22 @@ export default function make_checkout_service(db_connection:PrismaClient){
             let cart = await getUserCart(cartId,req.user)
             if(cart==null)
                 throw new BaseError(417,"cart not found",[]);
-            let address = await getUserAdress(addressId,req.user)
-            if (address==null&&deliveryType!="pickup")
-                throw new BaseError(417,"address not found",[]);
+            // let address = await getUserAdress(addressId,req.user)
+            // if (address==null&&deliveryType!="pickup")
+            //     throw new BaseError(417,"address not found",[]);
             if(isUpdate)
             checkout = await db_connection.checkout.update({
                 where:{
                     id:checkout.id
                 },
                 data:{
-                    deliveryType:deliveryType as DeliveryType,
-                    info:{
-                        update:{
-                            email:email,
-                            phone:phone
-                        }
-                    },
+                    // deliveryType:deliveryType as DeliveryType,
+                    // info:{
+                    //     update:{
+                    //         email:email,
+                    //         phone:phone
+                    //     }
+                    // },
                     variants:{
                         deleteMany:{
                             checkoutId:checkout.id
@@ -199,11 +199,11 @@ export default function make_checkout_service(db_connection:PrismaClient){
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
                         }
                     },
-                    address:address?{
-                        connect:{
-                            id:address.id
-                        }
-                    }:{}
+                    // address:address?{
+                    //     connect:{
+                    //         id:address.id
+                    //     }
+                    // }:{}
                 },
                 include:{
                     variants:getInclude(lang),
@@ -215,23 +215,23 @@ export default function make_checkout_service(db_connection:PrismaClient){
             checkout = await db_connection.checkout.create({
                 data:{
                     status:'preprocess',
-                    deliveryType:deliveryType as DeliveryType,
-                    info:{
-                        create:{
-                            email:email,
-                            phone:phone
-                        }
-                    },
+                   // deliveryType:deliveryType as DeliveryType,
+                    // info:{
+                    //     create:{
+                    //         email:email,
+                    //         phone:phone
+                    //     }
+                    // },
                     variants:{
                         createMany:{
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
                         }
                     },
-                    address:address?{
-                        connect:{
-                            id:address.id
-                        }
-                    }:{}
+                    // address:address?{
+                    //     connect:{
+                    //         id:address.id
+                    //     }
+                    // }:{}
                 },
                 include:{
                     variants:getInclude(lang),
