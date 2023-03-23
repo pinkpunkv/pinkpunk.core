@@ -250,49 +250,49 @@ export default function make_client_product_service(db_connection:PrismaClient){
     async function getProducts(req:HttpRequest){
         let{skip=0,take=10,lang="ru",sex=[],minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],colors=[],orderBy='{"views":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
-        
+        let where = {
+            active:true,
+            sex:sex.length>0?{
+                in:sex
+            }:{},
+            price:{
+                gte:minPrice,
+                lte:maxPrice
+            },
+            categories:categories.length>0?{
+                some:{
+                    id:{
+                        in:categories.map(x=>Number(x))
+                    }
+                }
+            }:{},
+            tags:tags.length>0?{
+                some:{
+                    tag:{
+                        in:tags
+                    }
+                }
+            }:{},
+            variants:sizes.length>0?{
+                some:{
+                    AND:{
+                        count:{
+                            gt:0
+                        }
+                    },
+                    size:sizes.length>0?{
+                        in:sizes
+                    }:{},
+                    color:colors.length>0?{
+                        in:colors
+                    }:{}
+                }
+            }:{}
+        }
         let products = await db_connection.product.findMany({
             skip:Number(skip),
             take:Number(take),
-            where:{
-                active:true,
-                sex:sex.length>0?{
-                    in:sex
-                }:{},
-                price:{
-                    gte:minPrice,
-                    lte:maxPrice
-                },
-                categories:categories.length>0?{
-                    some:{
-                        id:{
-                            in:categories.map(x=>Number(x))
-                        }
-                    }
-                }:{},
-                tags:tags.length>0?{
-                    some:{
-                        tag:{
-                            in:tags
-                        }
-                    }
-                }:{},
-                variants:sizes.length>0?{
-                    some:{
-                        AND:{
-                            count:{
-                                gt:0
-                            }
-                        },
-                        size:sizes.length>0?{
-                            in:sizes
-                        }:{},
-                        color:colors.length>0?{
-                            in:colors
-                        }:{}
-                    }
-                }:{}
-            },
+            where:where,
             orderBy:{
                 [orderKey]:orderValue
             },
@@ -339,7 +339,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 variants:true
             }
         });
-        let total = await db_connection.product.aggregate({_count:true})
+        let total = await db_connection.product.aggregate({where:where,_count:true})
         return {
             status:StatusCodes.OK,
             message:"success",
