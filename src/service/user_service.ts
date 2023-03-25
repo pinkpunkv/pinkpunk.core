@@ -8,6 +8,7 @@ import crypto from 'crypto'
 import { BaseError } from '../exception';
 import {StatusCodes} from 'http-status-codes'
 import {CustomerErrorCode} from '../common'
+import { createRabbitMQConnection } from '../helper';
 export const excludedFields = ['password', 'verified', 'verificationCode'];
 
 
@@ -66,7 +67,8 @@ export default function make_user_service(db_connection:PrismaClient){
                 }
             }
         });
-    
+        let rconn = await createRabbitMQConnection()
+        await rconn.sendMessage("user",JSON.stringify({email:user.email,type:"reqistration"}))
         return {
             status: StatusCodes.CREATED,
             message:"success",

@@ -1,19 +1,19 @@
 import * as amqp from 'amqplib';
 import {config} from '../config'
-
-
-export const sendMessage = async (queue:string,message:string)=> {
-    const connection = await amqp.connect(config.rabbitMQURL);
-    console.log("connected");
-    
-    const channel = await connection.createChannel();
+let channel;
+export default async function createRabbitMQConnection(){
+  if (!channel){
+    let connection = await amqp.connect(config.rabbitMQURL);
+    channel = await connection.createChannel();
+  }
+  return Object.freeze({
+    sendMessage
+  });
   
-    await channel.assertQueue(queue,{
-        durable: false
-      });
-    channel.sendToQueue(queue, Buffer.from(message));
-  
-    console.log(`Sent message: ${message}`);
-  
-    connection.close();
+  async function sendMessage(queue:string,message:string) {
+    let que = await channel.assertQueue(queue,{
+      durable: false
+    });
+    channel.sendToQueue(que.queue, Buffer.from(message));
+  }
 }

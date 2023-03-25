@@ -76,11 +76,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
     async function getUserCart(cartId,user:UserAttr) {
         return db_connection.cart.findFirst({
-            where:!user||user.isAnonimus?
-            {id:cartId,user:null}
-            :
-            {user:{id:user.id}},
-            
+            where:{id:cartId},
             include:{
                 variants:{
                     where:{
@@ -102,11 +98,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
     async function getUserCheckout(lang,checkId,user:UserAttr,status) {
         return db_connection.checkout.findFirst({
-            where:user.isAnonimus?
-            {id:checkId,userId:null}
-            :
-            {userId:user.id,status:status},
-            
+            where:{id:checkId},
             include:{
                 info:true,
                 variants:getInclude(lang),
@@ -117,11 +109,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
     async function getUserCheckoutWithoutFields(checkId,user:UserAttr,status) {
         return db_connection.checkout.findFirst({
-            where:user.isAnonimus?
-            {id:checkId,userId:null,status:status}
-            :
-            {userId:user.id,status:status},
-            
+            where:{id:checkId,status:status},
             include:{
                 variants:true,
                 info:true,
@@ -165,7 +153,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function preprocessCheckout(req:HttpRequest) {
         let {lang="ru",checkoutId="",cartId=""}= {...req.query}
         
-        let checkout = await getUserCheckoutWithoutFields(checkoutId,req.user,"preprocess")
+        let checkout = await getUserCheckoutWithoutFields(checkoutId, req.user, "preprocess")
         let isUpdate=false;
         if(checkout!=null){
             isUpdate=true;
@@ -191,6 +179,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     //         phone:phone
                     //     }
                     // },
+                    userId:req.user.isAnonimus?null:req.user.id,
                     variants:{
                         deleteMany:{
                             checkoutId:checkout.id
@@ -222,6 +211,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     //         phone:phone
                     //     }
                     // },
+                    userId:req.user.isAnonimus?null:req.user.id,
                     variants:{
                         createMany:{
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
