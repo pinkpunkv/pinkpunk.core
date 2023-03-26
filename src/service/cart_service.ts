@@ -135,8 +135,6 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function getCart(req:HttpRequest) {
         let {lang="ru",cartId=""} = {...req.query};
         let cart = await getUserCart(lang,cartId,req.user);
-        console.log(cart);
-         
         if (cart==null) {
             cart = await createCart(lang,req.user)
         }

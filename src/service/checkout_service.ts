@@ -179,7 +179,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     //         phone:phone
                     //     }
                     // },
-                    userId:req.user.isAnonimus?null:req.user.id,
+                    userId:req.user.isAnonimus?checkout.userId:req.user.id,
                     variants:{
                         deleteMany:{
                             checkoutId:checkout.id
@@ -211,7 +211,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     //         phone:phone
                     //     }
                     // },
-                    userId:req.user.isAnonimus?null:req.user.id,
+                    userId:req.user.isAnonimus?checkout.userId:req.user.id,
                     variants:{
                         createMany:{
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
@@ -306,11 +306,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
         let checkout_ = await db_connection.$transaction(async ()=>{
-            await db_connection.checkoutInfo.delete({
-                where:{
-                    id:checkout.infoId
-                }
-            })
+            // if(checkout.infoId!=null)
+            // await db_connection.checkoutInfo.delete({
+            //     where:{
+            //         id:checkout.infoId
+            //     }
+            // })
             return await db_connection.checkout.update({
                 where:{
                     id:checkout.id
@@ -319,6 +320,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     address:address!=null?{connect:{id:address?.id}}:{},
                     deliveryType:deliveryType as DeliveryType,
                     info:{
+                        delete:true,
                         create:{
                             email:email,
                             phone:phone,

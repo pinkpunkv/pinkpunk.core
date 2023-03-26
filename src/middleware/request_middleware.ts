@@ -2,7 +2,7 @@ import { Request,Response,NextFunction,CookieOptions } from "express";
 import {StatusCodes} from 'http-status-codes'
 import {BaseError} from '../exception'
 import {HttpRequest,HttpResponse} from '../common'
-import  {PrismaClientKnownRequestError} from "@prisma/client/runtime";
+import  {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import {config} from '../config'
 
 const cookiesOptions: CookieOptions = {
