@@ -374,74 +374,77 @@ export default function make_client_product_service(db_connection:PrismaClient){
     async function getProduct(req:HttpRequest){
         let {id=0} = {...req.params};
         let{lang="ru"}={...req.query}
-        
-        let product = await db_connection.product.findFirstOrThrow({
-            where:{
-                active:true,
-                id:Number(id)
-            },
-            include:{
-                fields:{
-                    where:{
-                        language:{symbol:{
-                            equals: lang,
-                            mode: 'insensitive'
-                        }}
-                    }
+        let res = db_connection.$transaction(async()=>{
+            let product = await db_connection.product.findFirstOrThrow({
+                where:{
+                    active:true,
+                    id:Number(id)
                 },
-                categories:{
-                    include:{
-                        fields:{
-                            where:{
-                                language:{
-                                    symbol:{
-                                        equals: lang,
-                                        mode: 'insensitive'
+                include:{
+                    fields:{
+                        where:{
+                            language:{symbol:{
+                                equals: lang,
+                                mode: 'insensitive'
+                            }}
+                        }
+                    },
+                    categories:{
+                        include:{
+                            fields:{
+                                where:{
+                                    language:{
+                                        symbol:{
+                                            equals: lang,
+                                            mode: 'insensitive'
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                },
-                tags:true,
-                collection:{
-                    include:{
-                        fields:true
-                    }
-                },
-                images:{
-                    select:{
-                        image:{
-                            select:{
-                                url:true
-                            }
+                    },
+                    tags:true,
+                    collection:{
+                        include:{
+                            fields:true
+                        }
+                    },
+                    images:{
+                        select:{
+                            image:{
+                                select:{
+                                    url:true
+                                }
+                            },
+                            isMain:true,
+                            number:true
                         },
-                        isMain:true,
-                        number:true
+                        orderBy:{number:"asc"},
                     },
-                    orderBy:{number:"asc"},
-                },
-               
-                variants:{
-                    where:{
-                        deleted:false
-                    },
-                    include:{
-                        images:true
+                   
+                    variants:{
+                        where:{
+                            deleted:false
+                        },
+                        include:{
+                            images:true
+                        }
                     }
                 }
-            }
-        })
-        await db_connection.product.update({
-            where:{
-                id:product.id
-            },
-            data:{
-                views:{
-                    increment:1
+            })
+            await db_connection.product.update({
+                where:{
+                    id:product.id
+                },
+                data:{
+                    views:{
+                        increment:1
+                    }
                 }
-            }
+            })
+            return product;
         })
+        
         // product.fields.forEach(async(field)=>{
         //     product[field.fieldName]=field.fieldValue
 
@@ -465,7 +468,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
         return {
             status:StatusCodes.OK,
             message:"success", 
-            content: mapProductToResponse(product)
+            content: mapProductToResponse(res)
         }
     }
 }
