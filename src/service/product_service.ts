@@ -374,7 +374,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
     async function getProduct(req:HttpRequest){
         let {id=0} = {...req.params};
         let{lang="ru"}={...req.query}
-        let res = db_connection.$transaction(async()=>{
+        let res = await db_connection.$transaction(async()=>{
             let product = await db_connection.product.findFirstOrThrow({
                 where:{
                     active:true,
@@ -444,6 +444,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             })
             return product;
         })
+        
         
         // product.fields.forEach(async(field)=>{
         //     product[field.fieldName]=field.fieldValue
