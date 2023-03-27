@@ -19,6 +19,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
     function mapCheckoutToResponse(checkout){
         checkout.total = 0;
+        checkout.currencySymbol = "BYN";
         delete checkout.infoId
         delete checkout.info?.id
         let totalAmount = new Decimal(0);
@@ -229,6 +230,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     address:{include:{fields:true}}
                 }
             })
+            
             return checkout;
         })
         
