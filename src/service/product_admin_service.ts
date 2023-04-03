@@ -156,7 +156,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
 
     async function updateProduct(req:HttpRequest) {
         let {id=0} = {...req.params};
-        let {slug=null,collectionId=null,tags=[],categories={}[0],active=false, fields = [],images={}[0],currencySymbol=null,price=0,sex="uni"} = {...req.body}
+        let {slug=null,collectionId=null,tags=[],categories={}[0],active=false, fields = [],images={}[0],currencySymbol=null,basePrice=0,price=0,sex="uni"} = {...req.body}
         
         return await db_connection.$transaction(async()=>{
             
@@ -206,6 +206,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                             data:images
                         }
                     },
+                    basePrice:basePrice,
                     active:active,
                     price:Number(price),
                     currencySymbol:currencySymbol,

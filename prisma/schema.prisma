@@ -117,7 +117,7 @@ model User{
   country String @default("")
   password String
   role RoleEnumType? @default(user)
-
+  status StatusEnumType? @default(pending)
   verificationCode String? @db.Text @unique
   addresses Address[]
   createdAt DateTime @default(now())
@@ -130,7 +130,11 @@ model User{
   @@unique([email, verificationCode])
   @@index([email, verificationCode])
 }
-
+enum StatusEnumType {
+  pending
+  active
+  banned
+}
 enum RoleEnumType {
   user
   admin
