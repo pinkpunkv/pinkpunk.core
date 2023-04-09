@@ -118,8 +118,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         if(res.Contents){
             for (let obj of res.Contents.filter(x=>x.Key!=path)) {
                 let ind = obj.Key.indexOf(path)
-                console.log(obj.Key);
-                
+               
                 if((ind==-1&&path=="/")||(ind!=-1&&path.length>1)){
                     let objName = obj.Key.slice(path.length>1?path.length:path.length-1,obj.Key.length);
                     let slashInd = objName.indexOf("/");
@@ -134,7 +133,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                             }
                         })
                         if(file!=null)
-                        files.push({id:file.id,name:objName})
+                        files.push({name:objName,...file})
                     }
                 }
                 else{
