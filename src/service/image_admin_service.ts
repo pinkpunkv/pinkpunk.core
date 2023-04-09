@@ -98,7 +98,6 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             }
         }
     }
-
     async function getFiles(req:HttpRequest) {
         let path:string = req.query['path']
         
@@ -119,18 +118,19 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         if(res.Contents){
             for (let obj of res.Contents.filter(x=>x.Key!=path)) {
                 let ind = obj.Key.indexOf(path)
+                console.log(obj.Key);
+                
                 if((ind==-1&&path=="/")||(ind!=-1&&path.length>1)){
                     let objName = obj.Key.slice(path.length>1?path.length:path.length-1,obj.Key.length);
                     let slashInd = objName.indexOf("/");
-                    console.log(obj.Key);
-                    
+                   
                     if(!obj.Key.includes(".")||slashInd!=-1){
                         folders.push(objName.slice(0,slashInd))
                     }
                     else{
                         let file = await db_connection.image.findFirst({
                             where:{
-                                url:"/"+obj.Key[0]
+                                url:"/"+obj.Key
                             }
                         })
                         if(file!=null)
