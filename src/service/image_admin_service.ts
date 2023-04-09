@@ -124,7 +124,12 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                     let slashInd = objName.indexOf("/");
                    
                     if(!obj.Key.includes(".")||slashInd!=-1){
-                        folders.push(objName.slice(0,slashInd))
+                        let folderName = objName.slice(0,slashInd);
+                        if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
+                            folders.push({
+                                name:folderName,
+                                url:obj.Key.slice(0,obj.Key.lastIndexOf("/")+1)
+                            })
                     }
                     else{
                         let file = await db_connection.image.findFirst({
@@ -138,8 +143,12 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 }
                 else{
                     let folderName = obj.Key.slice(0,ind);
-                    if(!folders.includes(folderName)&&folderName.length>0)
-                        folders.push(folderName)
+                   
+                    if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
+                        folders.push({
+                            name:folderName,
+                            url:obj.Key.slice(0,obj.Key.lastIndexOf("/")+1)
+                        })
                 }
             }
         }
