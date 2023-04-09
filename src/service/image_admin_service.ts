@@ -10,7 +10,8 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         deleteImage,
         getImages,
         createFolder,
-        getFiles
+        getFiles,
+        deleteFolder
     });
 
     
@@ -58,6 +59,22 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             Key: path, 
             Body: "", 
             ACL: 'public-read' 
+        })
+        return await getFiles(req)
+    }
+
+    async function deleteFolder(req:HttpRequest) {
+        let path:string = req.query['path']
+        
+        if(path!="/"){
+           
+            let ind = path.lastIndexOf('/');
+            if(ind==-1||ind!=path.length-1)
+                path+="/"
+        }
+        await s3client.deleteObject({ 
+            Bucket: process.env.S3_BUCKET_NAME, 
+            Key: path 
         })
         return await getFiles(req)
     }

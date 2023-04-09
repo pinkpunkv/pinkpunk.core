@@ -10,5 +10,6 @@ image_admin_router.post('/',uploads.array("files"),m(image_admin_service.uploadI
 image_admin_router.post('/folder',m(image_admin_service.createFolder))
 image_admin_router.get("/",m(image_admin_service.getFiles))
 image_admin_router.delete('/',m(image_admin_service.deleteImage))
+image_admin_router.delete('/folder',m(image_admin_service.deleteFolder))
 
 export default image_admin_router;
