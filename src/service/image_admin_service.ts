@@ -32,7 +32,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 })
                 await db_connection.image.create({
                     data:{
-                        url:file_path
+                        url:"/"+file_path
                     }
                 })
             }
@@ -122,15 +122,18 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 if((ind==-1&&path=="/")||(ind!=-1&&path.length>1)){
                     let objName = obj.Key.slice(path.length>1?path.length:path.length-1,obj.Key.length);
                     let slashInd = objName.indexOf("/");
+                    console.log(obj.Key);
+                    
                     if(!obj.Key.includes(".")||slashInd!=-1){
                         folders.push(objName.slice(0,slashInd))
                     }
                     else{
                         let file = await db_connection.image.findFirst({
                             where:{
-                                url:obj.Key
+                                url:"/"+obj.Key[0]
                             }
                         })
+                        if(file!=null)
                         files.push({id:file.id,name:objName})
                     }
                 }
