@@ -49,6 +49,7 @@ export default function req_middleware(controller:Function){
             // if(httpResponse.cookie){
               
             //   res.cookie('token',httpResponse.cookie,{ sameSite: 'none', secure: true });
+              console.log(httpResponse);
               
             // }    
             // res.type('json')

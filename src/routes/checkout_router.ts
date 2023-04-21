@@ -7,6 +7,8 @@ let checkout_router = express.Router();
 checkout_router.get('/:checkoutId',m(checkout_service.getCheckout))
 checkout_router.post('/preprocess',m(checkout_service.preprocessCheckout))
 checkout_router.post('/:checkoutId',m(checkout_service.addToCheckout))
+checkout_router.post('/:checkoutId/pay',m(checkout_service.payCheckout))
+checkout_router.put('/:orderId/status',m(checkout_service.updateCheckoutStatus))
 checkout_router.put('/:checkoutId',m(checkout_service.updateCheckout))
 checkout_router.delete("/decrease/:checkoutId",m(checkout_service.decreaseCountFromCheckout))
 checkout_router.delete('/:checkoutId',m(checkout_service.removeVariantFromCheckout))

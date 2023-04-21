@@ -5,7 +5,12 @@ import UserAttr from '../common/user_attr'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
+import {CustomerErrorCode} from '../common'
+import { createRabbitMQConnection } from '../helper';
 import Decimal from 'decimal.js';
+import {paymentSrvice} from '../helper'
+
+import generateToken from '../utils/generate_token';
 
 export default function make_checkout_service(db_connection:PrismaClient){
     return Object.freeze({
@@ -14,7 +19,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
         removeVariantFromCheckout,
         decreaseCountFromCheckout,
         addToCheckout,
-        getCheckout
+        getCheckout,
+        payCheckout,
+        updateCheckoutStatus
     });
 
     function mapCheckoutToResponse(checkout){
@@ -24,6 +31,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
         delete checkout.info?.id
         let totalAmount = new Decimal(0);
         checkout.variants.forEach(x=>{
+            console.log(x.variant.product);
+            
             x.id=x.variantId
             x.product = x.variant.product
             x.variant.product.fields.forEach(async(field)=>{
@@ -484,30 +493,135 @@ export default function make_checkout_service(db_connection:PrismaClient){
         }
     }
 
-    // async function payCheckout(req:HttpRequest) {
-    //     let res = await db_connection.$transaction(async ()=>{
-    //         let {checkoutId=""} = {...req.params} 
-           
-    //         let checkout = await getUserCheckout(checkoutId,req.user)
-    //         if(checkout==null)
-    //             throw new BaseError(417,"checkout not found",[]);
-    //         let totalAmount = new Decimal(0);
-    //         for (const variant of checkout.variants) {
-    //             totalAmount.add(new Decimal(variant.count))
-    //         }
-    //         let transaction = await db_connection.transaction.create({
-    //             data:{
-    //                 amount: .
-    //             }
-    //         })
-    //         return checkout;
-    //     })
+    async function payCheckout(req:HttpRequest) {
+        let res = await db_connection.$transaction(async ()=>{
+            let {checkoutId=""} = {...req.params}
+            let {lang="ru"} = {...req.query};
+            let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
+            if(checkout==null)
+                throw new BaseError(417,"checkout not found",[]);
+            
+            let totalAmount = new Decimal(0);
+            
+            for (const variant of checkout.variants) {  
+                let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+                totalAmount=totalAmount.add(itemAmount)
+            }
+            let token = await db_connection.token.create({
+                data:{
+                    token:generateToken(),
+                    type:"order",
+                    objectId:checkout.orderId.toString()
+                }
+            })
+            totalAmount=totalAmount.mul(new Decimal(100))
+            let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
+            if(payres.data.errorCode)
+                throw new BaseError(500,"something went wrong",payres.data);
+            await db_connection.checkout.update({
+                where:{
+                    id:checkout.id
+                },
+                data:{
+                    status:"pending"
+                }
+            })
+            
+            return payres.data;
+        })
         
         
-    //     return {
-    //         status:StatusCodes.OK,
-    //         message:"success",
-    //         content: res
-    //     }
-    // }
+        
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: res
+        }
+    }
+
+
+    async function updateCheckoutStatus(req:HttpRequest) {
+        console.log("REQ");
+        
+        let {orderId=""} = {...req.params}
+        let {lang="ru",ct=""} = {...req.query};
+        let token = await db_connection.token.findFirst({
+            where:{
+                token:ct,
+                type:"order"
+            }
+        })
+        if(token==null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
+
+        let orderStatus = await paymentSrvice.getOrderStatus(orderId);
+        console.log(orderStatus.data);
+        
+        let checkout;
+        if(orderStatus.data.orderStatus==2){
+            checkout = await db_connection.checkout.findFirst({
+                where:{
+                    orderId:Number(orderId)
+                }
+            })
+            if(checkout==null)
+                throw new BaseError(417,"order with this id not found",[]);
+            checkout = await db_connection.checkout.update({
+                where:{
+                    id:checkout.id
+                },
+                data:{
+                    status:"completed"
+                },
+                include:{info:true,variants:getInclude(lang),address:{include:{fields:true}}}
+            })
+        }
+        else{
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"unsuccessful payment status"}])
+        }
+        let totalProducts = 0;
+        let products= [];
+        let totalAmount = new Decimal(0);
+            
+        for (const variant of checkout.variants) {
+            totalProducts+=variant.count;
+            let product = variant['variant'].product 
+            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+            products.push({
+                name:product.fields.filter(x=>x.fieldName=="name")[0],
+                color:variant['variant'].colorText,
+                size:variant['variant'].size,
+                basePrice:product.basePrice,
+                price:product.price,
+                count:variant.count
+            })
+            totalAmount=totalAmount.add(itemAmount)
+        }
+        let rconn = await createRabbitMQConnection()
+        await rconn.sendMessage("user",JSON.stringify({email:checkout.info.email,type:"order",ct:token.token,checkoutInfo:{
+            orderId:checkout.orderId,
+            productsCount:totalProducts,
+            total:totalAmount,
+            deliveryPrice:0,
+            products:products,
+            info:{
+                contactFL:checkout.info.firstName+" "+checkout.info.lastName,
+                email:checkout.info.email,
+                phone:checkout.info.phone,
+                addressFL:checkout.address.fields[0].firstName+" "+checkout.address.fields[0].lastName,
+                address:checkout.address.fields[0].streetNumber,
+                postalCode:checkout.address.fields[0].zipCode,
+                city:checkout.address.fields[0].city
+            },
+            discount:0,
+            finalTotal:totalAmount,
+            lang:"BY"
+        }}))
+
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: {}
+        }
+    }
 }

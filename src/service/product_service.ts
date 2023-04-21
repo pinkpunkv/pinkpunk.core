@@ -353,6 +353,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
         for (let field of product.fields) {
             product[field.fieldName]=field.fieldValue
         }
+       
+        if(product.categories)
         for (let cat of product.categories) {
             for (let field of cat.fields) {
                 cat[field.fieldName]=field.fieldValue 

@@ -13,7 +13,13 @@ let config = {
     SECRET:process.env.SECRET,
     accessTokenExpiresIn:90,
     refreshTokenExpiresIn:180,
-    rabbitMQURL:process.env.rabbitMQURL
+    rabbitMQURL:process.env.rabbitMQURL,
+    PAYMENT_LOGIN:process.env.PAYMENT_LOGIN,
+    PAYMENT_PASSWORD:process.env.PAYMENT_PASSWORD,
+    PAYMENT_URL:process.env.PAYMENT_URL,
+    WEBSITES:{
+        BY:"https://pinkpunk.by"
+    }
 }
 export {
     config

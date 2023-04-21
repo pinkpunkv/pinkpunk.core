@@ -4,7 +4,7 @@ import {config} from '../config';
 //import redisClient from '../utils/connectRedis';
 import { signJwt, verifyJwt } from '../utils/jwt';
 import bcrypt from 'bcryptjs'
-import crypto from 'crypto'
+import generateToken from '../utils/generate_token';
 import { BaseError } from '../exception';
 import {StatusCodes} from 'http-status-codes'
 import {CustomerErrorCode} from '../common'
@@ -18,9 +18,13 @@ export default function make_user_service(db_connection:PrismaClient){
         registerUser,
         loginUser,
         getUserInfo,
-        updateUserInfo
+        updateUserInfo,
+        forgotPassword,
+        confirmChangePassword,
+        confirmUserRegistration
     })
-
+    
+    
     async function registerUser(req:HttpRequest) {
         let password:String = req.body['password'];
         if (password.includes(" ")){
@@ -28,12 +32,6 @@ export default function make_user_service(db_connection:PrismaClient){
         }
         const hashedPassword = await bcrypt.hash(req.body['password'],config.SECRET)
 
-        const verifyCode = crypto.randomBytes(32).toString('hex');
-        
-        const verificationCode = crypto
-          .createHash('sha256')
-          .update(verifyCode)
-          .digest('hex');
         let user_ = await db_connection.user.findFirst({
             where:{
                 email:{
@@ -44,35 +42,46 @@ export default function make_user_service(db_connection:PrismaClient){
         })
         if (user_!=null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'exists',[{code:CustomerErrorCode.Taken,message:"user already exists"}])
-        const user = await db_connection.user.create({
-            data:{
-                username: req.body['username'],
-                firstName: req.body['firstName'],
-                lastName: req.body['lastName'],
-                phone: req.body['phone'],
-                email: req.body['email'],
-                sex: req.body['sex'],
-                country:req.body['country'],
-                password: hashedPassword,
-                verificationCode: verificationCode,
-                cart:{
-                    create:{
-
-                    }
-                },
-                wishList:{
-                    create:{
-                        
+        let res = await db_connection.$transaction(async()=>{
+            const user = await db_connection.user.create({
+                data:{
+                    username: req.body['username'],
+                    firstName: req.body['firstName'],
+                    lastName: req.body['lastName'],
+                    phone: req.body['phone'],
+                    email: req.body['email'],
+                    sex: req.body['sex'],
+                    country:req.body['country'],
+                    password: hashedPassword,
+                    cart:{
+                        create:{
+    
+                        }
+                    },
+                    wishList:{
+                        create:{
+                            
+                        }
                     }
                 }
-            }
-        });
-        let rconn = await createRabbitMQConnection()
-        await rconn.sendMessage("user",JSON.stringify({email:user.email,type:"reqistration"}))
+            });
+            let token = await db_connection.token.create({
+                data:{
+                    token:generateToken(),
+                    type:"confirm",
+                    objectId:user.id
+                }
+            })
+            let rconn = await createRabbitMQConnection()
+            await rconn.sendMessage("user",JSON.stringify({email:user.email,type:"confirm",ct:token.token}))
+            return user
+        })
+        
+        
         return {
             status: StatusCodes.CREATED,
             message:"success",
-            content: user
+            content: res
         }
     }
 
@@ -82,6 +91,8 @@ export default function make_user_service(db_connection:PrismaClient){
         return {access_token:accessToken,refresh_token:"bearer "+signJwt({id:user.id},"refreshTokenPrivateKey",{expiresIn:config.refreshTokenExpiresIn*24*60*60*1000})}
     }
 
+    
+
     async function findUniqueUser(where: Prisma.UserWhereUniqueInput,
         select?: Prisma.UserSelect) {
         return (await db_connection.user.findUnique({
@@ -89,6 +100,7 @@ export default function make_user_service(db_connection:PrismaClient){
             select,
           })) as User;
     }
+
     async function updateUserInfo(req:HttpRequest) {
         let user = db_connection.user.update({
             where:{id: req.user.id },
@@ -138,7 +150,96 @@ export default function make_user_service(db_connection:PrismaClient){
 
     }
 
+    async function forgotPassword(req:HttpRequest) {
+        
+        let user = await findUniqueUser(
+            { email: req.body['email'] }
+        );
+        if(user==null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"user not found"}])
+        let token = await db_connection.token.create({
+            data:{
+                token:generateToken(),
+                type:"forgot",
+                objectId:user.id
+            }
+        })
+        let rconn = await createRabbitMQConnection()
+        await rconn.sendMessage("user",JSON.stringify({email:user.email,type:"forgot",ct:token.token}))
 
+        return {
+            status: StatusCodes.OK,
+            message:"success",
+            content: {}
+        }
+    }
+
+    async function confirmUserRegistration(req:HttpRequest) {
+        let ct = req.query['token']
+        let token = await db_connection.token.findFirst({
+            where:{
+                token:ct,
+                type:"confirm"
+            }
+        })
+        if(token==null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
+
+        let res = await db_connection.$transaction(async()=>{
+            await db_connection.user.update({
+                where:{
+                    id:token.objectId
+                },
+                data:{
+                    status:"active"
+                }
+            })
+            await db_connection.token.delete({
+                where:{
+                    token:token.token
+                }
+            })
+        })
+        return {
+            status: StatusCodes.OK,
+            message:"success",
+            content: res
+        }
+    }
+
+    async function confirmChangePassword(req:HttpRequest) {
+        
+        let ct = req.query['token']
+        let token = await db_connection.token.findFirst({
+            where:{
+                token:ct,
+                type:"forgot"
+            }
+        })
+        if(token==null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
+        let newPass = req.body['password']
+        let res = await db_connection.$transaction(async()=>{
+            await db_connection.user.update({
+                where:{
+                    id:token.objectId
+                },
+                data:{
+                    password:newPass
+                }
+            })
+            await db_connection.token.delete({
+                where:{
+                    token:token.token
+                }
+            })
+        })
+        return {
+            status: StatusCodes.OK,
+            message:"success",
+            content: res
+        }
+    }
     async function getUserInfo(req:HttpRequest) {
         
         let user = await findUniqueUser(

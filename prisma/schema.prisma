@@ -130,6 +130,18 @@ model User{
   @@unique([email, verificationCode])
   @@index([email, verificationCode])
 }
+
+enum TokenType {
+  confirm
+  order
+  forgot
+}
+model Token {
+  token String @id
+  type TokenType
+  objectId String
+}
+
 enum StatusEnumType {
   pending
   active
@@ -232,7 +244,7 @@ model CheckoutInfo {
 }
 model Checkout {
   id        String      @id @default(uuid())
-  status CheckoutStatus
+  status CheckoutStatus 
   orderId Int @default(autoincrement())
   deliveryType DeliveryType @default(pickup)
   paymentType PaymentType @default(cash)
@@ -242,6 +254,7 @@ model Checkout {
   userId String?
   user User? @relation(fields: [userId], references: [id])
   variants CheckoutVariants[]
+  orderDate DateTime @default(now())
   addressId String? 
   address Address? @relation(fields: [addressId], references: [id])
 }
