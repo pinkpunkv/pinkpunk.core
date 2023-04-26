@@ -8,6 +8,7 @@ import {product_router,product_admin_router,category_admin_router,category_route
     cart_router, wish_list_router,address_router, checkout_router, checkout_admin_router} from './routes'
 import cors from 'cors'
 import { user_status_middleware } from "./middleware";
+import session from 'express-session'
 
 let app:Express = express();
 app.use(express.json());
@@ -31,6 +32,14 @@ var corsOptions = {
 }
 
 app.use(cors(corsOptions))
+app.use(session({
+    secret:  config.SECRET,
+        resave: false,
+        saveUninitialized: true,
+        cookie: {          
+            maxAge: 31536000000
+        }
+  }));
 app.use(user_status_middleware)
 
 app.use('/api/v1/address', address_router)

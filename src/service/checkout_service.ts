@@ -1,4 +1,4 @@
-import { PrismaClient,DeliveryType,Prisma } from '@prisma/client'
+import { PrismaClient,DeliveryType,Prisma, PaymentType } from '@prisma/client'
 import { HttpRequest } from "../common";
 
 import UserAttr from '../common/user_attr'
@@ -256,7 +256,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
-        let {deliveryType = "pickup",email="",phone="" } = {...req.body}
+        let {deliveryType = "pickup",email="",phone="",paymentType="cash"} = {...req.body}
         let contactfirstName=req.body['firstName']
         let contactlastName=req.body['lastName']
         let {id=undefined,mask="",firstName="", lastName="", company="",streetNumber="",apartments="", zipCode="", city="",country=""} = {...req.body['address']}
@@ -319,12 +319,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
         let checkout_ = await db_connection.$transaction(async ()=>{
-            // if(checkout.infoId!=null)
-            // await db_connection.checkoutInfo.delete({
-            //     where:{
-            //         id:checkout.infoId
-            //     }
-            // })
+    
             return await db_connection.checkout.update({
                 where:{
                     id:checkout.id
@@ -340,8 +335,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
                             firstName:contactfirstName,
                             lastName:contactlastName
                         }
-    
-                    }
+                        
+                    },
+                    paymentType:paymentType as PaymentType
                 },
                 include:{
                     info:true,
@@ -494,27 +490,50 @@ export default function make_checkout_service(db_connection:PrismaClient){
     }
 
     async function payCheckout(req:HttpRequest) {
-        let res = await db_connection.$transaction(async ()=>{
-            let {checkoutId=""} = {...req.params}
-            let {lang="ru"} = {...req.query};
-            let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
-            if(checkout==null)
-                throw new BaseError(417,"checkout not found",[]);
-            
-            let totalAmount = new Decimal(0);
-            
-            for (const variant of checkout.variants) {  
-                let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
-                totalAmount=totalAmount.add(itemAmount)
+        let {checkoutId=""} = {...req.params}
+        let {lang="ru"} = {...req.query};
+        
+        let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
+        if(checkout==null)
+            throw new BaseError(417,"checkout not found",[]);
+        let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
+        if(status.data.actionCode==-100){
+            let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content: {"orderId":orderId,"formUrl":"https://abby.rbsuat.com/payment/merchants/www.pinkpunk.by_6261D2C6014F4/payment_ru.html?mdOrder="+orderId}
             }
-            let token = await db_connection.token.create({
-                data:{
-                    token:generateToken(),
-                    type:"order",
-                    objectId:checkout.orderId.toString()
-                }
-            })
-            totalAmount=totalAmount.mul(new Decimal(100))
+        }
+        let totalAmount = new Decimal(0);
+            
+        for (const variant of checkout.variants) {  
+            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+            totalAmount=totalAmount.add(itemAmount)
+        }
+        let token = await db_connection.token.create({
+            data:{
+                token:generateToken(),
+                type:"order",
+                objectId:checkout.orderId.toString()
+            }
+        })
+        totalAmount=totalAmount.mul(new Decimal(100))
+        let res = await db_connection.$transaction(async ()=>{ 
+            if(status.data.actionCode==-2007)
+            {   
+                let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
+                console.log(new_orderId);
+                checkout.orderId = Number(new_orderId[0].nextval)
+                await db_connection.checkout.update({
+                    where:{id:checkout.id},
+                    data:{
+                        orderId:{
+                            set:checkout.orderId 
+                        }
+                    }
+                })
+            }
             let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
             if(payres.data.errorCode)
                 throw new BaseError(500,"something went wrong",payres.data);
@@ -541,8 +560,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
 
     async function updateCheckoutStatus(req:HttpRequest) {
-        console.log("REQ");
-        
+
         let {orderId=""} = {...req.params}
         let {lang="ru",ct=""} = {...req.query};
         let token = await db_connection.token.findFirst({

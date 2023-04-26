@@ -11,5 +11,6 @@ product_router.get('/filters',req_middleware(product_service.getFilters))
 
 product_router.get('/search',req_middleware(product_service.searchProducts))
 product_router.get('/:id',req_middleware(product_service.getProduct))
+product_router.post('/:id/want',req_middleware(product_service.wantTo))
 
 export default product_router;

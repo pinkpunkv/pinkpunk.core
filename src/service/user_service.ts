@@ -102,7 +102,7 @@ export default function make_user_service(db_connection:PrismaClient){
     }
 
     async function updateUserInfo(req:HttpRequest) {
-        let user = db_connection.user.update({
+        let user = await db_connection.user.update({
             where:{id: req.user.id },
             data:{
                 firstName: req.body['firstName'],
@@ -225,7 +225,7 @@ export default function make_user_service(db_connection:PrismaClient){
                     id:token.objectId
                 },
                 data:{
-                    password:newPass
+                    password:await bcrypt.hash(newPass,config.SECRET)
                 }
             })
             await db_connection.token.delete({

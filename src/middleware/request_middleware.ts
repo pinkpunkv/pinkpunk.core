@@ -2,7 +2,7 @@ import { Request,Response,NextFunction,CookieOptions } from "express";
 import {StatusCodes} from 'http-status-codes'
 import {BaseError} from '../exception'
 import {HttpRequest,HttpResponse} from '../common'
-import  {PrismaClientKnownRequestError} from "@prisma/client/runtime";
+import  {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import {config} from '../config'
 
 const cookiesOptions: CookieOptions = {
@@ -41,7 +41,7 @@ export default function req_middleware(controller:Function){
           //   'Access-Control-Allow-Origin': 'http://localhost:3000',
           //   Referer: req.get('referer'),
             'User-Agent': req.get('User-Agent')
-        },req['userAttr'],req.files)
+        },req['sessionID'],req['userAttr'],req.files)
 
         controller(httpRequest).then((httpResponse:HttpResponse) => {
             console.log(httpRequest.user);
@@ -49,8 +49,6 @@ export default function req_middleware(controller:Function){
             // if(httpResponse.cookie){
               
             //   res.cookie('token',httpResponse.cookie,{ sameSite: 'none', secure: true });
-              console.log(httpResponse);
-              
             // }    
             // res.type('json')
             if(httpResponse.cookies){

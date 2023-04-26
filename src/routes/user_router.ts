@@ -5,6 +5,8 @@ import {createUserSchema,loginUserSchema} from '../schemas/user.schema'
 let user_router = express.Router();
 
 user_router.post('/register',validate(createUserSchema),m(user_service.registerUser))
+user_router.post('/password/forgot',m(user_service.forgotPassword))
+user_router.post('/password/confirm',m(user_service.confirmChangePassword))
 user_router.post('/login',validate(loginUserSchema),m(user_service.loginUser))
 user_router.put('/info',auth_middleware,m(user_service.updateUserInfo))
 user_router.get('/info',auth_middleware,m(user_service.getUserInfo))

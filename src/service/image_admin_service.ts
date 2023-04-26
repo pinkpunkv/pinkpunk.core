@@ -120,8 +120,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         
         let res = await s3client.send(new ListObjectsV2Command({
             Bucket: process.env.S3_BUCKET_NAME,
-            Prefix: path,
-            MaxKeys: 20
+            Prefix: path
         }))
 
         let folders = []
@@ -145,7 +144,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                         if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                             folders.push({
                                 name:folderName,
-                                url:obj.Key.slice(0,obj.Key.lastIndexOf("/")+1)
+                                url:obj.Key.slice(0,folderName.length+1)
                             })
                     }
                     else{
@@ -164,7 +163,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                     if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                         folders.push({
                             name:folderName,
-                            url:obj.Key.slice(0,obj.Key.lastIndexOf("/")+1)
+                            url:obj.Key.slice(0,folderName.length+1)
                         })
                 }
             }

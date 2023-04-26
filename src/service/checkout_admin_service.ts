@@ -1,4 +1,4 @@
-import { PrismaClient,DeliveryType,Prisma } from '@prisma/client'
+import { PrismaClient,DeliveryType,Prisma, CheckoutStatus } from '@prisma/client'
 import { HttpRequest } from "../common";
 
 import UserAttr from '../common/user_attr'
@@ -193,8 +193,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                             firstName:contactfirstName,
                             lastName:contactlastName
                         }
-    
-                    }
+                    },
                 },
                 include:{
                     info:true,
@@ -256,15 +255,30 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         }
     }
     async function getCheckouts(req:HttpRequest) {
-        let{skip=0,take=20}={...req.query}
-        
+        let{skip=0,take=20,lang="ru",statuses="completed,pending,declined"}={...req.query}
+        let statuses_ = statuses.split(",") as Prisma.Enumerable<CheckoutStatus>
         let checkouts = await db_connection.checkout.findMany({
             skip:skip,
-            take:take
+            take:take,
+            where:{
+                status:{
+                    in:statuses_
+                }
+            },
+            include:{
+                info:true,
+                variants:getInclude(lang),
+                address:{include:{fields:true}}
+            }
         })
 
         let total = await db_connection.checkout.aggregate({
-            _count:true
+            _count:true,
+            where:{
+                status:{
+                    in:statuses_
+                }
+            }
         })
 
          
@@ -272,11 +286,12 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content:{
-                checkouts:checkouts,
+                checkouts:checkouts.map(x=>mapCheckoutToResponse(x)),
                 total:total
             }
         }
     }
+
     async function getCheckoutInfo(req:HttpRequest) {
         let {checkoutId=""} = {...req.params}
         let {lang="ru"} = {...req.query};

@@ -9,6 +9,7 @@ export default class HttpRequest{
     params: object;
     method: string;
     headers: object;
+    sessionID: string
     files: FileArray
     user: UserAttr
 
@@ -21,6 +22,7 @@ export default class HttpRequest{
         params: Object,
         method: string,
         headers: Object,
+        sessionID:string,
         user: any,
         files:FileArray=null){
         this.user = user
@@ -33,5 +35,6 @@ export default class HttpRequest{
         this.method=method;
         this.path=path;
         this.headers=headers;
+        this.sessionID=sessionID;
     }
 }

@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+
+import  {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
 
@@ -9,8 +11,37 @@ export default function make_client_product_service(db_connection:PrismaClient){
         searchProducts,
         getProduct,
         getProductByPath,
-        getFilters
+        getFilters,
+        wantTo
     });
+    async function wantTo(req:HttpRequest) {
+        let {id=0} = {...req.params};
+        try{
+            let session = await  db_connection.sessions.create({data:{
+                session:req.sessionID
+            }})
+            await db_connection.product.update({
+                where:{id:Number(id)},
+                data:{
+                    wans:{
+                        increment:1
+                    }
+                }
+            })
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content:{}
+            }  
+        }
+        catch(ex){
+            return {
+                status:StatusCodes.EXPECTATION_FAILED,
+                message:"",
+                content:{}
+            } 
+        }
+    }
     async function searchProducts(req:HttpRequest){
         let{skip=0,take=5,search="",lang="ru"}={...req.query}
 
@@ -200,25 +231,14 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
-        // product.fields.forEach(async(field)=>{
-        //     product[field.fieldName]=field.fieldValue
-
-        // })
-        // delete product.fields
-        // product.categories.forEach(async(cat)=>{
-        //     cat.fields.forEach(async(field)=>{
-        //         cat[field.fieldName]=field.fieldValue
-        //     })
-        //     delete cat.fields
-        // })
-        // product.collection?.fields.forEach((field)=>{
-        //     product.collection[field.fieldName] = field.fieldValue
-        // })
-        // product.images?.forEach((image)=>{
-        //     image['url']=image.image.url
-        //     delete image.image
-        // })
-        // delete product.collection?.fields
+        await db_connection.product.update({
+            where:{id:product.id},
+            data:{
+                views:{
+                    increment:1
+                }
+            }
+        })
         return {
             status:StatusCodes.OK,
             message:"success", 
