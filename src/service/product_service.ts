@@ -1,6 +1,4 @@
 import { PrismaClient } from '@prisma/client'
-
-import  {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
 
