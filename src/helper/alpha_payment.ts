@@ -18,7 +18,7 @@ class DepositItem{
 }
 
 async function payForOrder(orderId:string,amount,ct) {
-    return await axios.post(config.PAYMENT_URL+`register.do?userName=${config.PAYMENT_LOGIN}&password=${config.PAYMENT_PASSWORD}&orderNumber=${orderId}&amount=${amount}&returnUrl=${config.WEBSITES.BY}/success/${orderId}?ct=${ct}&failUrl=${config.WEBSITES.BY}+/fail/${orderId}?ct=${ct}`)
+    return await axios.post(config.PAYMENT_URL+`register.do?userName=${config.PAYMENT_LOGIN}&password=${config.PAYMENT_PASSWORD}&orderNumber=${orderId}&amount=${amount}&returnUrl="${config.WEBSITES.BY}/success?ct=${ct}&orderId=${orderId}"&failUrl="${config.WEBSITES.BY}/fail?ct=${ct}&orderId=${orderId}"`)
 }
 
 async function getOrderStatus(orderNumber:string) {

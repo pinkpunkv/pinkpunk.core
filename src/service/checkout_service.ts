@@ -496,6 +496,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
+        
         let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
         if(status.data.actionCode==-100){
             let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
@@ -520,7 +521,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
         totalAmount=totalAmount.mul(new Decimal(100))
         let res = await db_connection.$transaction(async ()=>{ 
-            if(status.data.actionCode==-2007)
+            if(status.data.actionCode==-2007||status.data.errorCode==1)
             {   
                 let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
                 console.log(new_orderId);
