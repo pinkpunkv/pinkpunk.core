@@ -245,6 +245,16 @@ export default function make_user_service(db_connection:PrismaClient){
         let user = await findUniqueUser(
             { id: req.user.id }
         );
+        let orders = await db_connection.checkout.findMany({
+            where:{
+                OR:{
+                    userId:user.id,
+                    info:{
+                        email:user.email
+                    }
+                }
+            }
+        })
 
         return {
             status: StatusCodes.CREATED,

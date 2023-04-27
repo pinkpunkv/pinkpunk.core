@@ -21,6 +21,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         addToCheckout,
         getCheckout,
         payCheckout,
+        placeOrder,
         updateCheckoutStatus
     });
 
@@ -496,7 +497,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
-        
+        if(checkout.paymentType!="online")
+            throw new BaseError(417,"invalid payment type",[]);
         let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
         if(status.data.actionCode==-100){
             let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
@@ -558,7 +560,89 @@ export default function make_checkout_service(db_connection:PrismaClient){
             content: res
         }
     }
-
+    async function placeOrder(req:HttpRequest) {
+        let {checkoutId=""} = {...req.params}
+        let {lang="ru"} = {...req.query};
+        
+        let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocessed")
+        if(checkout==null)
+            throw new BaseError(417,"checkout not found",[]);
+        if(checkout.paymentType=="online")
+            throw new BaseError(417,"invalid payment type",[]);
+        if(checkout.status=="pending")
+            return {
+                status:StatusCodes.CREATED,
+                message:"success",
+                content: {
+                    orderId:checkout.orderId
+                }
+            }
+        let totalProducts = 0;
+        let products= [];
+        let totalAmount = new Decimal(0);
+            
+        for (const variant of checkout.variants) {
+            totalProducts+=variant.count;
+            let product = variant['variant'].product 
+            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+            products.push({
+                name:product.fields.filter(x=>x.fieldName=="name")[0],
+                color:variant['variant'].colorText,
+                size:variant['variant'].size,
+                basePrice:product.basePrice,
+                price:product.price,
+                count:variant.count
+            })
+            totalAmount=totalAmount.add(itemAmount)
+        }
+        let token = await db_connection.token.create({
+            data:{ 
+                token:generateToken(),
+                type:"order",
+                objectId:checkout.orderId.toString()
+            }
+        })
+        totalAmount=totalAmount.mul(new Decimal(100))
+        let res = await db_connection.$transaction(async ()=>{ 
+            await db_connection.checkout.update({
+                where:{
+                    id:checkout.id
+                },
+                data:{
+                    status:"pending"
+                }
+            })
+            let rconn = await createRabbitMQConnection()
+            await rconn.sendMessage("user",JSON.stringify({email:checkout.info.email,type:"order",ct:token.token,checkoutInfo:{
+                orderId:checkout.orderId,
+                productsCount:totalProducts,
+                total:totalAmount,
+                deliveryPrice:0,
+                products:products,
+                info:{
+                    contactFL:checkout.info.firstName+" "+checkout.info.lastName,
+                    email:checkout.info.email,
+                    phone:checkout.info.phone,
+                    addressFL:checkout.address.fields[0].firstName+" "+checkout.address.fields[0].lastName,
+                    address:checkout.address.fields[0].streetNumber,
+                    postalCode:checkout.address.fields[0].zipCode,
+                    city:checkout.address.fields[0].city
+                },
+                discount:0,
+                finalTotal:totalAmount,
+                lang:"BY"
+            }}))
+            return {orderId:checkout.orderId};
+        })
+        
+        
+        
+        return {
+            status:StatusCodes.CREATED,
+            message:"success",
+            content: res
+        }
+    }
 
     async function updateCheckoutStatus(req:HttpRequest) {
 
