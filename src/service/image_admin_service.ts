@@ -134,17 +134,16 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         if(res.Contents){
             for (let obj of res.Contents.filter(x=>x.Key!=path)) {
                 let ind = obj.Key.indexOf(path)
-               
                 if((ind==-1&&path=="/")||(ind!=-1&&path.length>1)){
                     let objName = obj.Key.slice(path.length>1?path.length:path.length-1,obj.Key.length);
                     let slashInd = objName.indexOf("/");
-                   
+                    
                     if(!obj.Key.includes(".")||slashInd!=-1){
                         let folderName = objName.slice(0,slashInd);
                         if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                         folders.push({
                             name:folderName,
-                            url:obj.Key.slice(0,obj.Key.length-folderName.length-1)
+                            url:path+folderName+"/"
                         })
                     }
                     else{
@@ -163,7 +162,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                     if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                         folders.push({
                             name:folderName,
-                            url:obj.Key.slice(0,obj.Key.length-folderName.length-1)
+                            url:path+folderName+"/"
                         })
                 }
             }
