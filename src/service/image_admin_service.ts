@@ -41,19 +41,19 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             return await getFiles(req)
         })
     }
-
-    async function createFolder(req:HttpRequest) {
-        let path:string = req.query['path']
-        console.log(path);
-        
-       
+    function pathFilter(path:string){
         if(path!="/"){
-           
+            if(path.startsWith("/"))
+                path = path.slice(1,path.length)
             let ind = path.lastIndexOf('/');
             if(ind==-1||ind!=path.length-1)
                 path+="/"
         }
-        console.log(path);
+        return path;
+    }
+    async function createFolder(req:HttpRequest) {
+        let path:string = req.query['path']
+        path = pathFilter(path);
         await s3client.putObject({ 
             Bucket: process.env.S3_BUCKET_NAME, 
             Key: path, 
@@ -66,12 +66,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
     async function deleteFolder(req:HttpRequest) {
         let path:string = req.query['path']
         
-        if(path!="/"){
-           
-            let ind = path.lastIndexOf('/');
-            if(ind==-1||ind!=path.length-1)
-                path+="/"
-        }
+        path = pathFilter(path);
         await s3client.deleteObject({ 
             Bucket: process.env.S3_BUCKET_NAME, 
             Key: path 
@@ -125,12 +120,8 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
 
         let folders = []
         let files = []
-        if(path!="/"){
-           
-            let ind = path.lastIndexOf('/');
-            if(ind==-1||ind!=path.length-1)
-                path+="/"
-        }
+        path = pathFilter(path);
+
         if(res.Contents){
             for (let obj of res.Contents.filter(x=>x.Key!=path)) {
                 let ind = obj.Key.indexOf(path)
