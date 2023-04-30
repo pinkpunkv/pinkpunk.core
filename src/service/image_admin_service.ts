@@ -45,8 +45,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         if(path!="/"){
             if(path.startsWith("/"))
                 path = path.slice(1,path.length)
-            let ind = path.lastIndexOf('/');
-            if(ind==-1||ind!=path.length-1)
+            if(!path.endsWith('/'))
                 path+="/"
         }
         return path;
