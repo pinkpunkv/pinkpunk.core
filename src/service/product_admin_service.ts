@@ -198,14 +198,14 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     tags:{
                         connect:tagsEntities
                     },
-                    images:images&&images.length>0?{
+                    images:{
                         deleteMany:{
                             productId:productData.id
                         },
                         createMany:{
                             data:images
                         }
-                    }:{},
+                    },
                     basePrice:Number(basePrice),
                     active:active,
                     price:Number(price),
