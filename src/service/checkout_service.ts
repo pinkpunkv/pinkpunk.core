@@ -552,7 +552,74 @@ export default function make_checkout_service(db_connection:PrismaClient){
             return payres.data;
         })
         
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: res
+        }
+    }
+
+    async function payGoogleCheckout(req:HttpRequest) {
+        let {checkoutId=""} = {...req.params}
+        let {lang="ru"} = {...req.query};
         
+        let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
+        if(checkout==null)
+            throw new BaseError(417,"checkout not found",[]);
+        if(checkout.paymentType!="online")
+            throw new BaseError(417,"invalid payment type",[]);
+        let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
+        if(status.data.actionCode==-100){
+            let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content: {"orderId":orderId,"formUrl":"https://abby.rbsuat.com/payment/merchants/www.pinkpunk.by_6261D2C6014F4/payment_ru.html?mdOrder="+orderId}
+            }
+        }
+        let totalAmount = new Decimal(0);
+            
+        for (const variant of checkout.variants) {  
+            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+            totalAmount=totalAmount.add(itemAmount)
+        }
+        let token = await db_connection.token.create({
+            data:{
+                token:generateToken(),
+                type:"order",
+                objectId:checkout.orderId.toString()
+            }
+        })
+        totalAmount=totalAmount.mul(new Decimal(100))
+        let res = await db_connection.$transaction(async ()=>{ 
+            if(status.data.actionCode==-2007||status.data.errorCode==1)
+            {   
+                let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
+                console.log(new_orderId);
+                checkout.orderId = Number(new_orderId[0].nextval)
+                await db_connection.checkout.update({
+                    where:{id:checkout.id},
+                    data:{
+                        orderId:{
+                            set:checkout.orderId 
+                        }
+                    }
+                })
+            }
+            let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
+            if(payres.data.errorCode)
+                throw new BaseError(500,"something went wrong",payres.data);
+            await db_connection.checkout.update({
+                where:{
+                    id:checkout.id
+                },
+                data:{
+                    status:"pending"
+                }
+            })
+            
+            return payres.data;
+        })
         
         return {
             status:StatusCodes.OK,
@@ -560,6 +627,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             content: res
         }
     }
+
     async function placeOrder(req:HttpRequest) {
         let {checkoutId=""} = {...req.params}
         let {lang="ru"} = {...req.query};

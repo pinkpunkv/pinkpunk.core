@@ -163,7 +163,8 @@ export default function make_admin_product_service(db_connection:PrismaClient){
             let productData = await db_connection.product.findFirstOrThrow({
                 where:{id:Number(id)},
                 include:{
-                    fields:true
+                    fields:true,
+                    tags:true
                 }
             })
             let tagsEntities = await db_connection.tag.findMany({
@@ -196,6 +197,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                         create:fields
                     },
                     tags:{
+                        disconnect:productData.tags,
                         connect:tagsEntities
                     },
                     images:{
