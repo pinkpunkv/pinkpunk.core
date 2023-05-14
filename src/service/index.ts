@@ -36,7 +36,7 @@ let s3storage = connectS3(process.env.storage);
 
 db_connection.$use(async (params, next) => {
     // Check incoming query type
-    if (params.model == 'Variant') {
+    if (params.model == 'Variant'||params.model=="Product") {
       if (params.action == 'delete') {
         // Delete queries
         // Change action to an update

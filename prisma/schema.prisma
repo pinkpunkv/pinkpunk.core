@@ -24,6 +24,7 @@ model Product {
   collectionId Int?
   collection  Collection?      @relation(fields: [collectionId], references: [id])
   images      ProductsImages[]
+  deleted Boolean @default(false)
   tags        Tag[]
   variants    Variant[]
   categories  Category[]       @relation("CategoryToProduct")

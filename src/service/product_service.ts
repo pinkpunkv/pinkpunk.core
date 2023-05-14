@@ -45,6 +45,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
 
         let products = await db_connection.product.findMany({
             where:{
+                deleted:false,
                 fields:{
                     some:{
                         fieldName:"name",
@@ -113,6 +114,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
         })
         let total = await db_connection.product.aggregate({
             _count:true, where:{
+                deleted:false,
+                active:true,
                 fields:{
                     some:{
                         fieldName:"name",
@@ -169,6 +172,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{
+                deleted:false,
+            
                 fields:{
                   some:{
                     fieldName:"path",
@@ -249,6 +254,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content:(await db_connection.product.findMany({
+                where:{deleted:false},
                 select:{
                     fields:{
                         where:{
@@ -269,6 +275,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
         let{skip=0,take=10,lang="ru",sex=[],minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],colors=[],orderBy='{"views":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
         let where = {
+            deleted:false,
             active:true,
             sex:sex.length>0?{
                 in:sex
