@@ -141,9 +141,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
                                 },
                                 tags:true,
                                 images:{
-                                    where:{
-                                        isMain:true
-                                    },
+                                    // where:{
+                                    //     isMain:true
+                                    // },
                                     select:{
                                         image:{
                                             select:{

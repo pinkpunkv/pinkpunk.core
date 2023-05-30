@@ -21,7 +21,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             await db_connection.product.update({
                 where:{id:Number(id)},
                 data:{
-                    wans:{
+                    wants:{
                         increment:1
                     }
                 }
@@ -364,6 +364,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 variants:true
             }
         });
+    
         let total = await db_connection.product.aggregate({where:where,_count:true})
         return {
             status:StatusCodes.OK,

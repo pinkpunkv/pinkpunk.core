@@ -32,9 +32,9 @@ export default function make_cart_service(db_connection:PrismaClient){
                                 },
                                 tags:true,
                                 images:{
-                                    where:{
-                                        isMain:true
-                                    },
+                                    // where:{
+                                    //     isMain:true
+                                    // },
                                     select:{
                                         image:{
                                             select:{
@@ -42,7 +42,9 @@ export default function make_cart_service(db_connection:PrismaClient){
                                             }
                                         }
                                     },
-                                    take:1
+                                    orderBy:{
+                                        number:"asc"
+                                    },
                                 }
                             }
                         },

@@ -41,15 +41,18 @@ export default function make_wish_list_service(db_connection:PrismaClient){
                 },
                 tags:true,
                 images:{
-                    where:{
-                        isMain:true
-                    },
+                    // where:{
+                    //     isMain:true
+                    // },
                     select:{
                         image:{
                             select:{
                                 url:true
                             }
                         }
+                    },
+                    orderBy:{
+                        number:"asc"
                     },
                     take:1
                 }
@@ -106,7 +109,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     async function getWish(req:HttpRequest) {
         let {wishListId="",lang="ru"} = {...req.query}
         let wishList = await getWishListData(lang,wishListId,req.user);
-        console.log(wishList);
+        
         
         if (wishList==null) {
             wishList = await createWishList(lang,req.user);
