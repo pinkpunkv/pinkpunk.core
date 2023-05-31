@@ -28,10 +28,6 @@ export default function make_wish_list_service(db_connection:PrismaClient){
     }
     function getInclude(lang) {
         return {
-
-            where:{
-                deleted:false
-            },
             include:{
                 fields:{
                     where:{

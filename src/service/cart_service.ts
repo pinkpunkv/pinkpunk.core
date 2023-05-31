@@ -22,9 +22,6 @@ export default function make_cart_service(db_connection:PrismaClient){
                 variant:{
                     include:{
                         product:{
-                            where:{
-                                deleted:false
-                            },
                             include:{
                                 fields:{
                                     where:{
@@ -58,6 +55,11 @@ export default function make_cart_service(db_connection:PrismaClient){
                     },
                 },
             },
+            where:{variant:{
+                product:{
+                    deleted:false
+                }
+            }},
             orderBy:{variantId:"desc"}
         } as Prisma.CartVariantsFindManyArgs
     }
