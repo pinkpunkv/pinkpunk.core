@@ -238,6 +238,7 @@ enum CheckoutStatus {
   pending
   completed
   declined
+  delivered
 }
 model CheckoutInfo {
   id    Int    @id @default(autoincrement())

@@ -169,8 +169,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(checkout!=null){
             isUpdate=true;
         }
-        console.log(checkout);
-        
         let checkout_ = await db_connection.$transaction(async ()=>{
            
             let cart = await getUserCart(cartId,req.user)
@@ -185,13 +183,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     id:checkout.id
                 },
                 data:{
-                    // deliveryType:deliveryType as DeliveryType,
-                    // info:{
-                    //     update:{
-                    //         email:email,
-                    //         phone:phone
-                    //     }
-                    // },
                     userId:req.user.isAnonimus?checkout.userId:req.user.id,
                     variants:{
                         deleteMany:{
@@ -201,11 +192,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
                         }
                     },
-                    // address:address?{
-                    //     connect:{
-                    //         id:address.id
-                    //     }
-                    // }:{}
                 },
                 include:{
                     variants:getInclude(lang),
@@ -217,24 +203,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
             checkout = await db_connection.checkout.create({
                 data:{
                     status:'preprocess',
-                   // deliveryType:deliveryType as DeliveryType,
-                    // info:{
-                    //     create:{
-                    //         email:email,
-                    //         phone:phone
-                    //     }
-                    // },
                     userId:req.user.isAnonimus?null:req.user.id,
                     variants:{
                         createMany:{
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
                         }
-                    },
-                    // address:address?{
-                    //     connect:{
-                    //         id:address.id
-                    //     }
-                    // }:{}
+                    }
                 },
                 include:{
                     variants:getInclude(lang),
@@ -499,6 +473,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
             throw new BaseError(417,"checkout not found",[]);
         if(checkout.paymentType!="online")
             throw new BaseError(417,"invalid payment type",[]);
+        if(checkout.info==null)
+            throw new BaseError(417,"user details is required",[]);
         let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
         if(status.data.actionCode==-100){
             let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
