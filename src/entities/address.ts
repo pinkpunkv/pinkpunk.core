@@ -3,7 +3,7 @@ class Address {
     userId: string
     mask: string
     fields: AddressField[]
-    
+
     static fromRow(id :string, userId: string, mask: string){
         let addr = new Address();
         addr.id = id;
@@ -13,9 +13,9 @@ class Address {
     }
     static fromObject(obj:any){
         let addr = new Address();
-        addr.id = obj['id'];
-        addr.userId = obj['userId'];
-        addr.mask = obj['mask'];
+        addr.id = obj['id']?obj['id']:null;
+        addr.userId = obj['userId']?obj['userId']:"";
+        addr.mask = obj['mask']?obj['mask']:"";
         return addr
     }
 }
@@ -61,17 +61,17 @@ class AddressField{
 
     static fromObject(obj:any){
         let addr = new AddressField();
-        addr.id=obj['id']
-        addr.type=obj['type']
-        addr.addressId=obj['addressId']
-        addr.firstName=obj['firstName']
-        addr.lastName=obj['lastName']
-        addr.company=obj['company']
-        addr.streetNumber=obj['streetNumber']
-        addr.apartments=obj['apartments']
-        addr.zipCode=obj['zipCode']
-        addr.city=obj['city']
-        addr.country=obj['country']
+        addr.id=obj['id']?obj['id']:null
+        addr.type=obj['type']?obj['type']:""
+        addr.addressId=obj['addressId']?obj['addressId']:""
+        addr.firstName=obj['firstName']?obj['firstName']:""
+        addr.lastName=obj['lastName']?obj['lastName']:""
+        addr.company=obj['company']?obj['company']:""
+        addr.streetNumber=obj['streetNumber']?obj['streetNumber']:""
+        addr.apartments=obj['apartments']?obj['apartments']:""
+        addr.zipCode=obj['zipCode']?obj['zipCode']:""
+        addr.city=obj['city']?obj['city']:""
+        addr.country=obj['country']?obj['country']:""
         return addr
     }
 }

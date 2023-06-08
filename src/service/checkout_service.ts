@@ -677,9 +677,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             }}))
             return {orderId:checkout.orderId};
         })
-        
-        
-        
+
         return {
             status:StatusCodes.CREATED,
             message:"success",
@@ -701,8 +699,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
         let orderStatus = await paymentSrvice.getOrderStatus(orderId);
-        console.log(orderStatus.data);
-        
         let checkout;
         if(orderStatus.data.orderStatus==2){
             checkout = await db_connection.checkout.findFirst({
