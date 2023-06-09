@@ -42,6 +42,7 @@ export default function make_user_service(db_connection:PrismaClient){
         })
         if (user_!=null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'exists',[{code:CustomerErrorCode.Taken,message:"user already exists"}])
+        let now = new Date().toISOString()
         let res = await db_connection.$transaction(async()=>{
             const user = await db_connection.user.create({
                 data:{
@@ -53,6 +54,8 @@ export default function make_user_service(db_connection:PrismaClient){
                     sex: req.body['sex'],
                     country:req.body['country'],
                     password: hashedPassword,
+                    createdAt:now,
+                    updatedAt:now,
                     cart:{
                         create:{
     
@@ -108,7 +111,9 @@ export default function make_user_service(db_connection:PrismaClient){
                 firstName: req.body['firstName'],
                 lastName: req.body['lastName'],
                 phone: req.body['phone'],
-        }})
+                updatedAt:new Date().toISOString()
+            }
+        })
         // Sign Tokens
         
         return {
