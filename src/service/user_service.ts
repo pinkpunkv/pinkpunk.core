@@ -151,17 +151,31 @@ export default function make_user_service(db_connection:PrismaClient){
     }
 
     async function forgotPassword(req:HttpRequest) {
-        
         let user = await findUniqueUser(
             { email: req.body['email'] }
         );
         if(user==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"user not found"}])
-        let token = await db_connection.token.create({
+        let now = new Date()
+        now.setMinutes(now.getMinutes()-1)
+        
+        let token = await db_connection.token.findFirst({
+            where:{
+                type:"forgot",
+                createdAt:{
+                    gte:now.toISOString()
+                }
+            }
+        })
+        if (token!=null)
+            throw new BaseError(StatusCodes.TOO_MANY_REQUESTS,'',[{code:CustomerErrorCode.TooManyRequests,message:`please, try later`}])
+
+        token = await db_connection.token.create({
             data:{
                 token:generateToken(),
                 type:"forgot",
-                objectId:user.id
+                objectId:user.id,
+                createdAt:new Date().toISOString()
             }
         })
         let rconn = await createRabbitMQConnection()

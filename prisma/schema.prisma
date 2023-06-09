@@ -145,6 +145,7 @@ model Token {
   token String @id
   type TokenType
   objectId String
+  createdAt DateTime @default(now())
 }
 
 enum StatusEnumType {

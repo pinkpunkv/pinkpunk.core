@@ -4,6 +4,7 @@ export enum CustomerErrorCode {
     Taken = 'TAKEN',
     TooLong = 'TOO_LONG',
     TooShort = 'TOO_SHORT',
+    TooManyRequests = 'TOO_MANY REQUESTS',
     UnidentifiedCustomer = 'UNIDENTIFIED_CUSTOMER',
     CustomerDisabled = 'CUSTOMER_DISABLED',
     PasswordStartsOrEndsWithWhitespace = 'PASSWORD_STARTS_OR_ENDS_WITH_WHITESPACE',
@@ -14,4 +15,5 @@ export enum CustomerErrorCode {
     NotFound = 'NOT_FOUND',
     BadDomain = 'BAD_DOMAIN',
     InvalidMultipassRequest = 'INVALID_MULTIPASS_REQUEST',
+
   }
