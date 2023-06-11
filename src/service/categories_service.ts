@@ -16,7 +16,8 @@ export default function make_category_service(db_connection:PrismaClient){
         if(parentId!=null)
         categories = await db_connection.category.findMany({
             where:{
-                parentId:parentId
+                parentId:parentId,
+                active:true
             },
             orderBy:{
                 id:"desc"
@@ -36,6 +37,7 @@ export default function make_category_service(db_connection:PrismaClient){
         });
         else
         categories = await db_connection.category.findMany({
+            where:{active:true},
             include:{
                 fields:{
                     where:{

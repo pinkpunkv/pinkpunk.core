@@ -61,6 +61,7 @@ export default function req_middleware(controller:Function){
         })
         .catch((err:Error) => {
             // console.log(err);
+            console.log(err);
             
             if (err instanceof BaseError){
                 res.status(err.status)

@@ -10,13 +10,14 @@ export default function make_admin_category_service(db_connection:PrismaClient){
     });
 
     async function createCategory(req:HttpRequest){
-        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[]}={...req.body}
+        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false}={...req.body}
         let category = await db_connection.category.create({
             data:{
                 parentId:parentId,
                 fields:{
                     create:fields
                 },
+                active:active,
                 isMain:isMain,
                 mainSliderImages:{
                     connect:mainSliderImages.map(x=>{return{id:x}})
@@ -35,7 +36,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
     }
     async function updateCategory(req:HttpRequest){
         let{id=-1}={...req.params}
-        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[]}={...req.body}
+        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false}={...req.body}
         let category = await db_connection.category.findFirstOrThrow({
             where:{
                 id:Number(id)
@@ -55,6 +56,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                     }},
                     create:fields.map(x=>{return{"fieldName":x.fieldName,"fieldValue":x.fieldValue,"languageId":x.languageId}})
                 },
+                active:active,
                 isMain:isMain,
                 mainSliderImages:{
                     deleteMany:{
