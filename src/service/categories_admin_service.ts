@@ -10,9 +10,10 @@ export default function make_admin_category_service(db_connection:PrismaClient){
     });
 
     async function createCategory(req:HttpRequest){
-        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false}={...req.body}
+        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false,slug=""}={...req.body}
         let category = await db_connection.category.create({
             data:{
+                slug:slug,
                 parentId:parentId,
                 fields:{
                     create:fields
@@ -36,7 +37,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
     }
     async function updateCategory(req:HttpRequest){
         let{id=-1}={...req.params}
-        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false}={...req.body}
+        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false, slug=""}={...req.body}
         let category = await db_connection.category.findFirstOrThrow({
             where:{
                 id:Number(id)
@@ -46,9 +47,17 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 mainSliderImages:true
             }
         })
+        let images = await db_connection.image.findMany({
+            where:{
+                id:{
+                    in:mainSliderImages                    
+                }
+            }
+        })
         let categoryData = await db_connection.category.update({
             where:{id:category.id},
             data:{
+                slug:slug,
                 parentId:parentId,
                 fields:{
                     deleteMany:{id:{
@@ -58,13 +67,20 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 },
                 active:active,
                 isMain:isMain,
-                mainSliderImages:{
+                mainSliderImages:images.length==0?{
                     deleteMany:{
                         id:{
                             in:category.mainSliderImages.map(x=>x.id)
                         }
                     },
-                    connect:mainSliderImages.map(x=>{return{id:x}})
+                   
+                }:{
+                    deleteMany:{
+                        id:{
+                            in:category.mainSliderImages.map(x=>x.id)
+                        }
+                    },
+                    connect:images
                 }
             },
             include:{

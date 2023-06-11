@@ -20,6 +20,7 @@ const currencyData = [
 
 async function main() {
   await prisma.$transaction(async()=>{
+   
     console.log(`Start seeding Languages...`)
     try {
       for await (const u of langData) {
@@ -47,10 +48,12 @@ async function main() {
     } catch (e) {
       // console.error(e)
     }
-
-    let byn = await prisma.Currency.findFirst({ where: { symbol: 'BYN' } })
-    let ru = await prisma.Language.findFirst({ where: { symbol: 'RU' } })
+  })
+  let byn = await prisma.Currency.findFirst({ where: { symbol: 'BYN' } })
+  let ru = await prisma.Language.findFirst({ where: { symbol: 'RU' } })
     let en = await prisma.Language.findFirst({ where: { symbol: 'EN' } })
+  await prisma.$transaction(async()=>{
+    
     
     const categoryData = [
       {
@@ -109,7 +112,7 @@ async function main() {
       },
       {
         isMain: true,
-        slug: 'shirts',
+        slug: 'shirts2',
         fields: {
           create: [
             {
@@ -298,7 +301,11 @@ async function main() {
       console.log(`Created event with id: ${data.id}`)
     }
     console.log(`Start seeding Products...`)
-
+  },{
+    timeout:9999999,
+    maxWait:9999999
+  })
+  await prisma.$transaction(async()=>{
     const productData = [
       {
         slug: 'best_hoodie',
@@ -413,6 +420,9 @@ async function main() {
     }
 
     console.log(`Seeding finished.`)
+  },{
+    timeout:9999999,
+    maxWait:9999999
   })
 }
 

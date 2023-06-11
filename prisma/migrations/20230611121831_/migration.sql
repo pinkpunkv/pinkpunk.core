@@ -1,12 +1,41 @@
+-- CreateEnum
+CREATE TYPE "TokenType" AS ENUM ('confirm', 'order', 'forgot');
+
+-- CreateEnum
+CREATE TYPE "StatusEnumType" AS ENUM ('pending', 'active', 'banned');
+
+-- CreateEnum
+CREATE TYPE "RoleEnumType" AS ENUM ('user', 'admin');
+
+-- CreateEnum
+CREATE TYPE "DeliveryType" AS ENUM ('pickup', 'courier', 'parcel');
+
+-- CreateEnum
+CREATE TYPE "PaymentType" AS ENUM ('cash', 'card', 'online');
+
+-- CreateEnum
+CREATE TYPE "CheckoutStatus" AS ENUM ('preprocess', 'pending', 'completed', 'declined', 'delivered');
+
+-- CreateTable
+CREATE TABLE "Sessions" (
+    "session" TEXT NOT NULL,
+
+    CONSTRAINT "Sessions_pkey" PRIMARY KEY ("session")
+);
+
 -- CreateTable
 CREATE TABLE "Product" (
     "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "price" DECIMAL(65,30) NOT NULL DEFAULT 0,
+    "basePrice" DECIMAL(65,30) NOT NULL DEFAULT 0,
     "active" BOOLEAN NOT NULL DEFAULT false,
     "sex" TEXT NOT NULL DEFAULT 'uni',
+    "views" DECIMAL(65,30) NOT NULL DEFAULT 0,
+    "wants" DECIMAL(65,30) NOT NULL DEFAULT 0,
     "currencySymbol" TEXT,
     "collectionId" INTEGER,
+    "deleted" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
@@ -15,7 +44,9 @@ CREATE TABLE "Product" (
 CREATE TABLE "Category" (
     "id" SERIAL NOT NULL,
     "parentId" INTEGER,
+    "active" BOOLEAN NOT NULL DEFAULT true,
     "isMain" BOOLEAN NOT NULL DEFAULT false,
+    "slug" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
 );
@@ -81,45 +112,60 @@ CREATE TABLE "ProductsImages" (
 );
 
 -- CreateTable
-CREATE TABLE "OauthAccessToken" (
+CREATE TABLE "users" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "applicationId" TEXT NOT NULL,
-    "token" TEXT NOT NULL,
-    "refreshToken" TEXT,
-    "tokenExpiresAt" TIMESTAMPTZ(6),
-    "refreshTokenExpiresAt" TIMESTAMPTZ(6),
-    "scopes" JSONB NOT NULL DEFAULT '[]',
-    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "OauthAccessToken_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "User" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "username" VARCHAR(255),
     "email" TEXT NOT NULL,
-    "encryptedPassword" TEXT NOT NULL,
-    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "photo" TEXT DEFAULT 'default.png',
+    "phone" TEXT,
+    "firstName" TEXT,
+    "lastName" TEXT,
+    "verified" BOOLEAN DEFAULT false,
+    "sex" TEXT NOT NULL DEFAULT '',
+    "country" TEXT NOT NULL DEFAULT '',
+    "password" TEXT NOT NULL,
+    "role" "RoleEnumType" DEFAULT 'user',
+    "status" "StatusEnumType" DEFAULT 'pending',
+    "verificationCode" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "cartId" TEXT,
+    "wishlistId" TEXT,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "UserIdentity" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "uid" TEXT NOT NULL,
-    "name" TEXT,
-    "email" TEXT,
-    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE "Token" (
+    "token" TEXT NOT NULL,
+    "type" "TokenType" NOT NULL,
+    "objectId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "UserIdentity_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Token_pkey" PRIMARY KEY ("token")
+);
+
+-- CreateTable
+CREATE TABLE "Cart" (
+    "id" TEXT NOT NULL,
+
+    CONSTRAINT "Cart_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CartVariants" (
+    "cartId" TEXT NOT NULL,
+    "count" INTEGER NOT NULL DEFAULT 1,
+    "variantId" INTEGER NOT NULL,
+
+    CONSTRAINT "CartVariants_pkey" PRIMARY KEY ("variantId","cartId")
+);
+
+-- CreateTable
+CREATE TABLE "WishList" (
+    "id" TEXT NOT NULL,
+
+    CONSTRAINT "WishList_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -128,7 +174,9 @@ CREATE TABLE "Variant" (
     "productId" INTEGER NOT NULL,
     "size" TEXT NOT NULL,
     "color" TEXT NOT NULL,
+    "colorText" TEXT,
     "count" INTEGER NOT NULL DEFAULT 0,
+    "deleted" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Variant_pkey" PRIMARY KEY ("id")
 );
@@ -140,6 +188,68 @@ CREATE TABLE "VariantTemplate" (
     "color" TEXT NOT NULL,
 
     CONSTRAINT "VariantTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Address" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "mask" TEXT NOT NULL,
+
+    CONSTRAINT "Address_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AddressFields" (
+    "id" SERIAL NOT NULL,
+    "type" TEXT NOT NULL,
+    "addressId" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "company" TEXT NOT NULL,
+    "streetNumber" TEXT NOT NULL,
+    "apartments" TEXT NOT NULL,
+    "zipCode" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "country" TEXT NOT NULL,
+
+    CONSTRAINT "AddressFields_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CheckoutInfo" (
+    "id" SERIAL NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "firstName" TEXT,
+    "lastName" TEXT,
+
+    CONSTRAINT "CheckoutInfo_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Checkout" (
+    "id" TEXT NOT NULL,
+    "status" "CheckoutStatus" NOT NULL,
+    "orderId" SERIAL NOT NULL,
+    "deliveryType" "DeliveryType" NOT NULL DEFAULT 'pickup',
+    "paymentType" "PaymentType" NOT NULL DEFAULT 'cash',
+    "transactionId" INTEGER,
+    "infoId" INTEGER,
+    "userId" TEXT,
+    "orderDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "addressId" TEXT,
+
+    CONSTRAINT "Checkout_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CheckoutVariants" (
+    "checkoutId" TEXT NOT NULL,
+    "count" INTEGER NOT NULL DEFAULT 1,
+    "variantId" INTEGER NOT NULL,
+
+    CONSTRAINT "CheckoutVariants_pkey" PRIMARY KEY ("checkoutId","variantId")
 );
 
 -- CreateTable
@@ -159,6 +269,12 @@ CREATE TABLE "Transaction" (
 
 -- CreateTable
 CREATE TABLE "_ProductToTag" (
+    "A" INTEGER NOT NULL,
+    "B" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "_ProductToWishList" (
     "A" INTEGER NOT NULL,
     "B" TEXT NOT NULL
 );
@@ -206,37 +322,43 @@ CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
 CREATE INDEX "Product_slug_idx" ON "Product"("slug");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Language_symbol_key" ON "Language"("symbol");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OauthAccessToken_token_key" ON "OauthAccessToken"("token");
+CREATE INDEX "Field_fieldName_fieldValue_idx" ON "Field"("fieldName", "fieldValue");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OauthAccessToken_refreshToken_key" ON "OauthAccessToken"("refreshToken");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE INDEX "OauthAccessToken_applicationId_idx" ON "OauthAccessToken"("applicationId");
+CREATE UNIQUE INDEX "users_verificationCode_key" ON "users"("verificationCode");
 
 -- CreateIndex
-CREATE INDEX "OauthAccessToken_userId_idx" ON "OauthAccessToken"("userId");
+CREATE UNIQUE INDEX "users_cartId_key" ON "users"("cartId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "users_wishlistId_key" ON "users"("wishlistId");
 
 -- CreateIndex
-CREATE INDEX "UserIdentity_userId_idx" ON "UserIdentity"("userId");
+CREATE INDEX "users_email_verificationCode_idx" ON "users"("email", "verificationCode");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "UserIdentity_provider_uid_key" ON "UserIdentity"("provider", "uid");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Variant_size_color_key" ON "Variant"("size", "color");
+CREATE UNIQUE INDEX "users_email_verificationCode_key" ON "users"("email", "verificationCode");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_ProductToTag_AB_unique" ON "_ProductToTag"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_ProductToTag_B_index" ON "_ProductToTag"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_ProductToWishList_AB_unique" ON "_ProductToWishList"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ProductToWishList_B_index" ON "_ProductToWishList"("B");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_CategoryToImage_AB_unique" ON "_CategoryToImage"("A", "B");
@@ -299,13 +421,40 @@ ALTER TABLE "ProductsImages" ADD CONSTRAINT "ProductsImages_imageId_fkey" FOREIG
 ALTER TABLE "ProductsImages" ADD CONSTRAINT "ProductsImages_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OauthAccessToken" ADD CONSTRAINT "OauthAccessToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "users" ADD CONSTRAINT "users_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserIdentity" ADD CONSTRAINT "UserIdentity_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "users" ADD CONSTRAINT "users_wishlistId_fkey" FOREIGN KEY ("wishlistId") REFERENCES "WishList"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartVariants" ADD CONSTRAINT "CartVariants_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartVariants" ADD CONSTRAINT "CartVariants_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "Variant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Variant" ADD CONSTRAINT "Variant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Address" ADD CONSTRAINT "Address_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AddressFields" ADD CONSTRAINT "AddressFields_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "Address"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Checkout" ADD CONSTRAINT "Checkout_infoId_fkey" FOREIGN KEY ("infoId") REFERENCES "CheckoutInfo"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Checkout" ADD CONSTRAINT "Checkout_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Checkout" ADD CONSTRAINT "Checkout_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "Address"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CheckoutVariants" ADD CONSTRAINT "CheckoutVariants_checkoutId_fkey" FOREIGN KEY ("checkoutId") REFERENCES "Checkout"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CheckoutVariants" ADD CONSTRAINT "CheckoutVariants_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "Variant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "Variant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -315,6 +464,12 @@ ALTER TABLE "_ProductToTag" ADD CONSTRAINT "_ProductToTag_A_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "_ProductToTag" ADD CONSTRAINT "_ProductToTag_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("tag") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ProductToWishList" ADD CONSTRAINT "_ProductToWishList_A_fkey" FOREIGN KEY ("A") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ProductToWishList" ADD CONSTRAINT "_ProductToWishList_B_fkey" FOREIGN KEY ("B") REFERENCES "WishList"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CategoryToImage" ADD CONSTRAINT "_CategoryToImage_A_fkey" FOREIGN KEY ("A") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
