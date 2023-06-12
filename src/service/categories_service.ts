@@ -88,7 +88,8 @@ export default function make_category_service(db_connection:PrismaClient){
         
         let categories = await db_connection.category.findMany({
             where:{
-                isMain:true
+                isMain:true,
+                active:true
             },
             orderBy:{
                 id:"desc"
