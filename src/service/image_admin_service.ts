@@ -3,7 +3,7 @@ import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
 import { S3,ListObjectsV2Command,PutObjectCommand } from '@aws-sdk/client-s3';
 import { BaseError } from '../exception';
-
+const imageRegex= /[\/.](gif|jpg|jpeg|tiff|png)$/i;
 export default function make_image_admin_service(db_connection:PrismaClient,s3client:S3){
     return Object.freeze({
         uploadImages,
@@ -109,6 +109,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             }
         }
     }
+    
     async function getFiles(req:HttpRequest) {
         let path:string = req.query['path']
         
@@ -116,19 +117,29 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             Bucket: process.env.S3_BUCKET_NAME,
             Prefix: path
         }))
-
+        
         let folders = []
         let files = []
         path = pathFilter(path);
 
         if(res.Contents){
+            // for ( let obj of res.Contents){
+            //     if(imageRegex.test(obj.Key)){
+            //         let file = await db_connection.image.create({
+            //             data:{
+            //                 url:"/"+obj.Key
+            //             }
+            //         })
+            //     }
+            // }
+                
             for (let obj of res.Contents.filter(x=>x.Key!=path)) {
                 let ind = obj.Key.indexOf(path)
                 if((ind==-1&&path=="/")||(ind!=-1&&path.length>1)){
                     let objName = obj.Key.slice(path.length>1?path.length:path.length-1,obj.Key.length);
                     let slashInd = objName.indexOf("/");
                     
-                    if(!obj.Key.includes(".")||slashInd!=-1){
+                    if(!imageRegex.test(obj.Key)||slashInd!=-1){
                         let folderName = objName.slice(0,slashInd);
                         if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                         folders.push({
