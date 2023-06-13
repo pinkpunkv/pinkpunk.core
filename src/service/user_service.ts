@@ -21,7 +21,8 @@ export default function make_user_service(db_connection:PrismaClient){
         updateUserInfo,
         forgotPassword,
         confirmChangePassword,
-        confirmUserRegistration
+        confirmUserRegistration,
+        confirmReg
     })
     
     
@@ -225,7 +226,38 @@ export default function make_user_service(db_connection:PrismaClient){
             content: res
         }
     }
-
+    async function confirmReg(req:HttpRequest) {
+        
+        let ct = req.query['token']
+        let token = await db_connection.token.findFirst({
+            where:{
+                token:ct,
+                type:"confirm"
+            }
+        })
+        if(token==null)
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
+        let res = await db_connection.$transaction(async()=>{
+            await db_connection.user.update({
+                where:{
+                    id:token.objectId
+                },
+                data:{
+                    status:"active"
+                }
+            })
+            await db_connection.token.delete({
+                where:{
+                    token:token.token
+                }
+            })
+        })
+        return {
+            status: StatusCodes.OK,
+            message:"success",
+            content: res
+        }
+    }
     async function confirmChangePassword(req:HttpRequest) {
         
         let ct = req.query['token']

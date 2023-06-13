@@ -11,10 +11,17 @@ export default function make_admin_category_service(db_connection:PrismaClient){
 
     async function createCategory(req:HttpRequest){
         let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false,slug=""}={...req.body}
+        let parent = await db_connection.category.findFirst({
+            where:{
+                id:Number(parentId)
+            }
+        })
+        
+        
         let category = await db_connection.category.create({
             data:{
                 slug:slug,
-                parentId:parentId,
+                parentId:parent?.id,
                 fields:{
                     create:fields
                 },
@@ -102,7 +109,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
             message:"success",
             content:await db_connection.category.delete({
                 where:{
-                    id:id
+                    id:Number(id)
                 }
             })
         }
