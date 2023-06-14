@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import { HttpRequest } from "../common";
 import {StatusCodes} from 'http-status-codes'
+import { BaseError } from '../exception';
+import Decimal from 'decimal.js';
 
 export default function make_client_product_service(db_connection:PrismaClient){
     return Object.freeze({
@@ -13,23 +15,42 @@ export default function make_client_product_service(db_connection:PrismaClient){
         wantTo
     });
     async function wantTo(req:HttpRequest) {
-        let {id=0} = {...req.params};
+        let {id=0, email=null} = {...req.params};
+        if (email==null||email=="")
+            throw new BaseError(417,"email is required",[]);
         try{
             let session = await  db_connection.sessions.create({data:{
                 session:req.sessionID
             }})
-            await db_connection.product.update({
-                where:{id:Number(id)},
-                data:{
-                    wants:{
-                        increment:1
-                    }
+            let want = await db_connection.want.findFirst({
+                where:{
+                    email:email
                 }
             })
+            let wants  = new Decimal(0)
+            if (want==null)
+            wants = (await db_connection.$transaction(async()=>{
+                let now = new Date().toISOString()
+                want = await db_connection.want.create({
+                    data:{
+                        email:want.email,
+                        updatedAt:now
+                    }
+                })
+                return await db_connection.product.update({
+                    where:{id:Number(id)},
+                    data:{
+                        wants:{
+                            increment:1
+                        }
+                    }
+                })
+            })).wants
+            
             return {
                 status:StatusCodes.OK,
                 message:"success",
-                content:{}
+                content:{wants:wants}
             }  
         }
         catch(ex){

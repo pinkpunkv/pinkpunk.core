@@ -164,6 +164,12 @@ model Cart{
   user User?
   variants CartVariants[]
 }
+
+model Want{
+  email           String  @id
+  updatedAt       DateTime
+}
+
 model CartVariants{
   cartId   String
   count     Int @default(1)
