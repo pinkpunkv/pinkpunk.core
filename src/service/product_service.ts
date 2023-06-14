@@ -152,8 +152,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
             min:Number
             max:Number
         }
-        let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct color)as colors  from "Variant" v`
-        let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p`
+        let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct color)as colors  from "Variant" v where v.deleted=false`
+        let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p where p.deleted=false and active = true`
         
         return {
             status:StatusCodes.OK,
