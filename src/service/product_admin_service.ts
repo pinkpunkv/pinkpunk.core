@@ -104,6 +104,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     }
                 }))
             })
+            let now = new Date().toISOString()
             let product = await db_connection.product.create({
                 data:{
                     slug:slug,
@@ -121,6 +122,8 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     price:Number(price),
                     basePrice:basePrice,
                     sex:sex,
+                    createdAt:now,
+                    updatedAt:now,
                     active:active
                 },
                 include:{
@@ -182,6 +185,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     }
                 }))
             })
+            let now = new Date().toISOString()
             let product = await db_connection.product.update({
                 where:{id:productData.id},
                 data:{
@@ -210,6 +214,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     },
                     basePrice:Number(basePrice),
                     active:active,
+                    updatedAt:now,
                     price:Number(price),
                     currencySymbol:currencySymbol,
                     sex:sex
