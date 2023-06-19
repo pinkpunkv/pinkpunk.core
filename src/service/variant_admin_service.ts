@@ -83,6 +83,7 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                             color:x.color,
                             productId:Number(productId),
                             count:x.count,
+                            colorText:x.colorText,
                             images:{
                                 connect:x.images
                             },
@@ -98,6 +99,7 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                                 color:x.color,
                                 productId:Number(productId),
                                 count:x.count,
+                                colorText:x.colorText,
                                 images:{
                                     connect:x.images
                                 }
