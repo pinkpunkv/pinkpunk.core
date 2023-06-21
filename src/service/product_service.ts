@@ -105,7 +105,11 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                variants:true
+                variants:{
+                    where:{
+                        deleted:false
+                    }
+                }
             }
         });
         let categories = await db_connection.category.findMany({
@@ -173,15 +177,24 @@ export default function make_client_product_service(db_connection:PrismaClient){
             min:Number
             max:Number
         }
-        let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct "colorText")as colors  from "Variant" v where v.deleted=false`
+        let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct "color" || ':' || "colorText") as colors  from "Variant" v where v.deleted=false`
         let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p where p.deleted=false and active = true`
+        let colors = {}
+        let text_color;
         
+        
+        for(let color of sc_s[0].colors.filter(x=>x!=null)){
+            console.log(color);
+            text_color = color.split(':')
+            if(colors[text_color[0]]==null)
+            colors[text_color[0]]={color:text_color[0],colorText:text_color[1]}
+        }
         return {
             status:StatusCodes.OK,
             message:"success", 
             content: {
                 sizes:sc_s[0].sizes,
-                colors:sc_s[0].colors,
+                colors:Object.values(colors),
                 min:prices[0].min,
                 max:prices[0].max
             }
@@ -382,7 +395,14 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                variants:true
+                variants:{
+                    where:{
+                        deleted:false
+                    },
+                    include:{
+                        images:true
+                    }
+                }
             }
         });
     
