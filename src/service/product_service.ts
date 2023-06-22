@@ -169,32 +169,20 @@ export default function make_client_product_service(db_connection:PrismaClient){
         }
     }
     async function getFilters(req:HttpRequest) {
-        class SizesColors{
-            sizes:String[]
-            colors:String[]
-        }
         class Prices{
             min:Number
             max:Number
         }
-        let sc_s = await db_connection.$queryRaw<SizesColors[]>`SELECT array_agg(distinct size) as sizes,array_agg(distinct "color" || ':' || "colorText") as colors  from "Variant" v where v.deleted=false`
+        let sizes = await db_connection.size.findMany({where:{variants:{some:{deleted:false}}}})
         let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p where p.deleted=false and active = true`
-        let colors = {}
-        let text_color;
+        let colors = await db_connection.color.findMany({where:{variants:{some:{deleted:false}}}})
         
-        
-        for(let color of sc_s[0].colors.filter(x=>x!=null)){
-            console.log(color);
-            text_color = color.split(':')
-            if(colors[text_color[0]]==null)
-            colors[text_color[0]]={color:text_color[0],colorText:text_color[1]}
-        }
         return {
             status:StatusCodes.OK,
             message:"success", 
             content: {
-                sizes:sc_s[0].sizes,
-                colors:Object.values(colors),
+                sizes:sizes.map(x=>x.size),
+                colors:colors,
                 min:prices[0].min,
                 max:prices[0].max
             }
@@ -263,7 +251,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         deleted:false
                     },
                     include:{
-                        images:true
+                        images:true,
+                        color:true
                     }
                 }
             }
@@ -332,7 +321,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
                     }
                 }
             }:{},
-            variants:sizes.length>0?{
+            variants:sizes.length>0||colors.length>0?{
                 some:{
                     AND:{
                         count:{
@@ -342,8 +331,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
                     size:sizes.length>0?{
                         in:sizes
                     }:{},
-                    colorText:colors.length>0?{
-                        in:colors
+                    colorId:colors.length>0?{
+                        in:colors.map(x=>Number(x))
                     }:{}
                 }
             }:{}
@@ -400,7 +389,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
                         deleted:false
                     },
                     include:{
-                        images:true
+                        images:true,
+                        color:true
                     }
                 }
             }
@@ -496,7 +486,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
                             deleted:false
                         },
                         include:{
-                            images:true
+                            images:true,
+                            color:true
                         }
                     }
                 }

@@ -16,9 +16,10 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
         let {id=0} = {...req.params};
         let variants = await db_connection.variant.findMany({
             where:{id:id},
-            distinct:["color","size"],
+            distinct:['colorId','size'],
             include:{
-                product:true
+                product:true,
+                color:true
             }
         });
         
@@ -69,8 +70,10 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                 }
             })
             for (let x of variants) {
-                let productVariantInd = productVariants.findIndex(y=>x.color==y.color&&x.size==y.size)
-            
+                let productVariantInd = productVariants.findIndex(y=>x.colorId==y.colorId&&x.size==y.size)
+                let size = await db_connection.size.findFirst({where:{size:x.size}})
+                if (size==null)
+                    size = await db_connection.size.create({data:{size:x.size}}) 
                 if(productVariantInd!=-1)
                 {
                     let variant = productVariants.at(productVariantInd)
@@ -79,11 +82,9 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                             id:variant.id
                         },
                         data:{
-                            size:x.size,
-                            color:x.color,
+                            colorId:x.colorId,
                             productId:Number(productId),
                             count:x.count,
-                            colorText:x.colorText,
                             images:{
                                 connect:x.images
                             },
@@ -95,21 +96,16 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                 else{
                     variantsData.push(await db_connection.variant.create({
                             data:{
-                                size:x.size,
-                                color:x.color,
+                                size:size.size,
+                                colorId:x.colorId,
                                 productId:Number(productId),
                                 count:x.count,
-                                colorText:x.colorText,
                                 images:{
                                     connect:x.images
                                 }
                             },
-                            select:{
-                                images:true,
-                                color:true,
-                                count:true,
-                                productId:true,
-                                size:true
+                            include:{
+                                color:true
                             }
                         })
                     )

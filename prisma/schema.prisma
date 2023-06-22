@@ -190,9 +190,14 @@ model WishList{
 model Variant {
   id           Int           @id @default(autoincrement())
   productId    Int
+  
+
+  color Color @relation(fields: [colorId], references: [id])
+  colorId Int 
+
   size         String
-  color        String
-  colorText        String?
+  sizeObj Size @relation(fields: [size], references: [size])
+
   images        Image[]
   count Int @default(0)
   transactions Transaction[]
@@ -200,6 +205,18 @@ model Variant {
   carts CartVariants[]
   orders CheckoutVariants[]
   deleted Boolean @default(false)
+}
+
+model Color {
+  id Int @id @default(autoincrement())
+  color        String
+  colorText        String?
+  variants Variant[]
+}
+
+model Size {
+  size         String @id
+  variants Variant[]
 }
 
 model VariantTemplate{

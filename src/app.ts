@@ -5,7 +5,8 @@ import cookieParser from 'cookie-parser'
 import {product_router,product_admin_router,category_admin_router,category_router,
     variant_admin_router,collection_admin_router,collection_router,image_admin_router,
     language_admin_router,language_router,tag_admin_router,tag_router,user_router, user_admin_router, 
-    cart_router, wish_list_router,address_router, checkout_router, checkout_admin_router} from './routes'
+    cart_router, wish_list_router,address_router, checkout_router, checkout_admin_router,
+    color_admin_router, size_admin_router} from './routes'
 import cors from 'cors'
 import { user_status_middleware } from "./middleware";
 import session from 'express-session'
@@ -72,6 +73,9 @@ app.use('/api/v1/wishList',wish_list_router)
 
 app.use('/api/v1/checkout',checkout_router)
 app.use('/api/v1/admin/checkout',checkout_admin_router)
+
+app.use('/api/v1/admin/color',color_admin_router)
+app.use('/api/v1/admin/size',size_admin_router)
 
 
 app.listen(config.PORT,()=>{

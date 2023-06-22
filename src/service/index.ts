@@ -28,6 +28,9 @@ import make_address_service from './address_service'
 import make_checkout_service from './checkout_service'
 import make_admin_checkout_service from './checkout_admin_service';
 
+import make_color_admin_service from './color_admin_service'
+import make_size_admin_service from './size_admin_service'
+
 import {db} from '../database'
 import {connectS3} from '../helper'
 
@@ -75,6 +78,8 @@ const cart_service = make_cart_service(db_connection)
 const wish_list_service = make_wish_list_service(db_connection)
 const checkout_service = make_checkout_service(db_connection)
 const checkout_admin_service = make_admin_checkout_service(db_connection)
+const color_admin_service = make_color_admin_service(db_connection)
+const size_admin_service = make_size_admin_service(db_connection)
 
 export {
   address_service,
@@ -95,5 +100,7 @@ export {
   cart_service,
   wish_list_service,
   checkout_service,
-  checkout_admin_service
+  checkout_admin_service,
+  color_admin_service,
+  size_admin_service
 }
