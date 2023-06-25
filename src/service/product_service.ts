@@ -297,6 +297,8 @@ export default function make_client_product_service(db_connection:PrismaClient){
     async function getProducts(req:HttpRequest){
         let{skip=0,take=10,lang="ru",sex=[],minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],colors=[],orderBy='{"views":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
+        
+        colors = colors.filter(x=>x!=null&&x!=""&&!isNaN(x));
         let where = {
             deleted:false,
             active:true,
