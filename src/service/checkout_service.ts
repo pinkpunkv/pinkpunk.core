@@ -337,7 +337,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if (ind!=-1)
             checkout.variants[ind].count+=1;
         else
-            checkout.variants.push(checkoutVariant)
+            checkout.variants.push(checkoutVariant as any)
         
         return {
             status:StatusCodes.OK,
