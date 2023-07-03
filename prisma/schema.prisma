@@ -273,6 +273,7 @@ model CheckoutInfo {
   phone String
   firstName String?
   lastName String?
+  comment String?
   checkout Checkout[]
 }
 model Checkout {

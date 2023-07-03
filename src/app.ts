@@ -8,7 +8,7 @@ import {product_router,product_admin_router,category_admin_router,category_route
     cart_router, wish_list_router,address_router, checkout_router, checkout_admin_router,
     color_admin_router, size_admin_router} from './routes'
 import cors from 'cors'
-import { user_status_middleware } from "./middleware";
+import { user_status_middleware, has_access_by_role } from "./middleware";
 import session from 'express-session'
 
 let app:Express = express();
@@ -42,6 +42,7 @@ app.use(session({
         }
   }));
 app.use(user_status_middleware)
+app.use("/api/v1/admin/*", has_access_by_role("admin"))
 
 app.use('/api/v1/address', address_router)
 

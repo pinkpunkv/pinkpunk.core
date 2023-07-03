@@ -15,5 +15,5 @@ export enum CustomerErrorCode {
     NotFound = 'NOT_FOUND',
     BadDomain = 'BAD_DOMAIN',
     InvalidMultipassRequest = 'INVALID_MULTIPASS_REQUEST',
-
+    Forbidden = "HOS NO ACCESS TO RESOURCE"
   }

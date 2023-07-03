@@ -176,17 +176,23 @@ export default function make_cart_service(db_connection:PrismaClient){
     async function addToCart(req:HttpRequest) {
         let{cartId=""}={...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        let variantsData = await getUserCart(lang,cartId,req.user)
-
-        if(variantsData==null)
+        let variant = await db_connection.variant.findFirst({
+            where:{id:Number(variantId), deleted:false}
+        })
+        if (variant == null)
+            throw new BaseError(417,"variant with this id not found",[]);
+        let cart = await getUserCart(lang,cartId,req.user)
+        
+        if(cart==null)
             throw new BaseError(417,"cart with this id not found",[]);
             
-        let cartVariant = await getCartVariant(variantsData.id,variantId)
-       
+        let cartVariant = await getCartVariant(cart.id,variantId)
+        console.log(cartVariant);
+        
         if (cartVariant==null){
             //let cart  = await getUserCartWithoutVariants(variantsData.id,req.user)
-            variantsData = await db_connection.cart.update({
-                where:{id:variantsData.id},
+            cart = await db_connection.cart.update({
+                where:{id:cart.id},
                 data:{
                     variants:{
                         create: {variantId:Number(variantId)}
@@ -200,7 +206,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                 await db_connection.cartVariants.update({
                     where:{
                         variantId_cartId:{
-                            cartId:variantsData.id,
+                            cartId:cart.id,
                             variantId:Number(variantId),   
                         }
                     },
@@ -208,15 +214,15 @@ export default function make_cart_service(db_connection:PrismaClient){
                         count:{increment:1}
                     }
                 })
-                let ind = variantsData.variants.findIndex(x=>x.variantId==variantId)
-                variantsData.variants[ind].count+=1;
+                let ind = cart.variants.findIndex(x=>x.variantId==variantId)
+                cart.variants[ind].count+=1;
             }
             
         }
         return {
             status:StatusCodes.OK,
             message:"success",
-            content: mapCartToResponse(variantsData)
+            content: mapCartToResponse(cart)
         }
     }
 

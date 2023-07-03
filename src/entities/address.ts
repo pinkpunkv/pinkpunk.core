@@ -12,6 +12,8 @@ class Address {
         return addr
     }
     static fromObject(obj:any){
+        if (obj == null)
+            return null
         let addr = new Address();
         addr.id = obj['id']?obj['id']:null;
         addr.userId = obj['userId']?obj['userId']:"";
@@ -43,7 +45,7 @@ class AddressField{
                 zipCode: string,
                 city: string,
                 country: string){
-
+                
         let field = new AddressField();
         field.id=id,
         field.type=type
@@ -60,6 +62,8 @@ class AddressField{
     }
 
     static fromObject(obj:any){
+        if (obj == null)
+            return null
         let addr = new AddressField();
         addr.id=obj['id']?obj['id']:null
         addr.type=obj['type']?obj['type']:""

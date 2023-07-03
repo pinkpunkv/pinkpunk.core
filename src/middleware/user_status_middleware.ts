@@ -3,8 +3,7 @@ import { verifyJwt } from "../utils/jwt";
 
 export default async function user_status_middleware(req:Request,res:Response,next:NextFunction){
     let act:string = req.headers.authorization;
-    console.log(act);
-    
+
     if(!act){req['userAttr'] = {isAnonimus:true}; return next()}
     try{
    
