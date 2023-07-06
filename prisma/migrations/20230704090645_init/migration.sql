@@ -36,6 +36,8 @@ CREATE TABLE "Product" (
     "currencySymbol" TEXT,
     "collectionId" INTEGER,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
@@ -153,6 +155,14 @@ CREATE TABLE "Cart" (
 );
 
 -- CreateTable
+CREATE TABLE "Want" (
+    "email" TEXT NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Want_pkey" PRIMARY KEY ("email")
+);
+
+-- CreateTable
 CREATE TABLE "CartVariants" (
     "cartId" TEXT NOT NULL,
     "count" INTEGER NOT NULL DEFAULT 1,
@@ -172,13 +182,28 @@ CREATE TABLE "WishList" (
 CREATE TABLE "Variant" (
     "id" SERIAL NOT NULL,
     "productId" INTEGER NOT NULL,
+    "colorId" INTEGER NOT NULL,
     "size" TEXT NOT NULL,
-    "color" TEXT NOT NULL,
-    "colorText" TEXT,
     "count" INTEGER NOT NULL DEFAULT 0,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Variant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Color" (
+    "id" SERIAL NOT NULL,
+    "color" TEXT NOT NULL,
+    "colorText" TEXT,
+
+    CONSTRAINT "Color_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Size" (
+    "size" TEXT NOT NULL,
+
+    CONSTRAINT "Size_pkey" PRIMARY KEY ("size")
 );
 
 -- CreateTable
@@ -431,6 +456,12 @@ ALTER TABLE "CartVariants" ADD CONSTRAINT "CartVariants_cartId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "CartVariants" ADD CONSTRAINT "CartVariants_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "Variant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Variant" ADD CONSTRAINT "Variant_colorId_fkey" FOREIGN KEY ("colorId") REFERENCES "Color"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Variant" ADD CONSTRAINT "Variant_size_fkey" FOREIGN KEY ("size") REFERENCES "Size"("size") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Variant" ADD CONSTRAINT "Variant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -61,19 +61,20 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
     async function addProductVariants(req:HttpRequest){
         let {productId=-1} = {...req.query};
         let variants = req.body['variants']
-        
+        productId = Number(productId)
         let res = await db_connection.$transaction(async()=>{
             let variantsData=[]
             let productVariants = await db_connection.variant.findMany({
                 where:{
-                    productId:Number(productId)
+                    productId:productId
                 }
             })
-            for (let x of variants) {
-                let productVariantInd = productVariants.findIndex(y=>x.colorId==y.colorId&&x.size==y.size)
-                let size = await db_connection.size.findFirst({where:{size:x.size}})
+            for (let variant_data of variants) {
+                variant_data.colorId = Number(variant_data.colorId)
+                let productVariantInd = productVariants.findIndex(x=>variant_data.colorId==x.colorId&&variant_data.size==x.size)
+                let size = await db_connection.size.findFirst({where:{size:variant_data.size}})
                 if (size==null)
-                    size = await db_connection.size.create({data:{size:x.size}}) 
+                    size = await db_connection.size.create({data:{size:variant_data.size}}) 
                 if(productVariantInd!=-1)
                 {
                     let variant = productVariants.at(productVariantInd)
@@ -82,11 +83,11 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                             id:variant.id
                         },
                         data:{
-                            colorId:x.colorId,
-                            productId:Number(productId),
-                            count:x.count,
+                            colorId:variant_data.colorId,
+                            productId:productId,
+                            count:variant_data.count,
                             images:{
-                                connect:x.images
+                                connect:variant_data.images
                             },
                             deleted:false
                         }
@@ -97,11 +98,11 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                     variantsData.push(await db_connection.variant.create({
                             data:{
                                 size:size.size,
-                                colorId:x.colorId,
-                                productId:Number(productId),
-                                count:x.count,
+                                colorId:variant_data.colorId,
+                                productId:productId,
+                                count:variant_data.count,
                                 images:{
-                                    connect:x.images
+                                    connect:variant_data.images
                                 }
                             },
                             include:{
