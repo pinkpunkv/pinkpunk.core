@@ -17,7 +17,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
     
     async function uploadImages(req:HttpRequest) {
         let path = req.query['path']
-
+        path = pathFilter(path);
         return await db_connection.$transaction(async()=>{
             if (req.files==null)
                 throw new BaseError(417,"files is null",[]);
