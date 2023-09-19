@@ -255,7 +255,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         }
     }
     async function getCheckouts(req:HttpRequest) {
-        let{skip=0,take=20,lang="ru",statuses="completed,pending,declined",orderBy='{"orderDate":"desc"}'}={...req.query}
+        let{skip=0,take=20,lang="ru",statuses="completed,pending,declined,preprocess",orderBy='{"orderDate":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
         let statuses_ = statuses.split(",") as Prisma.Enumerable<CheckoutStatus>
         let checkouts = await db_connection.checkout.findMany({
@@ -271,6 +271,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             },
             include:{
                 info:true,
+                user: true,
                 variants:getInclude(lang),
                 address:{include:{fields:true}}
             }
