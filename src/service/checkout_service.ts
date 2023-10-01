@@ -442,31 +442,32 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(checkout.info==null)
             throw new BaseError(417,"user details is required",[]);
         let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
-        if(status.data.actionCode==-100){
-            let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
+        // if(status.data.actionCode==-100){
+        //     let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
             
-            return {
-                status:StatusCodes.OK,
-                message:"success",
-                content: {"orderId":orderId,"formUrl":"https://abby.rbsuat.com/payment/merchants/www.pinkpunk.by_6261D2C6014F4/payment_ru.html?mdOrder="+orderId}
-            }
-        }
+        //     return {
+        //         status:StatusCodes.OK,
+        //         message:"success",
+        //         content: {"orderId":orderId,"formUrl":"https://abby.rbsuat.com/payment/merchants/www.pinkpunk.by_6261D2C6014F4/payment_ru.html?mdOrder="+orderId}
+        //     }
+        // }
         let totalAmount = new Decimal(0);
             
         for (const variant of checkout.variants) {  
             let itemAmount = new Decimal(variant['variant']['product'].price).mul(new Decimal(variant.count))
             totalAmount=totalAmount.add(itemAmount)
         }
-        let token = await db_connection.token.create({
-            data:{
-                token:generateToken(),
-                type:"order",
-                objectId:checkout.orderId.toString()
-            }
-        })
+        
         totalAmount=totalAmount.mul(new Decimal(100))
         let res = await db_connection.$transaction(async ()=>{ 
-            if(status.data.actionCode==-2007||status.data.errorCode==1)
+            let token = await db_connection.token.create({
+                data:{
+                    token:generateToken(),
+                    type:"order",
+                    objectId:checkout.orderId.toString()
+                }
+            })
+            if(status.data.actionCode==-2007||status.data.errorCode==1||status.data.actionCode==-100)
             {   
                 let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
                 checkout.orderId = Number(new_orderId[0].nextval)
