@@ -277,7 +277,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                                 comment:comment
                             },
                             update:{
-                                id:checkout.infoId,
+                                // id:checkout.infoId,
                                 email:email,
                                 phone:phone,
                                 firstName:firstName,
