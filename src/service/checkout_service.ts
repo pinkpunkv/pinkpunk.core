@@ -441,7 +441,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             throw new BaseError(417,"invalid payment type",[]);
         if(checkout.info==null)
             throw new BaseError(417,"user details is required",[]);
-        let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
+        // let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
         // if(status.data.actionCode==-100){
         //     let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
             
@@ -467,19 +467,18 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     objectId:checkout.orderId.toString()
                 }
             })
-            if(status.data.actionCode==-2007||status.data.errorCode==1||status.data.actionCode==-100)
-            {   
-                let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
-                checkout.orderId = Number(new_orderId[0].nextval)
-                await db_connection.checkout.update({
-                    where:{id:checkout.id},
-                    data:{
-                        orderId:{
-                            set:checkout.orderId 
-                        }
+            
+            let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
+            checkout.orderId = Number(new_orderId[0].nextval)
+            await db_connection.checkout.update({
+                where:{id:checkout.id},
+                data:{
+                    orderId:{
+                        set:checkout.orderId 
                     }
-                })
-            }
+                }
+            })
+            
             let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
             if(payres.data.errorCode)
                 throw new BaseError(500,"something went wrong",payres.data);
