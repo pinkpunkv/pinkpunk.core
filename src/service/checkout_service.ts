@@ -211,7 +211,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let addressData = Address.fromObject(req.body['address'])
         let addressField = AddressField.fromObject(req.body['address'])
 
-        if (addressData==null)
+        if (addressData==null && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
         let address_field = {
             apartments:   addressField.apartments,
@@ -225,30 +225,32 @@ export default function make_checkout_service(db_connection:PrismaClient){
             zipCode:      addressField.zipCode
         } as Prisma.AddressFieldsCreateWithoutAddressInput
 
-        let address = await db_connection.address.upsert({
-            where:{
-                id:addressData?.id
-            },
-            create:{
-                userId:req.user.id,
-                mask: addressData.mask,
-                fields:{
-                    create:address_field
+        let address = null;
+        if (deliveryType=="courier")
+            address = await db_connection.address.upsert({
+                where:{
+                    id:addressData?.id
                 },
-            },
-            update:{
-                mask:addressData.mask,
-                fields:{
-                    deleteMany:{
-                        addressId:addressData.id
+                create:{
+                    userId:req.user.id,
+                    mask: addressData.mask,
+                    fields:{
+                        create:address_field
                     },
-                    create:address_field
+                },
+                update:{
+                    mask:addressData.mask,
+                    fields:{
+                        deleteMany:{
+                            addressId:addressData.id
+                        },
+                        create:address_field
+                    }
+                },
+                include:{
+                    fields:true
                 }
-            },
-            include:{
-                fields:true
-            }
-        })
+            })
         
         // let address = await getUserAdress(addressId,req.user)
         // if (address==null&&deliveryType!="pickup")
