@@ -226,7 +226,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         } as Prisma.AddressFieldsCreateWithoutAddressInput
 
         let address = null;
-        if (deliveryType=="courier")
+        if (deliveryType!="pickup")
             address = await db_connection.address.upsert({
                 where:{
                     id:addressData?.id
