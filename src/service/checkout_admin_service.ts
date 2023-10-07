@@ -1,4 +1,4 @@
-import { PrismaClient,DeliveryType,Prisma, CheckoutStatus } from '@prisma/client'
+import { PrismaClient,DeliveryType, Prisma, CheckoutStatus } from '@prisma/client'
 import { HttpRequest } from "../common";
 
 import UserAttr from '../common/user_attr'
@@ -117,7 +117,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
-        let {deliveryType = "pickup",email="",phone="" } = {...req.body}
+        let {deliveryType = "pickup",email="",phone="", status:CheckoutStatus="pending" } = {...req.body}
         let contactfirstName=req.body['firstName']
         let contactlastName=req.body['lastName']
         let {id=undefined,mask="",firstName="", lastName="", company="",streetNumber="",apartments="", zipCode="", city="",country=""} = {...req.body['address']}
@@ -183,6 +183,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     id:checkout.id
                 },
                 data:{
+                    status:status as CheckoutStatus,
                     address:address!=null?{connect:{id:address?.id}}:{},
                     deliveryType:deliveryType as DeliveryType,
                     info:{
