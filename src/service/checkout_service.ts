@@ -48,8 +48,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
             totalAmount = totalAmount.add(new Decimal(x.count).mul(new Decimal(x.product.price)))
             x.maxCount = x.variant.count
             x.size = x.variant.size
-            x.color = color.color
-            x.colorText = color.colorText
+            x.color = x.variant.color
+            // x.colorText = color.colorText
             delete x.variantId
             delete x.checkoutId
             delete x.variant
