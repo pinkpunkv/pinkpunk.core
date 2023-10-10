@@ -15,7 +15,7 @@ class Address {
         if (obj == null)
             return null
         let addr = new Address();
-        addr.id = obj['id']?obj['id']:null;
+        addr.id = obj['id']?obj['id']:undefined;
         addr.userId = obj['userId']?obj['userId']:"";
         addr.mask = obj['mask']?obj['mask']:"";
         return addr
