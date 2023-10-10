@@ -254,7 +254,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if (deliveryType!="pickup")
             address = await db_connection.address.upsert({
                 where:{
-                    id:addressData?.id
+                    id:addressData?.id?addressData.id:undefined
                 },
                 create:{
                     userId:req.user.id,
