@@ -14,7 +14,8 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         removeVariantFromCheckout,
         decreaseCountFromCheckout,
         addToCheckout,
-        getCheckoutInfo
+        getCheckoutInfo,
+        getUserCheckouts
     });
 
     function mapCheckoutToResponse(checkout){
@@ -113,7 +114,36 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             }    
         } as Prisma.CheckoutVariantsFindManyArgs
     }
+    async function getUserCheckouts(req:HttpRequest) {
+        let {lang="ru",statuses="completed,pending,declined,preprocess",userId=""}= {...req.query}
+        let statuses_ = statuses.split(",") as Prisma.Enumerable<CheckoutStatus>
+        if (req.user.isAnonimus||userId=="")
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content: []
+            }
+        let checkouts = await db_connection.checkout.findMany({
+            where:{
+                userId:userId,
+                status:{
+                    in:statuses_
+                }
+            },
+            include:{
+                info:true,
+                user: true,
+                variants:getInclude(lang),
+                address:{include:{fields:true}}
+            }
+        })
 
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: checkouts.map(x=>mapCheckoutToResponse(x))
+        }
+    }
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}

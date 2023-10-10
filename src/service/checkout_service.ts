@@ -24,7 +24,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
         getCheckout,
         payCheckout,
         placeOrder,
-        updateCheckoutStatus
+        updateCheckoutStatus,
+        getUserCheckouts
     });
 
     function mapCheckoutToResponse(checkout){
@@ -159,6 +160,30 @@ export default function make_checkout_service(db_connection:PrismaClient){
             address:{include:{fields:true}}
         }
     }
+    async function getUserCheckouts(req:HttpRequest) {
+        let {lang="ru"}= {...req.query}
+        if (req.user.isAnonimus)
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content: []
+            }
+        let checkouts = await db_connection.checkout.findMany({
+            where:{
+                userId:req.user.id,
+                status:{
+                    in:["delivered","pending","completed"]
+                }
+            },
+            include:getCheckoutInclude(lang)
+        })
+
+        return {
+            status:StatusCodes.OK,
+            message:"success",
+            content: checkouts.map(x=>mapCheckoutToResponse(x))
+        }
+    }
     async function preprocessCheckout(req:HttpRequest) {
         let {lang="ru",checkoutId="",cartId=""}= {...req.query}
         let checkout = await getUserCheckoutWithoutFields(checkoutId, req.user, "preprocess")
@@ -240,10 +265,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 },
                 update:{
                     mask:addressData.mask,
-                    fields:{
+                    fields:addressData.id?{
                         deleteMany:{
                             addressId:addressData.id
                         },
+                        create:address_field
+                    }:{
                         create:address_field
                     }
                 },

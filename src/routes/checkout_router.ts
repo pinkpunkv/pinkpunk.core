@@ -4,7 +4,9 @@ import {req_middleware as m} from '../middleware'
 
 let checkout_router = express.Router();
 
+checkout_router.get('/orders',m(checkout_service.getUserCheckouts))
 checkout_router.get('/:checkoutId',m(checkout_service.getCheckout))
+
 checkout_router.post('/preprocess',m(checkout_service.preprocessCheckout))
 checkout_router.post('/:checkoutId',m(checkout_service.addToCheckout))
 checkout_router.post('/:checkoutId/pay',m(checkout_service.payCheckout))

@@ -49,6 +49,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                                 }
                             }
                         },
+                        color:true,
                         images:{
                             take:1
                         }
