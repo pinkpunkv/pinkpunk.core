@@ -13,6 +13,7 @@ import {paymentSrvice} from '../helper'
 import generateToken from '../utils/generate_token';
 import { Address,AddressField } from '../entities/address';
 import { config } from '../config';
+import { number } from 'zod';
 
 export default function make_checkout_service(db_connection:PrismaClient){
     return Object.freeze({
@@ -464,8 +465,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
-        if(checkout.paymentType!="online")
-            throw new BaseError(417,"invalid payment type",[]);
+        // if(checkout.paymentType!="online")
+        //     throw new BaseError(417,"invalid payment type",[]);
         if(checkout.info==null)
             throw new BaseError(417,"user details is required",[]);
         // let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
@@ -478,116 +479,82 @@ export default function make_checkout_service(db_connection:PrismaClient){
         //         content: {"orderId":orderId,"formUrl":"https://abby.rbsuat.com/payment/merchants/www.pinkpunk.by_6261D2C6014F4/payment_ru.html?mdOrder="+orderId}
         //     }
         // }
-        let totalAmount = new Decimal(0);
-            
-        for (const variant of checkout.variants) {  
-            let itemAmount = new Decimal(variant['variant']['product'].price).mul(new Decimal(variant.count))
-            totalAmount=totalAmount.add(itemAmount)
-        }
-        
-        totalAmount=totalAmount.mul(new Decimal(100))
-        let res = await db_connection.$transaction(async ()=>{ 
-            let token = await db_connection.token.create({
-                data:{
-                    token:generateToken(),
-                    type:"order",
-                    objectId:checkout.orderId.toString()
-                }
-            })
-            
-            let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
-            checkout.orderId = Number(new_orderId[0].nextval)
-            await db_connection.checkout.update({
-                where:{id:checkout.id},
-                data:{
-                    orderId:{
-                        set:checkout.orderId 
+        let [totalProducts, products, totalAmount] = _calcCheckoutData(checkout.variants);
+          
+        let res;
+        if (checkout.paymentType=="online"){
+            totalAmount=totalAmount.mul(new Decimal(100))
+            res = await db_connection.$transaction(async ()=>{ 
+                let token = await db_connection.token.create({
+                    data:{
+                        token:generateToken(),
+                        type:"order",
+                        objectId:checkout.orderId.toString()
                     }
-                }
-            })
-            
-            let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
-            if(payres.data.errorCode)
-                throw new BaseError(500,"something went wrong",payres.data);
-            await db_connection.checkout.update({
-                where:{
-                    id:checkout.id
-                },
-                data:{
-                    status:"pending"
-                }
-            })
-            
-            return payres.data;
-        })
-        
-        return {
-            status:StatusCodes.OK,
-            message:"success",
-            content: res
-        }
-    }
-
-    async function payGoogleCheckout(req:HttpRequest) {
-        let {checkoutId=""} = {...req.params}
-        let {lang="ru"} = {...req.query};
-        
-        let checkout = await getUserCheckout(lang,checkoutId,req.user,"preprocess")
-        if(checkout==null)
-            throw new BaseError(417,"checkout not found",[]);
-        if(checkout.paymentType!="online")
-            throw new BaseError(417,"invalid payment type",[]);
-        let status = await paymentSrvice.getOrderStatus(checkout.orderId.toString())
-        if(status.data.actionCode==-100){
-            let orderId = status.data.attributes.filter(x=>x.name=="mdOrder")[0].value;
-            return {
-                status:StatusCodes.OK,
-                message:"success",
-                content: {"orderId":orderId,"formUrl":"https://abby.rbsuat.com/payment/merchants/www.pinkpunk.by_6261D2C6014F4/payment_ru.html?mdOrder="+orderId}
-            }
-        }
-        let totalAmount = new Decimal(0);
-            
-        for (const variant of checkout.variants) {  
-            let itemAmount = new Decimal(variant['variant']['product'].price).mul(new Decimal(variant.count))
-            totalAmount=totalAmount.add(itemAmount)
-        }
-        let token = await db_connection.token.create({
-            data:{
-                token:generateToken(),
-                type:"order",
-                objectId:checkout.orderId.toString()
-            }
-        })
-        totalAmount=totalAmount.mul(new Decimal(100))
-        let res = await db_connection.$transaction(async ()=>{ 
-            if(status.data.actionCode==-2007||status.data.errorCode==1)
-            {   
+                })
+                
                 let new_orderId = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
                 checkout.orderId = Number(new_orderId[0].nextval)
+                
+                let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
+                if(payres.data.errorCode)
+                    throw new BaseError(500,"something went wrong",payres.data);
+            
                 await db_connection.checkout.update({
-                    where:{id:checkout.id},
+                    where:{
+                        id:checkout.id
+                    },
                     data:{
+                        status:"pending",
                         orderId:{
                             set:checkout.orderId 
                         }
                     }
                 })
-            }
-            let payres = await paymentSrvice.payForOrder(checkout.orderId.toString(),totalAmount,token.token)
-            if(payres.data.errorCode)
-                throw new BaseError(500,"something went wrong",payres.data);
-            await db_connection.checkout.update({
-                where:{
-                    id:checkout.id
-                },
-                data:{
-                    status:"pending"
-                }
+                
+                return payres.data;
             })
-            
-            return payres.data;
-        })
+        }
+        else
+            res = await db_connection.$transaction(async ()=>{
+                let token = await db_connection.token.create({
+                    data:{ 
+                        token:generateToken(),
+                        type:"order",
+                        objectId:checkout.orderId.toString()
+                    }
+                })
+                await db_connection.checkout.update({
+                    where:{
+                        id:checkout.id
+                    },
+                    data:{
+                        status:"pending"
+                    }
+                })
+                let rconn = await createRabbitMQConnection()
+                await rconn.sendMessage("user",JSON.stringify({email:checkout.info.email,type:"order",ct:token.token,checkoutInfo:{
+                    orderId:checkout.orderId,
+                    productsCount:totalProducts,
+                    total:totalAmount,
+                    deliveryPrice:0,
+                    products:products,
+                    info:{
+                        contactFL:checkout.info.firstName+" "+checkout.info.lastName,
+                        email:checkout.info.email,
+                        phone:checkout.info.phone,
+                        addressFL:checkout.address.fields[0].firstName+" "+checkout.address.fields[0].lastName,
+                        address:checkout.address.fields[0].streetNumber,
+                        postalCode:checkout.address.fields[0].zipCode,
+                        city:checkout.address.fields[0].city
+                    },
+                    discount:0,
+                    finalTotal:totalAmount,
+                    lang:"BY"
+                }}))
+                return {orderId:checkout.orderId};
+            })
+        
         
         return {
             status:StatusCodes.OK,
@@ -613,24 +580,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     orderId:checkout.orderId
                 }
             }
-        let totalProducts = 0;
-        let products= [];
-        let totalAmount = new Decimal(0);
+        let [totalProducts, products, totalAmount] = _calcCheckoutData(checkout.variants);
             
-        for (const variant of checkout.variants) {
-            totalProducts+=variant.count;
-            let product = variant['variant']['product'] 
-            let itemAmount = new Decimal(variant.variant['product'].price).mul(new Decimal(variant.count))
-            products.push({
-                name:product.fields.filter(x=>x.fieldName=="name")[0],
-                color:variant.variant['color'].colorText,
-                size:variant['variant'].size,
-                basePrice:product.basePrice,
-                price:product.price,
-                count:variant.count
-            })
-            totalAmount=totalAmount.add(itemAmount)
-        }
         let token = await db_connection.token.create({
             data:{ 
                 token:generateToken(),
@@ -711,27 +662,11 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 include:getCheckoutInclude(lang)
             })
         }
-        else{
+        else
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"unsuccessful payment status"}])
-        }
-        let totalProducts = 0;
-        let products= [];
-        let totalAmount = new Decimal(0);
+        
+        let totalProducts, products, totalAmount = _calcCheckoutData(checkout.variants);
             
-        for (const variant of checkout.variants) {
-            totalProducts+=variant.count;
-            let product = variant['variant'].product 
-            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
-            products.push({
-                name:product.fields.filter(x=>x.fieldName=="name")[0],
-                color:variant.variant['color'].colorText,
-                size:variant['variant'].size,
-                basePrice:product.basePrice,
-                price:product.price,
-                count:variant.count
-            })
-            totalAmount=totalAmount.add(itemAmount)
-        }
         let rconn = await createRabbitMQConnection()
         await rconn.sendMessage("user",JSON.stringify({email:checkout.info.email,type:"order",ct:token.token,checkoutInfo:{
             orderId:checkout.orderId,
@@ -758,5 +693,27 @@ export default function make_checkout_service(db_connection:PrismaClient){
             message:"success",
             content: {}
         }
+    }
+
+    function _calcCheckoutData(variants:any[]):[number, any[], Decimal]{
+        let totalProducts = 0;
+        let products= [];
+        let totalAmount = new Decimal(0);
+            
+        for (const variant of variants) {
+            totalProducts+=variant.count;
+            let product = variant['variant'].product 
+            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+            products.push({
+                name:product.fields.filter(x=>x.fieldName=="name")[0],
+                color:variant.variant['color'].colorText,
+                size:variant['variant'].size,
+                basePrice:product.basePrice,
+                price:product.price,
+                count:variant.count
+            })
+            totalAmount=totalAmount.add(itemAmount)
+        }
+        return [totalProducts, products, totalAmount]
     }
 }
