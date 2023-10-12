@@ -552,6 +552,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     finalTotal:totalAmount,
                     lang:"BY"
                 }}))
+                console.log("MESSAGE SENDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                
                 return {orderId:checkout.orderId};
             })
         

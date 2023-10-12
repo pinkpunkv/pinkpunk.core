@@ -1,6 +1,6 @@
 import * as amqp from 'amqplib';
 import {config} from '../config'
-let channel;
+let channel:amqp.Channel;
 export default async function createRabbitMQConnection(){
   if (!channel){
     let connection = await amqp.connect(config.rabbitMQURL);
