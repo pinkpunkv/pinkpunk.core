@@ -101,21 +101,23 @@ export default function make_address_service(db_connection:PrismaClient){
         }
     }
     async function createAddress(req:HttpRequest) {
-        let {mask="",firstName="", lastName="", company="",streetNumber="",apartments="", zipCode="", city="",country=""} = {...req.body} 
+        let {mask="",firstName="", lastName="", company="", apartment="",comment="",building="", street="", zipCode="", city="",country=""} = {...req.body} 
         let address = await db_connection.address.create({
             data:{
                 userId:req.user.id,
                 mask: mask,
                 fields:{
                     create:{
-                        apartments:apartments,
+                        apartment:apartment,
+                        street:street,
+                        comment:comment,
+                        building: building,
                         city:city,
                         type:"shipping",
                         company:company,
                         country:country,
                         firstName:firstName,
                         lastName:lastName,
-                        streetNumber:streetNumber,
                         zipCode:zipCode
                     } as Prisma.AddressFieldsCreateWithoutAddressInput
                 },

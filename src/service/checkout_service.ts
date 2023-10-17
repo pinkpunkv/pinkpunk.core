@@ -544,7 +544,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         email:checkout.info.email,
                         phone:checkout.info.phone,
                         addressFL:checkout.address.fields[0].firstName+" "+checkout.address.fields[0].lastName,
-                        address:checkout.address.fields[0].streetNumber,
+                        address:`${checkout.address.fields[0].street} ${checkout.address.fields[0].apartment} ${checkout.address.fields[0].building}`,
                         postalCode:checkout.address.fields[0].zipCode,
                         city:checkout.address.fields[0].city
                     },
@@ -552,8 +552,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     finalTotal:totalAmount,
                     lang:"BY"
                 }}))
-                console.log("MESSAGE SENDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                
                 return {orderId:checkout.orderId};
             })
         
@@ -613,7 +611,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     email:checkout.info.email,
                     phone:checkout.info.phone,
                     addressFL:checkout.address.fields[0].firstName+" "+checkout.address.fields[0].lastName,
-                    address:checkout.address.fields[0].streetNumber,
+                    address:`${checkout.address.fields[0].street} ${checkout.address.fields[0].apartment} ${checkout.address.fields[0].building}`,
                     postalCode:checkout.address.fields[0].zipCode,
                     city:checkout.address.fields[0].city
                 },

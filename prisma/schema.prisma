@@ -254,8 +254,12 @@ model AddressFields{
   firstName String
   lastName String
   company String
-  streetNumber String
-  apartments String
+  
+  street String @default("")
+  building String @default("")
+  apartment String @default("")
+  comment String @default("")
+
   zipCode String
   city String
   country String

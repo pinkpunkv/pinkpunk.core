@@ -147,10 +147,10 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
-        let {deliveryType = "pickup",email="",phone="", сstatus="pending" } = {...req.body}
+        let {deliveryType = "pickup",email="",phone="", status="pending" } = {...req.body}
         let contactfirstName=req.body['firstName']
         let contactlastName=req.body['lastName']
-        let {id=undefined,mask="",firstName="", lastName="", company="",streetNumber="",apartments="", zipCode="", city="",country=""} = {...req.body['address']}
+        let {id=undefined,mask="",firstName="", lastName="", company="", apartment="",comment="",building="", street="", zipCode="", city="",country=""} = {...req.body['address']}
         let address;
         let checkout = await getCheckoutWithoutFields(checkoutId)
         if(checkout==null)
@@ -162,14 +162,17 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 mask: mask,
                 fields:{
                     create:{
-                        apartments:apartments,
+                        apartment:apartment,
+                        street:street,
+                        comment:comment,
+                        building: building,
                         city:city,
                         type:"shipping",
                         company:company,
                         country:country,
                         firstName:firstName,
                         lastName:lastName,
-                        streetNumber:streetNumber,
+                        
                         zipCode:zipCode
                     } as Prisma.AddressFieldsCreateWithoutAddressInput
                 },
@@ -190,14 +193,16 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                         addressId:id
                     },
                     create:{
-                        apartments:apartments,
+                        apartment:apartment,
+                        street:street,
+                        comment:comment,
+                        building: building,
                         city:city,
                         type:"shipping",
                         company:company,
                         country:country,
                         firstName:firstName,
                         lastName:lastName,
-                        streetNumber:streetNumber,
                         zipCode:zipCode
                     } as Prisma.AddressFieldsCreateWithoutAddressInput
                 }
@@ -213,7 +218,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     id:checkout.id
                 },
                 data:{
-                    status:сstatus as CheckoutStatus,
+                    status:status as CheckoutStatus,
                     address:address!=null?{connect:{id:address?.id}}:{},
                     deliveryType:deliveryType as DeliveryType,
                     info:{
