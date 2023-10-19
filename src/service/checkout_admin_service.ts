@@ -36,8 +36,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             })
             checkout.total+=x.count
             totalAmount = totalAmount.add(new Decimal(x.count).mul(new Decimal(x.product.price)))
-            console.log(x.variant);
-            
+        
             x.maxCount = x.variant.count
             x.size = x.variant.size
             x.color = x.variant.color
@@ -237,48 +236,51 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         let address_dto = new AddressDto(req.body['address'])
 
         let address;
-        let checkout = await getCheckoutWithoutFields(checkoutId)
-        if(checkout==null)
-            throw new BaseError(417,"checkout not found",[]);
-            
-        if(address_dto.id==null)
-        address = await db_connection.address.create({
-            data:{
-                userId:checkout.userId,
-                mask: address_dto.mask,
-                fields:{
-                    createMany:{
-                        data: address_dto.fields
-                    }
-                }
-            },
-            include:{
-                fields:true
-            }
-            
-        })
-        else
-        address = await db_connection.address.update({
-            where:{
-                id:address_dto.id
-            },
-            data:{
-                mask:address_dto.mask,
-                fields:{
-                    deleteMany:{
-                        addressId:address_dto.id
-                    },
-                    createMany:{
-                        data: address_dto.fields
-                    }
-                }
-            },
-            include:{
-                fields:true
-            }
-        })
-      
         let checkout_ = await db_connection.$transaction(async ()=>{
+            let checkout = await getCheckoutWithoutFields(checkoutId)
+            if(checkout==null)
+                throw new BaseError(417,"checkout not found",[]);
+                
+            if(address_dto.id==null)
+            address = await db_connection.address.create({
+                data:{
+                    userId:checkout.userId,
+                    mask: address_dto.mask,
+                    fields:{
+                        createMany:{
+                            data: address_dto.fields
+                        }
+                    }
+                },
+                include:{
+                    fields:true
+                }
+                
+            })
+            else
+            address = await db_connection.address.update({
+                where:{
+                    id:address_dto.id
+                },
+                data:{
+                    mask:address_dto.mask,
+                    fields:{
+                        deleteMany:{
+                            addressId:address_dto.id
+                        },
+                        createMany:{
+                            data: address_dto.fields
+                        }
+                    }
+                },
+                include:{
+                    fields:true
+                }
+            })
+      
+            await db_connection.checkoutInfo.delete({
+                where:{id:checkout.infoId}
+            })
             return await db_connection.checkout.update({
                 where:{
                     id:checkout.id
@@ -288,7 +290,6 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     address:address!=null?{connect:{id:address?.id}}:{},
                     deliveryType:deliveryType as DeliveryType,
                     info:{
-                        delete:true,
                         create:{
                             email:info_dto.email,
                             phone:info_dto.phone,

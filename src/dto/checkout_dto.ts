@@ -6,8 +6,8 @@ class CheckoutInfoDto{
     comment: string | null
 
     constructor(model:any){
-        this.email = model.email
-        this.phone = model.phone
+        this.email = model.email || ""
+        this.phone = model.phone || ""
         this.firstName = model.firstName
         this.lastName = model.lastName
         this.comment = model.comment
