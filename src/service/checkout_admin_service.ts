@@ -218,7 +218,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     id:checkout.id
                 },
                 data:{
-                    status:status as CheckoutStatus,
+                    "status":status as CheckoutStatus,
                     address:address!=null?{connect:{id:address?.id}}:{},
                     deliveryType:deliveryType as DeliveryType,
                     info:{
@@ -240,7 +240,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         })
         
         return {
-            status:StatusCodes.OK,
+            "status":StatusCodes.OK,
             message:"success",
             content: mapCheckoutToResponse(checkout_)
         }    
