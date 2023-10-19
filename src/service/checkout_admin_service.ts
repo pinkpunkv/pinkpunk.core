@@ -1,6 +1,6 @@
-import { PrismaClient,DeliveryType, Prisma, CheckoutStatus } from '@prisma/client'
+import { PrismaClient,DeliveryType, Prisma, CheckoutStatus, Address, CheckoutInfo } from '@prisma/client'
 import { HttpRequest } from "../common";
-
+import {AddressDto, CheckoutInfoDto} from '../dto'
 import UserAttr from '../common/user_attr'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
@@ -36,6 +36,8 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             })
             checkout.total+=x.count
             totalAmount = totalAmount.add(new Decimal(x.count).mul(new Decimal(x.product.price)))
+            console.log(x.variant);
+            
             x.maxCount = x.variant.count
             x.size = x.variant.size
             x.color = x.variant.color
@@ -56,6 +58,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             include:{
                 variant:{
                     select:{
+                        color: true,
                         count:true
                     }
                 }
@@ -109,7 +112,8 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                                     take:1
                                 }
                             }
-                        }
+                        },
+                        color:true
                     }
                 }
             }    
@@ -149,32 +153,21 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         let {lang="ru"}= {...req.query}
         console.log(req.body);
         
-        let {deliveryType = "pickup",email="",phone="", status="pending", variants = []} = {...req.body}
-        let contactfirstName=req.body['firstName']
-        let contactlastName=req.body['lastName']
-        let {id=undefined,mask="",firstName="", lastName="", company="", apartment="",comment="",building="", street="", zipCode="", city="",country=""} = {...req.body['address']}
-        let address;
+        let {deliveryType = "pickup", status="pending", variants = []} = {...req.body}
+        let info_dto = new CheckoutInfoDto(req.body['info'])
+        let address_dto = new AddressDto(req.body['address'])
+        
         let checkout_ = await db_connection.$transaction(async ()=>{
-            if(id==null)
+            let address;
+            if(address_dto.id==null)
             address = await db_connection.address.create({
                 data:{
                     // userId:checkout.userId,
-                    mask: mask,
+                    mask: address_dto.mask,
                     fields:{
-                        create:{
-                            apartment:apartment,
-                            street:street,
-                            comment:comment,
-                            building: building,
-                            city:city,
-                            type:"shipping",
-                            company:company,
-                            country:country,
-                            firstName:firstName,
-                            lastName:lastName,
-                            
-                            zipCode:zipCode
-                        } as Prisma.AddressFieldsCreateWithoutAddressInput
+                        createMany:{
+                          data: address_dto.fields  
+                        } 
                     },
                 },
                 include:{
@@ -184,27 +177,17 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             else
             address = await db_connection.address.update({
                 where:{
-                    id:id
+                    id:address_dto.id
                 },
                 data:{
-                    mask:mask,
+                    mask:address_dto.mask,
                     fields:{
                         deleteMany:{
-                            addressId:id
+                            addressId:address_dto.id
                         },
-                        create:{
-                            apartment:apartment,
-                            street:street,
-                            comment:comment,
-                            building: building,
-                            city:city,
-                            type:"shipping",
-                            company:company,
-                            country:country,
-                            firstName:firstName,
-                            lastName:lastName,
-                            zipCode:zipCode
-                        } as Prisma.AddressFieldsCreateWithoutAddressInput
+                        createMany:{
+                            data:address_dto.fields
+                        }
                     }
                 },
                 include:{
@@ -223,10 +206,10 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     },
                     info:{
                         create:{
-                            email:email,
-                            phone:phone,
-                            firstName:contactfirstName,
-                            lastName:contactlastName
+                            email:info_dto.email,
+                            phone:info_dto.phone,
+                            firstName:info_dto.firstName,
+                            lastName:info_dto.lastName
                         }
                     },
                 },
@@ -248,65 +231,46 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
         console.log(req.body);
-        
-        let {deliveryType = "pickup",email="",phone="", status="pending" } = {...req.body}
-        let contactfirstName=req.body['firstName']
-        let contactlastName=req.body['lastName']
-        let {id=undefined,mask="",firstName="", lastName="", company="", apartment="",comment="",building="", street="", zipCode="", city="",country=""} = {...req.body['address']}
+
+        let {deliveryType = "pickup", status="pending", variants = []} = {...req.body}
+        let info_dto = new CheckoutInfoDto(req.body['info'])
+        let address_dto = new AddressDto(req.body['address'])
+
         let address;
         let checkout = await getCheckoutWithoutFields(checkoutId)
         if(checkout==null)
             throw new BaseError(417,"checkout not found",[]);
-        if(id==null)
+            
+        if(address_dto.id==null)
         address = await db_connection.address.create({
             data:{
                 userId:checkout.userId,
-                mask: mask,
+                mask: address_dto.mask,
                 fields:{
-                    create:{
-                        apartment:apartment,
-                        street:street,
-                        comment:comment,
-                        building: building,
-                        city:city,
-                        type:"shipping",
-                        company:company,
-                        country:country,
-                        firstName:firstName,
-                        lastName:lastName,
-                        
-                        zipCode:zipCode
-                    } as Prisma.AddressFieldsCreateWithoutAddressInput
-                },
+                    createMany:{
+                        data: address_dto.fields
+                    }
+                }
             },
             include:{
                 fields:true
             }
+            
         })
         else
         address = await db_connection.address.update({
             where:{
-                id:id
+                id:address_dto.id
             },
             data:{
-                mask:mask,
+                mask:address_dto.mask,
                 fields:{
                     deleteMany:{
-                        addressId:id
+                        addressId:address_dto.id
                     },
-                    create:{
-                        apartment:apartment,
-                        street:street,
-                        comment:comment,
-                        building: building,
-                        city:city,
-                        type:"shipping",
-                        company:company,
-                        country:country,
-                        firstName:firstName,
-                        lastName:lastName,
-                        zipCode:zipCode
-                    } as Prisma.AddressFieldsCreateWithoutAddressInput
+                    createMany:{
+                        data: address_dto.fields
+                    }
                 }
             },
             include:{
@@ -326,10 +290,17 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     info:{
                         delete:true,
                         create:{
-                            email:email,
-                            phone:phone,
-                            firstName:contactfirstName,
-                            lastName:contactlastName
+                            email:info_dto.email,
+                            phone:info_dto.phone,
+                            firstName:info_dto.firstName,
+                            lastName:info_dto.lastName,
+                            comment: info_dto.comment
+                        }
+                    },
+                    variants: {
+                        deleteMany: { checkoutId: checkout.id },
+                        createMany: {
+                            data: variants.map(x=>{return {variantId:x.id, count:x.count}})
                         }
                     },
                 },
