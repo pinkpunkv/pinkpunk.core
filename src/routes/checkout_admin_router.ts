@@ -6,7 +6,7 @@ let checkout_admin_router = express.Router();
 
 checkout_admin_router.get('/orders',m(checkout_admin_service.getUserCheckouts))
 checkout_admin_router.get('/:checkoutId',m(checkout_admin_service.getCheckoutInfo))
-
+checkout_admin_router.post('/',m(checkout_admin_service.createCheckout))
 checkout_admin_router.get('/',m(checkout_admin_service.getCheckouts))
 checkout_admin_router.put('/:checkoutId',m(checkout_admin_service.updateCheckout))
 checkout_admin_router.post('/:checkoutId',m(checkout_admin_service.addToCheckout))

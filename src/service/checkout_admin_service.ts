@@ -10,6 +10,7 @@ import Decimal from 'decimal.js';
 export default function make_admin_checkout_service(db_connection:PrismaClient){
     return Object.freeze({
         updateCheckout,
+        createCheckout,
         getCheckouts,
         removeVariantFromCheckout,
         decreaseCountFromCheckout,
@@ -143,6 +144,105 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             message:"success",
             content: checkouts.map(x=>mapCheckoutToResponse(x))
         }
+    }
+    async function createCheckout(req:HttpRequest) {
+        let {lang="ru"}= {...req.query}
+        console.log(req.body);
+        
+        let {deliveryType = "pickup",email="",phone="", status="pending", variants = []} = {...req.body}
+        let contactfirstName=req.body['firstName']
+        let contactlastName=req.body['lastName']
+        let {id=undefined,mask="",firstName="", lastName="", company="", apartment="",comment="",building="", street="", zipCode="", city="",country=""} = {...req.body['address']}
+        let address;
+        let checkout_ = await db_connection.$transaction(async ()=>{
+            if(id==null)
+            address = await db_connection.address.create({
+                data:{
+                    // userId:checkout.userId,
+                    mask: mask,
+                    fields:{
+                        create:{
+                            apartment:apartment,
+                            street:street,
+                            comment:comment,
+                            building: building,
+                            city:city,
+                            type:"shipping",
+                            company:company,
+                            country:country,
+                            firstName:firstName,
+                            lastName:lastName,
+                            
+                            zipCode:zipCode
+                        } as Prisma.AddressFieldsCreateWithoutAddressInput
+                    },
+                },
+                include:{
+                    fields:true
+                }
+            })
+            else
+            address = await db_connection.address.update({
+                where:{
+                    id:id
+                },
+                data:{
+                    mask:mask,
+                    fields:{
+                        deleteMany:{
+                            addressId:id
+                        },
+                        create:{
+                            apartment:apartment,
+                            street:street,
+                            comment:comment,
+                            building: building,
+                            city:city,
+                            type:"shipping",
+                            company:company,
+                            country:country,
+                            firstName:firstName,
+                            lastName:lastName,
+                            zipCode:zipCode
+                        } as Prisma.AddressFieldsCreateWithoutAddressInput
+                    }
+                },
+                include:{
+                    fields:true
+                }
+            })
+            return await db_connection.checkout.create({
+                data:{
+                    "status":status as CheckoutStatus,
+                    address:address!=null?{connect:{id:address?.id}}:{},
+                    deliveryType:deliveryType as DeliveryType,
+                    variants: {
+                        createMany: {
+                            data: variants.map(x=>{return {variantId:x.id, count:x.count}})
+                        }
+                    },
+                    info:{
+                        create:{
+                            email:email,
+                            phone:phone,
+                            firstName:contactfirstName,
+                            lastName:contactlastName
+                        }
+                    },
+                },
+                include:{
+                    info:true,
+                    variants:getInclude(lang),
+                    address:{include:{fields:true}}
+                }
+            })
+        })
+        
+        return {
+            "status":StatusCodes.OK,
+            message:"success",
+            content: mapCheckoutToResponse(checkout_)
+        }    
     }
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
