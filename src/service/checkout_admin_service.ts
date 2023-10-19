@@ -147,6 +147,8 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
     async function updateCheckout(req:HttpRequest) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
+        console.log(req.body);
+        
         let {deliveryType = "pickup",email="",phone="", status="pending" } = {...req.body}
         let contactfirstName=req.body['firstName']
         let contactlastName=req.body['lastName']
