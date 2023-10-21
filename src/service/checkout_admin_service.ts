@@ -277,10 +277,10 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     fields:true
                 }
             })
-      
-            await db_connection.checkoutInfo.delete({
-                where:{id:checkout.infoId}
-            })
+            if (checkout.infoId!=null)
+                await db_connection.checkoutInfo.delete({
+                    where:{id:checkout.infoId}
+                })
             return await db_connection.checkout.update({
                 where:{
                     id:checkout.id
