@@ -11,17 +11,17 @@ class AddressFieldDto{
     city: string
     country: string
     constructor(model: any) {
-        this.type = model.type || "shipping"
-        this.firstName = model.firstName || ""
-        this.lastName = model.lastName || ""
-        this.company = model.company || ""
-        this.street = model.street || ""
-        this.building = model.building || ""
-        this.apartment = model.apartment || ""
-        this.comment = model.comment || ""
-        this.zipCode = model.zipCode || ""
-        this.city = model.city || ""
-        this.country = model.country || ""
+        this.type = model?.type || "shipping"
+        this.firstName = model?.firstName || ""
+        this.lastName = model?.lastName || ""
+        this.company = model?.company || ""
+        this.street = model?.street || ""
+        this.building = model?.building || ""
+        this.apartment = model?.apartment || ""
+        this.comment = model?.comment || ""
+        this.zipCode = model?.zipCode || ""
+        this.city = model?.city || ""
+        this.country = model?.country || ""
     }
 }
 class AddressDto{
@@ -30,10 +30,10 @@ class AddressDto{
     mask: string
     fields: AddressFieldDto[]
     constructor(model: any) {
-        this.id = model.id 
-        this.userId = model.userId || ""
-        this.mask = model.mask || ""
-        this.fields = model.fields?model.fields.map(x=>new AddressFieldDto(x)):[]
+        this.id = model?.id 
+        this.userId = model?.userId || ""
+        this.mask = model?.mask || ""
+        this.fields = model?.fields?model.fields.map(x=>new AddressFieldDto(x)):[]
     }
 }
 
