@@ -11,7 +11,7 @@ import Decimal from 'decimal.js';
 import {paymentSrvice} from '../helper'
 
 import generateToken from '../utils/generate_token';
-import { Address,AddressField } from '../entities/address';
+import {AddressFieldDto, AddressDto} from '../dto'
 import { config } from '../config';
 import { number } from 'zod';
 
@@ -234,22 +234,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
         let {deliveryType = "pickup",email="",phone="",paymentType="cash",firstName="",lastName="", comment=""} = {...req.body}
-        let addressData = Address.fromObject(req.body['address'])
-        let addressField = AddressField.fromObject(req.body['address'])
+        let addressData = new AddressDto(req.body['address'])
+        let addressField = new AddressFieldDto(req.body['address'])
 
         if (addressData==null && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
-        let address_field = {
-            apartments:   addressField.apartments,
-            city:         addressField.city,
-            type:         "shipping",
-            company:      addressField.company,
-            country:      addressField.country,
-            firstName:    firstName,
-            lastName:     lastName,
-            streetNumber: addressField.streetNumber,
-            zipCode:      addressField.zipCode
-        } as Prisma.AddressFieldsCreateWithoutAddressInput
+
 
         let address = null;
         if (deliveryType!="pickup")
@@ -261,7 +251,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     userId:req.user.id,
                     mask: addressData.mask,
                     fields:{
-                        create:address_field
+                        create:addressField
                     },
                 },
                 update:{
@@ -270,9 +260,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         deleteMany:{
                             addressId:addressData.id
                         },
-                        create:address_field
+                        create:addressField
                     }:{
-                        create:address_field
+                        create:addressField
                     }
                 },
                 include:{
