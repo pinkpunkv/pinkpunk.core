@@ -33,7 +33,7 @@ app.use(cors({
     if (requestOrigin&&whitelist.indexOf(requestOrigin) !== -1) {
         callback(null, true)
     } else {
-        callback(null, false)
+        callback(null, true)
         //callback(new Error('Not allowed by CORS'))
     }
    }, 
