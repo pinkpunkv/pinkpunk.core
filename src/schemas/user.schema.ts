@@ -18,7 +18,7 @@ export const createUserSchema = object({
   })
 });
 
-export const loginUserSchema = object({
+export const loginSchema = object({
   body: object({
     email: string({
       required_error: `{"code":"${CustomerErrorCode.Blank}","message":"email is required"}`,

@@ -1,5 +1,5 @@
-export default class UserAttr{
+export default interface UserAttr{
     id:string
-    isAnonimus:boolean
+    is_anonimus:boolean
     role:string
 }

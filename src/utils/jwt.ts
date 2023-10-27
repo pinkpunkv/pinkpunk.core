@@ -1,18 +1,17 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import {config} from '../config';
 
 // ? Sign Access or Refresh Token
-export const signJwt = (
+export const sign_jwt = (
   payload: any,
   keyName: 'accessTokenPrivateKey' | 'refreshTokenPrivateKey',
   options: SignOptions
 ) => {
-  console.log(config[keyName]);
-  return jwt.sign(payload, config[keyName], {algorithm:"HS256",...options});
+  return jwt.sign(payload, config[keyName]!, {algorithm:"HS256",...options});
 };
 
-export const verifyJwt=(token:string,keyName: 'accessTokenPrivateKey' | 'refreshTokenPrivateKey')=>{
-  return jwt.verify(token,config[keyName])
+export const verify_jwt=(token:string,keyName: 'accessTokenPrivateKey' | 'refreshTokenPrivateKey')=>{
+  return jwt.verify(token,config[keyName]!) as JwtPayload
 }
 
 // ? Verify Access or Refresh Token

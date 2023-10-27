@@ -1,14 +1,14 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 
 export default function make_tag_service(db_connection:PrismaClient){
     return Object.freeze({
-        getTagsWithProducts
+        get_tags_with_products
     });
 
 
-    async function getTagsWithProducts(req:HttpRequest) {
+    async function get_tags_with_products(req:Request, res: Response) {
         let{skip=0,take=10,tags=[],lang="ru"}={...req.query}
         let tagsData = await db_connection.tag.findMany({
             where:{
@@ -61,24 +61,24 @@ export default function make_tag_service(db_connection:PrismaClient){
             }
         })
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: await Promise.all(tagsData.map(async (tag)=>{
-                tag.products.forEach(async(x)=>{
-                    x.fields.forEach(async(field)=>{
+            content: await Promise.all(tagsData.map(async (tag:any)=>{
+                tag.products.forEach(async(x:any)=>{
+                    x.fields.forEach(async(field:any)=>{
                         x[field.fieldName]=field.fieldValue
                     })
-                    x.categories.forEach(async(cat)=>{
-                        cat.fields.forEach(async(field)=>{
+                    x.categories.forEach(async(cat:any)=>{
+                        cat.fields.forEach(async(field:any)=>{
                             cat[field.fieldName]=field.fieldValue
                         })
                         delete cat.fields
                     })
-                    x.collection?.fields.forEach((field)=>{
+                    x.collection?.fields.forEach((field:any)=>{
                         x.collection[field.fieldName] = field.fieldValue
                     })
-                    x.images?.forEach(async(image)=>{
+                    x.images?.forEach(async(image:any)=>{
 
                         image['url'] = image.image.url
                         delete image.image
@@ -89,7 +89,7 @@ export default function make_tag_service(db_connection:PrismaClient){
                 })
                 return tag;
             }))
-        }
+        })
     }
 
 }

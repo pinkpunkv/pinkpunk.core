@@ -1,16 +1,16 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 export default function make_admin_category_service(db_connection:PrismaClient){
     return Object.freeze({
-        createCategory,
-        getCategories,
-        deleteCategory,
-        updateCategory
+        create_category,
+        get_categories,
+        delete_category,
+        update_category
     });
 
-    async function createCategory(req:HttpRequest){
-        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false,slug=""}={...req.body}
+    async function create_category(req:Request, res: Response){
+        let{fields=[0],parentId=null,isMain=false,mainSliderImages=[],active=false,slug=""}={...req.body}
         let parent = await db_connection.category.findFirst({
             where:{
                 id:Number(parentId)
@@ -28,7 +28,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 active:active,
                 isMain:isMain,
                 mainSliderImages:{
-                    connect:mainSliderImages.map(x=>{return{id:x}})
+                    connect:mainSliderImages.map((x:any)=>{return{id:x}})
                 }
             },
             include:{
@@ -36,15 +36,15 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 mainSliderImages:true
             }
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:category
-        }
+        })
     }
-    async function updateCategory(req:HttpRequest){
+    async function update_category(req:Request, res: Response){
         let{id=-1}={...req.params}
-        let{fields={}[0],parentId=null,isMain=false,mainSliderImages=[],active=false, slug=""}={...req.body}
+        let{fields=[0],parentId=null,isMain=false,mainSliderImages=[],active=false, slug=""}={...req.body}
         let category = await db_connection.category.findFirstOrThrow({
             where:{
                 id:Number(id)
@@ -70,7 +70,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                     deleteMany:{id:{
                         in:category.fields.map(x=>x.id)
                     }},
-                    create:fields.map(x=>{return{"fieldName":x.fieldName,"fieldValue":x.fieldValue,"languageId":x.languageId}})
+                    create:fields.map((x:any)=>{return{"fieldName":x.fieldName,"fieldValue":x.fieldValue,"languageId":x.languageId}})
                 },
                 active:active,
                 isMain:isMain,
@@ -95,16 +95,16 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 mainSliderImages:true
             }
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:categoryData
-        }
+        })
     }
-    async function deleteCategory(req:HttpRequest){
+    async function delete_category(req:Request, res: Response){
         let{id=-1}={...req.params}
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:await db_connection.category.delete({
@@ -112,12 +112,12 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                     id:Number(id)
                 }
             })
-        }
+        })
     }
 
-    async function getCategories(req:HttpRequest) {
+    async function get_categories(req:Request, res: Response) {
         let {skip=0,take=10} = {...req.query};
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.category.findMany({
@@ -131,7 +131,7 @@ export default function make_admin_category_service(db_connection:PrismaClient){
                 skip:Number(skip),
                 take:Number(take)
             })
-        }
+        })
     }
 
 }

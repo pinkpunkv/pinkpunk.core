@@ -1,11 +1,9 @@
 import express from'express'
 import {wish_list_service} from '../service'
-import {req_middleware as m} from '../middleware'
-
 let wish_list_router = express.Router();
 
-wish_list_router.get('/',m(wish_list_service.getWish))
-wish_list_router.post('/:wishId',m(wish_list_service.addWish))
-wish_list_router.delete('/:wishId',m(wish_list_service.removeFromWish))
+wish_list_router.get('/',wish_list_service.get_wishlist)
+wish_list_router.post('/:wishId',wish_list_service.add_to_wishlist)
+wish_list_router.delete('/:wishId',wish_list_service.remove_from_wishlist)
 
 export default wish_list_router;

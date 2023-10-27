@@ -1,18 +1,18 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { S3 } from '@aws-sdk/client-s3';
 
 export default function make_tag_admin_service(db_connection:PrismaClient){
     return Object.freeze({
-        createTag,
-        deleteTag,
-        getTags
+        create_tag,
+        delete_tag,
+        get_tags
     });
 
-    async function getTags(req:HttpRequest) {
+    async function get_tags(req:Request, res: Response) {
         let {skip=0,take=10} = {...req.query};
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.tag.findMany({
@@ -20,11 +20,11 @@ export default function make_tag_admin_service(db_connection:PrismaClient){
                 take:take,
                 skip:skip
             })
-        }
+        })
     }
-    async function createTag(req:HttpRequest) {
+    async function create_tag(req:Request, res: Response) {
         let{tag=null}={...req.body}
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.tag.create({
@@ -32,11 +32,11 @@ export default function make_tag_admin_service(db_connection:PrismaClient){
                     tag:tag
                 }
             })
-        }
+        })
     }
-    async function deleteTag(req:HttpRequest) {
-        let{tag=null}={...req.params}
-        return {
+    async function delete_tag(req:Request, res: Response) {
+        let{tag=""}={...req.params}
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.tag.delete({
@@ -44,6 +44,6 @@ export default function make_tag_admin_service(db_connection:PrismaClient){
                     tag:tag
                 }
             })
-        }
+        })
     }
 }

@@ -11,41 +11,41 @@ model Sessions{
   session String @id
 }
 model Product {
-  id          Int              @id @default(autoincrement())
-  slug        String           @unique
-  price Decimal @default(0)
-  basePrice Decimal @default(0)
-  active Boolean @default(false)
-  sex String @default("uni")
-  views Decimal @default(0)
-  wants Decimal @default(0)
-  currencySymbol String?        
-  currency Currency? @relation(fields: [currencySymbol], references: [symbol])
-  collectionId Int?
-  collection  Collection?      @relation(fields: [collectionId], references: [id])
-  images      ProductsImages[]
-  deleted Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  tags        Tag[]
-  variants    Variant[]
-  categories  Category[]       @relation("CategoryToProduct")
-  fields      Field[]          @relation("FieldToProduct")
-  wishLists WishList[]
+  id              Int         @id @default(autoincrement())
+  slug            String      @unique
+  price           Decimal     @default(0)
+  basePrice       Decimal     @default(0)
+  active          Boolean     @default(false)
+  sex             String      @default("uni")
+  views           Decimal     @default(0)
+  wants           Decimal     @default(0)
+  currencySymbol  String?        
+  currency        Currency?   @relation(fields: [currencySymbol], references: [symbol])
+  collectionId    Int?
+  collection      Collection? @relation(fields: [collectionId], references: [id])
+  images          ProductsImages[]
+  deleted         Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now())
+  tags            Tag[]
+  variants        Variant[]
+  categories      Category[]  @relation("CategoryToProduct")
+  fields          Field[]     @relation("FieldToProduct")
+  wishLists       WishList[]
   @@index([slug])
 }
 
 model Category {
-  id       Int        @id @default(autoincrement())
-  parentId Int?
-  active Boolean @default(true)
+  id              Int        @id @default(autoincrement())
+  parentId        Int?
+  active          Boolean    @default(true)
   mainSliderImages Image[]
-  isMain Boolean @default(false)
-  slug String @unique @default("")
-  parent   Category?  @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
-  childs   Category[] @relation("parent")
-  fields   Field[]    @relation("CategoryToField")
-  products Product[]  @relation("CategoryToProduct")
+  isMain          Boolean    @default(false)
+  slug            String     @unique @default("")
+  parent          Category?  @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
+  childs          Category[] @relation("parent")
+  fields          Field[]    @relation("CategoryToField")
+  products        Product[]  @relation("CategoryToProduct")
 }
 
 model Tag {
@@ -54,22 +54,22 @@ model Tag {
 }
 
 model Language {
-  id     Int     @id @default(autoincrement())
-  name String @default("")
-  symbol String  @unique
-  fields Field[]
+  id       Int      @id @default(autoincrement())
+  name     String   @default("")
+  symbol   String   @unique
+  fields   Field[]
   imageId  Int?
-  image    Image?     @relation(fields: [imageId], references: [id])
+  image    Image?   @relation(fields: [imageId], references: [id])
 }
 
 model Image {
-  id       Int              @id @default(autoincrement())
-  url      String
-  products ProductsImages[]
-  languages Language[]
-  currencies Currency[]
-  variants Variant[]
-  categories Category[]
+  id          Int   @id @default(autoincrement())
+  url         String
+  products    ProductsImages[]
+  languages   Language[]
+  currencies  Currency[]
+  variants    Variant[]
+  categories  Category[]
 }
 
 model Field {
@@ -91,10 +91,10 @@ model Collection {
 }
 
 model Currency {
-  symbol String @id
-  products Product[]
-  imageId  Int?
-  image    Image?     @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  symbol    String @id
+  products  Product[]
+  imageId   Int?
+  image     Image?     @relation(fields: [imageId], references: [id], onDelete: Cascade)
 }
 
 model ProductsImages {
@@ -102,7 +102,7 @@ model ProductsImages {
   imageId   Int
   number    Int
   isMain    Boolean @default(false)
-  image       Image   @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  image     Image   @relation(fields: [imageId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([productId, imageId])
@@ -112,29 +112,28 @@ model ProductsImages {
 
 model User{
   @@map(name: "users")
-
-  id String  @id @default(uuid())
-  username String?  @db.VarChar(255)
-  email String @unique
-  photo String? @default("default.png")
-  phone String?
-  firstName String?
-  lastName String?
-  verified Boolean? @default(false) 
-  sex String @default("")
-  country String @default("")
-  password String
-  role RoleEnumType? @default(user)
-  status StatusEnumType? @default(pending)
+  id          String         @id @default(uuid())
+  username    String?  @db.VarChar(255)
+  email       String      @unique
+  photo       String?     @default("default.png")
+  phone       String?
+  firstName   String?
+  lastName    String?
+  verified    Boolean? @default(false) 
+  sex         String        @default("")
+  country     String    @default("")
+  password    String
+  role        RoleEnumType? @default(user)
+  status      StatusEnumType? @default(pending)
   verificationCode String? @db.Text @unique
-  addresses Address[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  checkouts Checkout[] 
-  cartId String? @unique
-  cart Cart? @relation(fields: [cartId], references: [id])
-  wishlistId String? @unique
-  wishList WishList? @relation(fields: [wishlistId], references: [id])
+  addresses   Address[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  checkouts   Checkout[] 
+  cartId      String? @unique
+  cart        Cart? @relation(fields: [cartId], references: [id])
+  wishlistId  String? @unique
+  wishList    WishList? @relation(fields: [wishlistId], references: [id])
   @@unique([email, verificationCode])
   @@index([email, verificationCode])
 }
@@ -145,9 +144,9 @@ enum TokenType {
   forgot
 }
 model Token {
-  token String @id
-  type TokenType
-  objectId String
+  token     String @id
+  type      TokenType
+  objectId  String
   createdAt DateTime @default(now())
 }
 
@@ -162,66 +161,62 @@ enum RoleEnumType {
 }
 
 model Cart{
-  id           String  @id @default(uuid())
-  user User?
-  variants CartVariants[]
+  id        String  @id @default(uuid())
+  user      User?
+  variants  CartVariants[]
 }
 
 model Want{
-  email           String  @id
-  updatedAt       DateTime
+  email     String  @id
+  updatedAt DateTime
 }
 
 model CartVariants{
-  cartId   String
+  cartId    String
   count     Int @default(1)
-  variantId   Int
-  cart       Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId Int
+  cart      Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variant   Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@id([variantId, cartId])
 }
 model WishList{
-  id            String  @id @default(uuid())
+  id String  @id @default(uuid())
   user User? 
   products Product[]
 }
 
 model Variant {
-  id           Int           @id @default(autoincrement())
-  productId    Int
-  
-
-  color Color @relation(fields: [colorId], references: [id])
-  colorId Int 
-
-  size         String
-  sizeObj Size @relation(fields: [size], references: [size])
-
-  images        Image[]
-  count Int @default(0)
+  id        Int @id @default(autoincrement())
+  productId Int
+  color     Color @relation(fields: [colorId], references: [id])
+  colorId   Int 
+  size      String
+  sizeObj   Size @relation(fields: [size], references: [size])
+  images    Image[]
+  count     Int @default(0)
   transactions Transaction[]
-  product      Product       @relation(fields: [productId], references: [id])
-  carts CartVariants[]
-  orders CheckoutVariants[]
-  deleted Boolean @default(false)
+  product   Product @relation(fields: [productId], references: [id])
+  carts     CartVariants[]
+  orders    CheckoutVariants[]
+  deleted   Boolean @default(false)
 }
 
 model Color {
-  id Int @id @default(autoincrement())
-  color        String
-  colorText        String?
-  variants Variant[]
+  id        Int @id @default(autoincrement())
+  color     String
+  colorText String?
+  variants  Variant[]
 }
 
 model Size {
-  size         String @id
+  size     String @id
   variants Variant[]
 }
 
 model VariantTemplate{
-  id Int @id @default(autoincrement())
-  size String
+  id    Int @id @default(autoincrement())
+  size  String
   color String 
 }
 
@@ -235,34 +230,36 @@ enum PaymentType {
   cash
   card
   online
+  darkcash
+  darkcard
 }
 
 model Address{
-  id        String      @id @default(uuid())
-  user User? @relation(fields: [userId], references: [id])
-  userId String? 
-  mask String
-  fields AddressFields[]
-  orders Checkout[]
+  id      String      @id @default(uuid())
+  user    User? @relation(fields: [userId], references: [id])
+  userId  String? 
+  mask    String
+  fields  AddressFields[]
+  orders  Checkout[]
 }
 
 model AddressFields{
   id        Int      @id @default(autoincrement())
-  type String
+  type      String
   addressId String
-  address Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  address   Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
   firstName String
-  lastName String
-  company String
+  lastName  String
+  company   String
   
-  street String @default("")
-  building String @default("")
+  street    String @default("")
+  building  String @default("")
   apartment String @default("")
-  comment String @default("")
+  comment   String @default("")
 
-  zipCode String
-  city String
-  country String
+  zipCode   String
+  city      String
+  country   String
 }
 enum CheckoutStatus {
   preprocess
@@ -272,44 +269,43 @@ enum CheckoutStatus {
   delivered
 }
 model CheckoutInfo {
-  id    Int    @id @default(autoincrement())
-  email String 
-  phone String
+  id        Int    @id @default(autoincrement())
+  email     String 
+  phone     String
   firstName String?
-  lastName String?
-  comment String?
-  checkout Checkout[]
+  lastName  String?
+  comment   String?
+  checkout  Checkout[]
 }
 model Checkout {
-  id        String      @id @default(uuid())
-  status CheckoutStatus 
-  orderId Int @default(autoincrement())
-  deliveryType DeliveryType @default(pickup)
-  paymentType PaymentType @default(cash)
+  id            String      @id @default(uuid())
+  status        CheckoutStatus 
+  orderId       Int @default(autoincrement())
+  deliveryType  DeliveryType @default(pickup)
+  paymentType   PaymentType @default(cash)
   transactionId Int?
-  infoId Int?
-  info CheckoutInfo? @relation(fields: [infoId], references: [id])
-  userId String?
-  user User? @relation(fields: [userId], references: [id])
-  variants CheckoutVariants[]
-  orderDate DateTime @default(now())
-  addressId String? 
-  address Address? @relation(fields: [addressId], references: [id])
+  infoId        Int?
+  info          CheckoutInfo? @relation(fields: [infoId], references: [id])
+  userId        String?
+  user          User? @relation(fields: [userId], references: [id])
+  variants      CheckoutVariants[]
+  orderDate     DateTime @default(now())
+  addressId     String? 
+  address       Address? @relation(fields: [addressId], references: [id])
 }
 
 model CheckoutVariants {
-  checkoutId   String
-  count     Int @default(1)
+  checkoutId  String
+  count       Int @default(1)
   variantId   Int
-
-  checkout  Checkout   @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
-  variant   Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  checkout    Checkout   @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  variant     Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@id([checkoutId, variantId])
 }
 
 model Transaction {
-  id        Int      @id @default(autoincrement())
+  id        Int @id @default(autoincrement())
   variantId Int
   userId    String
   status    String
@@ -318,5 +314,5 @@ model Transaction {
   startDate DateTime
   endDate   DateTime
   details   String
-  variant   Variant  @relation(fields: [variantId], references: [id])
+  variant   Variant @relation(fields: [variantId], references: [id])
 }

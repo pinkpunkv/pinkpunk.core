@@ -1,37 +1,38 @@
 import { PrismaClient, Prisma, User } from '@prisma/client';
-import { HttpRequest } from "../common";
+import { Request, Response } from "express";
 import {config} from '../config';
 //import redisClient from '../utils/connectRedis';
-import { signJwt, verifyJwt } from '../utils/jwt';
+import { sign_jwt, verify_jwt } from '../utils/jwt';
 import bcrypt from 'bcryptjs'
 import generateToken from '../utils/generate_token';
 import { BaseError } from '../exception';
 import {StatusCodes} from 'http-status-codes'
 import {CustomerErrorCode} from '../common'
-import { createRabbitMQConnection } from '../helper';
+import { create_message_broker_connection } from '../helper';
+import { set_cookie } from '../helper/cookie_setter';
 export const excludedFields = ['password', 'verified', 'verificationCode'];
 
 
 export default function make_user_service(db_connection:PrismaClient){
 
     return Object.freeze({
-        registerUser,
-        loginUser,
-        getUserInfo,
-        updateUserInfo,
-        forgotPassword,
-        confirmChangePassword,
-        confirmUserRegistration,
-        confirmReg
+        register,
+        login,
+        get_user_info,
+        update_user_info,
+        forgot_password,
+        confirm_change_password,
+        confirm_user_registration,
+        confirm
     })
     
     
-    async function registerUser(req:HttpRequest) {
+    async function register(req:Request, res: Response) {
         let password:String = req.body['password'];
         if (password.includes(" ")){
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,"EXPECTATION_FAILED",[{code:CustomerErrorCode.PasswordStartsOrEndsWithWhitespace,message:'Invalid password'}])
         }
-        const hashedPassword = await bcrypt.hash(req.body['password'],config.SECRET)
+        const hashedPassword = await bcrypt.hash(req.body['password'],config.SECRET!)
 
         let user_ = await db_connection.user.findFirst({
             where:{
@@ -44,16 +45,16 @@ export default function make_user_service(db_connection:PrismaClient){
         if (user_!=null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'exists',[{code:CustomerErrorCode.Taken,message:"user already exists"}])
         let now = new Date().toISOString()
-        let res = await db_connection.$transaction(async()=>{
+        let result = await db_connection.$transaction(async()=>{
             const user = await db_connection.user.create({
                 data:{
-                    username: req.body['username'],
-                    firstName: req.body['firstName'],
-                    lastName: req.body['lastName'],
-                    phone: req.body['phone'],
-                    email: req.body['email'],
-                    sex: req.body['sex'],
-                    country:req.body['country'],
+                    username: req.body.username,
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName,
+                    phone: req.body.phone,
+                    email: req.body.email,
+                    sex: req.body.sex,
+                    country:req.body.country,
                     password: hashedPassword,
                     createdAt:now,
                     updatedAt:now,
@@ -76,23 +77,23 @@ export default function make_user_service(db_connection:PrismaClient){
                     objectId:user.id
                 }
             })
-            let rconn = await createRabbitMQConnection()
-            await rconn.sendMessage("user",JSON.stringify({email:user.email,type:"confirm",ct:token.token}))
+            let rconn = await create_message_broker_connection()
+            await rconn.publish_user_action("confirm", user.email, "ru", token.token)
             return user
         })
         
         
-        return {
-            status: StatusCodes.CREATED,
+        return res.status(StatusCodes.CREATED).send({
+            status:StatusCodes.CREATED,
             message:"success",
-            content: res
-        }
+            content: result
+        })
     }
 
     async function signTokens(user:User) {
-        let accessToken = "bearer "+signJwt({id:user.id,role:user.role},"accessTokenPrivateKey",{expiresIn:config.accessTokenExpiresIn*24*60*60*1000})
-        verifyJwt(accessToken.split(" ")[1],"accessTokenPrivateKey")
-        return {access_token:accessToken,refresh_token:"bearer "+signJwt({id:user.id},"refreshTokenPrivateKey",{expiresIn:config.refreshTokenExpiresIn*24*60*60*1000})}
+        let accessToken = "bearer "+sign_jwt({id:user.id,role:user.role},"accessTokenPrivateKey",{expiresIn:config.accessTokenExpiresIn*24*60*60*1000})
+        verify_jwt(accessToken.split(" ")[1],"accessTokenPrivateKey")
+        return {access_token:accessToken,refresh_token:"bearer "+sign_jwt({id:user.id},"refreshTokenPrivateKey",{expiresIn:config.refreshTokenExpiresIn*24*60*60*1000})}
     }
 
     
@@ -105,26 +106,27 @@ export default function make_user_service(db_connection:PrismaClient){
           })) as User;
     }
 
-    async function updateUserInfo(req:HttpRequest) {
+    async function update_user_info(req:Request, res: Response) {
         let user = await db_connection.user.update({
-            where:{id: req.user.id },
+            where:{id: req.body.authenticated_user.id },
             data:{
-                firstName: req.body['firstName'],
-                lastName: req.body['lastName'],
-                phone: req.body['phone'],
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                phone: req.body.phone,
                 updatedAt:new Date().toISOString()
             }
         })
         // Sign Tokens
         
-        return {
-            status: StatusCodes.CREATED,
+        return res.status(StatusCodes.CREATED).send({
+            status:StatusCodes.CREATED,
             message:"success",
             content: user
-        }
+        })
 
     }
-    async function loginUser(req:HttpRequest) {
+    
+    async function login(req:Request, res:Response) {
         const { email='', password='' } = {...req.body};
         
         const user = await findUniqueUser(
@@ -139,26 +141,22 @@ export default function make_user_service(db_connection:PrismaClient){
 
         // Sign Tokens
         const { access_token, refresh_token } = await signTokens(user);
-        
-        return {
-            status: StatusCodes.CREATED,
+        set_cookie(res, access_token, refresh_token)
+        return res.status(StatusCodes.CREATED).send({
+            status:StatusCodes.CREATED,
             message:"success",
-            cookies:{
-                access_token:access_token,
-                refresh_token:refresh_token
-            },
             content: {
                 user:user,
                 access_token:access_token,
                 refresh_token:refresh_token
             }
-        }
+        })
 
     }
 
-    async function forgotPassword(req:HttpRequest) {
+    async function forgot_password(req:Request, res: Response) {
         let user = await findUniqueUser(
-            { email: req.body['email'] }
+            { email: req.body.email }
         );
         if(user==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"user not found"}])
@@ -184,19 +182,20 @@ export default function make_user_service(db_connection:PrismaClient){
                 createdAt:new Date().toISOString()
             }
         })
-        let rconn = await createRabbitMQConnection()
-        await rconn.sendMessage("user",JSON.stringify({email:user.email,type:"forgot",ct:token.token}))
+        
+        let rconn = await create_message_broker_connection()
+        await rconn.publish_user_action("forgot", user.email, "ru", token.token)
 
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.CREATED).send({
+            status:StatusCodes.CREATED,
             message:"success",
             content: {}
-        }
+        })
     }
 
-    async function confirmUserRegistration(req:HttpRequest) {
-        let ct = req.query['token']
-        let token = await db_connection.token.findFirst({
+    async function confirm_user_registration(req:Request, res: Response) {
+        let ct = req.query.token!.toString()
+        let token = await db_connection.token.findFirstOrThrow({
             where:{
                 token:ct,
                 type:"confirm"
@@ -205,7 +204,7 @@ export default function make_user_service(db_connection:PrismaClient){
         if(token==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
-        let res = await db_connection.$transaction(async()=>{
+        let result = await db_connection.$transaction(async()=>{
             await db_connection.user.update({
                 where:{
                     id:token.objectId
@@ -220,16 +219,16 @@ export default function make_user_service(db_connection:PrismaClient){
                 }
             })
         })
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
-            content: res
-        }
+            content: result
+        })
     }
-    async function confirmReg(req:HttpRequest) {
+    async function confirm(req:Request, res: Response) {
         
-        let ct = req.query['token']
-        let token = await db_connection.token.findFirst({
+        let ct = req.query.token!.toString()
+        let token = await db_connection.token.findFirstOrThrow({
             where:{
                 token:ct,
                 type:"confirm"
@@ -237,7 +236,7 @@ export default function make_user_service(db_connection:PrismaClient){
         })
         if(token==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
-        let res = await db_connection.$transaction(async()=>{
+        let result = await db_connection.$transaction(async()=>{
             await db_connection.user.update({
                 where:{
                     id:token.objectId
@@ -252,16 +251,16 @@ export default function make_user_service(db_connection:PrismaClient){
                 }
             })
         })
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
             content: res
-        }
+        })
     }
-    async function confirmChangePassword(req:HttpRequest) {
+    async function confirm_change_password(req:Request, res: Response) {
         
-        let ct = req.query['token']
-        let token = await db_connection.token.findFirst({
+        let ct = req.query.token!.toString()
+        let token = await db_connection.token.findFirstOrThrow({
             where:{
                 token:ct,
                 type:"forgot"
@@ -270,13 +269,13 @@ export default function make_user_service(db_connection:PrismaClient){
         if(token==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
         let newPass = req.body['password']
-        let res = await db_connection.$transaction(async()=>{
+        let result = await db_connection.$transaction(async()=>{
             await db_connection.user.update({
                 where:{
                     id:token.objectId
                 },
                 data:{
-                    password:await bcrypt.hash(newPass,config.SECRET)
+                    password:await bcrypt.hash(newPass,config.SECRET!)
                 }
             })
             await db_connection.token.delete({
@@ -285,16 +284,16 @@ export default function make_user_service(db_connection:PrismaClient){
                 }
             })
         })
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
-            content: res
-        }
+            content: result
+        })
     }
-    async function getUserInfo(req:HttpRequest) {
+    async function get_user_info(req:Request, res: Response) {
         
         let user = await findUniqueUser(
-            { id: req.user.id }
+            { id: req.body.authenticated_user.id }
         );
         let orders = await db_connection.checkout.findMany({
             where:{
@@ -307,12 +306,11 @@ export default function make_user_service(db_connection:PrismaClient){
             }
         })
 
-        return {
-            status: StatusCodes.CREATED,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
-            content: user
-            
-        }
+            content: user  
+        })
 
     }
 }

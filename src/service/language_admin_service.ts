@@ -1,17 +1,17 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 
 export default function make_language_admin_service(db_connection:PrismaClient){
     return Object.freeze({
-        getLanguages,
-        createLanguage,
-        updateLanguage,
-        deleteLanguage
+        get_languages,
+        create_language,
+        update_language,
+        delete_language
     });
 
-    async function getLanguages(req:HttpRequest) {
-        return {
+    async function get_languages(req:Request, res: Response) {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.language.findMany({
@@ -19,11 +19,11 @@ export default function make_language_admin_service(db_connection:PrismaClient){
                     image:true
                 }
             })
-        }
+        })
     }
-    async function createLanguage(req:HttpRequest) {
+    async function create_language(req:Request, res: Response) {
         let{name=null,symbol=null,imageId=null}={...req.body}
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.language.create({
@@ -33,12 +33,12 @@ export default function make_language_admin_service(db_connection:PrismaClient){
                     name:name
                 }
             })
-        }
+        })
     }
-    async function updateLanguage(req:HttpRequest) {
+    async function update_language(req:Request, res: Response) {
         let {id=0} = {...req.params};
         let{name=null,symbol=null,imageId=null}={...req.body}
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.language.update({
@@ -49,16 +49,16 @@ export default function make_language_admin_service(db_connection:PrismaClient){
                     name:name
                 }
             })
-        }
+        })
     }
-    async function deleteLanguage(req:HttpRequest) {
+    async function delete_language(req:Request, res: Response) {
         let {id=0} = {...req.params};
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.language.delete({
                 where:{id:Number(id)}
             })
-        }
+        })
     }
 }

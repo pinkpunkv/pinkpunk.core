@@ -1,10 +1,10 @@
 
 import { S3 } from '@aws-sdk/client-s3';
 import {config} from '../config'
-let conection:S3=null;
+let conection:S3;
 
 export default function connectS3(path: string | null = ''): S3 {
-    if (conection==null)
+    if (conection)
     {
         console.log(config.S3_ENDPOINT_URL);
         
@@ -13,8 +13,8 @@ export default function connectS3(path: string | null = ''): S3 {
             endpoint: `${config.S3_ENDPOINT_URL}`,
             region:'us-east-1',
             credentials: {
-                accessKeyId: config.S3_ACCESS_KEY,
-                secretAccessKey: config.S3_SECRET_KEY,
+                accessKeyId: config.S3_ACCESS_KEY!,
+                secretAccessKey: config.S3_SECRET_KEY!,
             },
         })
     }

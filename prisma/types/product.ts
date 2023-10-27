@@ -85,7 +85,7 @@ export interface Collection {
   id: number
   name: string
 }
-export interface SearchProductsBody {
+export interface search_productsBody {
   /**
    * The search query string to filter the products by.
    */
@@ -117,7 +117,7 @@ export interface SearchProductsBody {
 /**
  * Fetches a list of products based on the given search criteria.
  */
-export type SearchProductsHook = {
+export type search_productsHook = {
   data: {
     categories?: any
     /**
@@ -129,9 +129,9 @@ export type SearchProductsHook = {
      */
     found: boolean
   }
-  body: SearchProductsBody
-  input: SearchProductsBody
-  fetcherInput: SearchProductsBody
+  body: search_productsBody
+  input: search_productsBody
+  fetcherInput: search_productsBody
 }
 
 /**
@@ -142,7 +142,7 @@ export type ProductsSchema = {
   endpoint: {
     options: {}
     handlers: {
-      getProducts: SearchProductsHook
+      get_products: search_productsHook
     }
   }
 }
@@ -165,7 +165,7 @@ export type GetAllProductsOperation = {
   }
 }
 
-export type GetProductOperation = {
+export type get_productOperation = {
   data: { product?: Product }
   variables: { path: string; slug?: never } | { path?: never; slug: string }
 }
@@ -177,7 +177,7 @@ export interface Filters {
   max: Number
 }
 
-export type GetFiltersOperation = {
+export type get_filtersOperation = {
   data: { filters?: Filters }
 }
 export type GetPostsOperation = {

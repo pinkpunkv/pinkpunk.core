@@ -11,7 +11,7 @@ export default class BaseError extends Error{
     }
 }
 
-class ErrorObject {
+interface ErrorObject {
     code:string;
     message:string;   
 }

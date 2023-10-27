@@ -1,5 +1,5 @@
 import { PrismaClient, Prisma, User } from '@prisma/client';
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {config} from '../config';
 import bcrypt from 'bcryptjs'
 import {StatusCodes} from 'http-status-codes'
@@ -9,13 +9,13 @@ export const excludedFields = ['password', 'verified', 'verificationCode'];
 export default function make_color_admin_service(db_connection:PrismaClient){
 
     return Object.freeze({
-        getAllColors,
-        createColor,
-        updateColorInfo,
-        deleteColor
+        get_colors,
+        create_color,
+        update_color,
+        delete_color
     })
 
-    async function getAllColors(req:HttpRequest){
+    async function get_colors(req:Request, res: Response){
         let{skip=0,take=20}={...req.query}
         let colors = await db_connection.color.findMany({
             skip:skip,
@@ -33,7 +33,7 @@ export default function make_color_admin_service(db_connection:PrismaClient){
             }
         }
     }
-    async function createColor(req:HttpRequest) {
+    async function create_color(req:Request, res: Response) {
         let {color="",colorText=""} = {...req.body}
         let colorData = await db_connection.color.create({
             data:{
@@ -48,7 +48,7 @@ export default function make_color_admin_service(db_connection:PrismaClient){
             content: colorData
         }
     }
-    async function updateColorInfo(req:HttpRequest) {
+    async function update_color(req:Request, res: Response) {
         let colorId = req.params['colorId']
         let {color="",colorText=""} = {...req.body}
         
@@ -68,7 +68,7 @@ export default function make_color_admin_service(db_connection:PrismaClient){
 
     }
 
-    async function deleteColor(req:HttpRequest) {
+    async function delete_color(req:Request, res: Response) {
         let colorId = req.params['colorId']
         let colorData = await db_connection.color.delete({
             where:{id: Number(colorId) }

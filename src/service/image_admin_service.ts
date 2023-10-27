@@ -1,26 +1,28 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { S3,ListObjectsV2Command,PutObjectCommand } from '@aws-sdk/client-s3';
 import { BaseError } from '../exception';
+import * as ef from 'express-fileupload';
 const imageRegex= /[\/.](gif|jpg|jpeg|tiff|png)$/i;
 export default function make_image_admin_service(db_connection:PrismaClient,s3client:S3){
     return Object.freeze({
-        uploadImages,
-        deleteImage,
-        getImages,
-        createFolder,
-        getFiles,
-        deleteFolder
+        upload_images,
+        delete_images,
+        get_images,
+        create_folder,
+        get_files,
+        delete_folder
     });
 
     
-    async function uploadImages(req:HttpRequest) {
-        let path = req.query['path']
+    async function upload_images(req:Request, res: Response) {
+        let path:string = req.query.path!.toString()
         path = pathFilter(path);
         return await db_connection.$transaction(async()=>{
             if (req.files==null)
                 throw new BaseError(417,"files is null",[]);
+            
             for (let i = 0; i < Object.entries(req.files).length; i++) {
                 let file:any = req.files[i];
                 let file_path = path+file.originalname
@@ -38,7 +40,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 })
             }
            
-            return await getFiles(req)
+            return await get_files(req,res)
         })
     }
     function pathFilter(path:string){
@@ -50,8 +52,8 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         }
         return path;
     }
-    async function createFolder(req:HttpRequest) {
-        let path:string = req.query['path']
+    async function create_folder(req:Request, res: Response) {
+        let path:string = req.query.path!.toString()
         path = pathFilter(path);
         await s3client.putObject({ 
             Bucket: process.env.S3_BUCKET_NAME, 
@@ -59,21 +61,21 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             Body: "", 
             ACL: 'public-read' 
         })
-        return await getFiles(req)
+        return await get_files(req,res)
     }
 
-    async function deleteFolder(req:HttpRequest) {
-        let path:string = req.query['path']
+    async function delete_folder(req:Request, res: Response) {
+        let path:string = req.query.path!.toString()
         
         path = pathFilter(path);
         await s3client.deleteObject({ 
             Bucket: process.env.S3_BUCKET_NAME, 
             Key: path 
         })
-        return await getFiles(req)
+        return await get_files(req,res)
     }
 
-    async function deleteImage(req:HttpRequest) {
+    async function delete_images(req:Request, res: Response) {
         let imageId = req.query['imageId']
         await db_connection.$transaction(async()=>{
             let image = await db_connection.image.delete({
@@ -89,12 +91,12 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                 req.query['path']=image.url.slice(0,ind)
             return image;
         });
-        return await getFiles(req)
+        return await get_files(req,res)
     }
 
-    async function getImages(req:HttpRequest) {
+    async function get_images(req:Request, res: Response) {
         let{skip=0,take=20}={...req.query}
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: {
@@ -107,13 +109,13 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                     _count:true
                 }))._count
             }
-        }
+        })
     }
     
-    async function getFiles(req:HttpRequest) {
-        let path:string = req.query['path']
+    async function get_files(req:Request, res: Response) {
+        let path:string = String(req.query.path)
         
-        let res = await s3client.send(new ListObjectsV2Command({
+        let result = await s3client.send(new ListObjectsV2Command({
             Bucket: process.env.S3_BUCKET_NAME,
             Prefix: path
         }))
@@ -122,7 +124,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
         let files = []
         path = pathFilter(path);
 
-        if(res.Contents){
+        if(result.Contents){
             // for ( let obj of res.Contents){
             //     if(imageRegex.test(obj.Key)){
             //         let file = await db_connection.image.create({
@@ -133,13 +135,13 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             //     }
             // }
                 
-            for (let obj of res.Contents.filter(x=>x.Key!=path)) {
-                let ind = obj.Key.indexOf(path)
+            for (let obj of result.Contents.filter(x=>x.Key!=path)) {
+                let ind = obj.Key!.indexOf(path)
                 if((ind==-1&&path=="/")||(ind!=-1&&path.length>1)){
-                    let objName = obj.Key.slice(path.length>1?path.length:path.length-1,obj.Key.length);
+                    let objName = obj.Key!.slice(path.length>1?path.length:path.length-1,obj.Key!.length);
                     let slashInd = objName.indexOf("/");
                     
-                    if(!imageRegex.test(obj.Key)||slashInd!=-1){
+                    if(!imageRegex.test(obj.Key!)||slashInd!=-1){
                         let folderName = objName.slice(0,slashInd);
                         if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                         folders.push({
@@ -158,7 +160,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
                     }
                 }
                 else{
-                    let folderName = obj.Key.slice(0,ind);
+                    let folderName = obj.Key!.slice(0,ind);
                     
                     if(folderName.length>0&&folders.filter(x=>x.name==folderName).length==0)
                         folders.push({
@@ -169,14 +171,14 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             }
         }
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: {
                 files:files,
                 folders:folders
             }
-        }
+        })
     }
 
 }

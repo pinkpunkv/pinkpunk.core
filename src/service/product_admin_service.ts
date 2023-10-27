@@ -1,17 +1,17 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 
 export default function make_admin_product_service(db_connection:PrismaClient){
     return Object.freeze({
-        getProducts,
-        getProduct,
-        createProduct,
-        updateProduct,
-        deleteProduct
+        get_products,
+        get_product,
+        create_product,
+        update_product,
+        delete_product
     });
 
-    async function getProducts(req:HttpRequest){
+    async function get_products(req:Request, res: Response){
         let{skip=0,take=50}={...req.query}
         let total = await db_connection.product.aggregate({
             _count:true
@@ -37,21 +37,21 @@ export default function make_admin_product_service(db_connection:PrismaClient){
             }
         });
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:{
                 total:total._count,
                 products:products.map(x=>{
                     x.images.forEach(x=>{
-                        x['id']=x.imageId
+                        return {id: x.imageId, ...x}
                     })
                     return x
                 })
             }
-        }
+        })
     }
-    async function getProduct(req:HttpRequest){
+    async function get_product(req:Request, res: Response){
         let {id=0} = {...req.params};
         
         let product = await db_connection.product.findFirstOrThrow({
@@ -75,18 +75,18 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 currency:true
             }
         })
-        product.images.forEach(x=>{
+        product.images.forEach((x:any)=>{
             x['id']=x.imageId
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: product
-        }
+        })
     }
 
-    async function createProduct(req:HttpRequest) {
-        let {path=null,slug=null,collectionId=0,tags=[],categories={}[0],active=false, fields = [],images={}[0],currencySymbol=null,price=0,basePrice=0,sex='uni'} = {...req.body}
+    async function create_product(req:Request, res: Response) {
+        let {path=null,slug=null,collectionId=0,tags=[],categories=[0],active=false, fields = [],images=[0],currencySymbol=null,price=0,basePrice=0,sex='uni'} = {...req.body}
        
         return await db_connection.$transaction(async()=>{
             let tagsEntities = await db_connection.tag.findMany({
@@ -97,7 +97,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 }
             })
             let tags_ = tagsEntities.map(x=>x.tag)
-            await tags.filter(x=>!tags_.includes(x)).forEach(async (x)=>{
+            await tags.filter((x:string)=>!tags_.includes(x)).forEach(async (x:string)=>{
                 tagsEntities.push(await db_connection.tag.create({
                     data:{
                         tag:x
@@ -109,7 +109,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 data:{
                     slug:slug,
                     categories:{
-                        connect:categories.map(x=>{return { id:Number(x)}})
+                        connect:categories.map((x:string)=>{return { id:Number(x)}})
                     },
                     collectionId:collectionId,
                     fields:{
@@ -140,26 +140,25 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 }
             })
             for (let image of images) {
-               
                 image.productId=product.id
             }
             await db_connection.productsImages.createMany({data:images})
-            product.images.forEach(x=>{
+            product.images.forEach((x:any)=>{
                 x['id']=x.imageId
                 return x
             })
-            return {
+            return res.status(StatusCodes.OK).send({
                 status:StatusCodes.OK,
-                message:"success", 
+                message:"success",
                 content: product
-            }
+            })
         })
         
     }
 
-    async function updateProduct(req:HttpRequest) {
+    async function update_product(req:Request, res: Response) {
         let {id=0} = {...req.params};
-        let {slug=null,collectionId=null,tags=[],categories={}[0],active=false, fields = [],images={}[0],currencySymbol=null,basePrice=0,price=0,sex="uni"} = {...req.body}
+        let {slug=null,collectionId=null,tags=[],categories=[0],active=false, fields = [],images=[0],currencySymbol=null,basePrice=0,price=0,sex="uni"} = {...req.body}
         
         return await db_connection.$transaction(async()=>{
             
@@ -178,7 +177,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 }
             })
             let tags_ = tagsEntities.map(x=>x.tag)
-            await tags.filter(x=>!tags_.includes(x)).forEach(async (x)=>{
+            await tags.filter((x:string)=>!tags_.includes(x)).forEach(async(x:string)=>{
                 tagsEntities.push(await db_connection.tag.create({
                     data:{
                         tag:x
@@ -191,7 +190,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                 data:{
                     slug:slug,
                     categories:categories?{
-                        connect:categories.map(x=>{return { id:Number(x)}})
+                        connect:categories.map((x:string)=>{return { id:Number(x)}})
                     }:{},
                     collectionId:collectionId,
                     fields:{
@@ -232,29 +231,29 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     }
                 }
             })
-            product.images.forEach(x=>{
+            product.images.forEach((x:any)=>{
                 x['id']=x.imageId
                 return x
             })
-            return {
+            return res.status(StatusCodes.OK).send({
                 status:StatusCodes.OK,
-                message:"success", 
+                message:"success",
                 content: product
-            }
+            })
         })
     }
 
-    async function deleteProduct(req:HttpRequest) {
+    async function delete_product(req:Request, res: Response) {
         let {id=0} = {...req.params};
         let product = await db_connection.product.delete({
             where:{id:Number(id)}
         })
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: product
-        }
+        })
     }
 
 }

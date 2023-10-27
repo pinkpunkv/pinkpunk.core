@@ -1,5 +1,5 @@
 import { PrismaClient,Prisma, Cart, CartVariants } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import UserAttr from '../common/user_attr'
 import Decimal from 'decimal.js';
@@ -8,15 +8,15 @@ import { BaseError } from '../exception';
 export default function make_cart_service(db_connection:PrismaClient){
     
     return Object.freeze({
-        addToCart,
-        removeFromCart,
-        getCart,
-        decreaseCountFromCart
+        add_to_cart,
+        remove_from_cart,
+        get_cart,
+        decrease_from_cart
     });
 
 
 
-    function getInclude(lang){
+    function get_include(lang: string){
         return {include:
             {
                 variant:{
@@ -65,10 +65,10 @@ export default function make_cart_service(db_connection:PrismaClient){
         } as Prisma.CartVariantsFindManyArgs
     }
 
-    function mapCartToResponse(cart) {
+    function map_cart_to_response(cart: any) {
         cart.total = 0;
         let totalAmount = new Decimal(0);
-        for (const x of cart['variants']) {
+        for (const x of cart.variants) {
             x.id=x.variantId
             x.product = x.variant.product
             x.images = x.variant.images
@@ -93,17 +93,17 @@ export default function make_cart_service(db_connection:PrismaClient){
         return cart;
     }
 
-    async function getUserCart(lang,cartId,user:UserAttr) {
+    async function get_user_cart(lang:string,cartId:string,user:UserAttr) {
         return db_connection.cart.findFirst({
-            where:!user||user.isAnonimus?
+            where:!user||user.is_anonimus?
             {id:cartId,user:null}
             :
             {user:{id:user.id}},
             
-            include:{variants:getInclude(lang) }
+            include:{variants:get_include(lang) }
         })
     }
-    async function getCartVariant(cartId,variantId) {
+    async function get_cart_variants(cartId:string,variantId:number) {
         return await db_connection.cartVariants.findFirst({
             where:{cartId:cartId,variantId:Number(variantId),variant:{deleted:false}},
             include:{
@@ -115,41 +115,41 @@ export default function make_cart_service(db_connection:PrismaClient){
             }
         })
     }
-    async function createCart(lang,user:UserAttr) {
+    async function create_cart(lang:string,user:UserAttr) {
         return await db_connection.cart.create({
-            data:user.isAnonimus?
+            data:user.is_anonimus?
             {}
             :
             {user:{connect:{id:user.id}}},
-            include:{variants:getInclude(lang) }
+            include:{variants:get_include(lang) }
         })
     }
     
-    async function getUserCartWithoutVariants(cartId,user:UserAttr) {
+    async function get_user_cart_without_variants(cartId:string,user:UserAttr) {
         return db_connection.cart.findFirst({
-            where:!user||user.isAnonimus?
+            where:!user||user.is_anonimus?
             {id:cartId,user:null}
             :
             {user:{id:user.id}}
         })
     }
 
-    async function getCartWithVariants(cartId) {
+    async function get_cart_with_variants(cart_id:string) {
         return await db_connection.cart.findFirst({
-            where:{id:cartId},
+            where:{id:cart_id},
             include:{variants:true}
         })
     }
    
-    async function getCart(req:HttpRequest) {
+    async function get_cart(req:Request, res: Response) {
         let {lang="ru",cartId=""} = {...req.query};
-        let cart = await getUserCart(lang,cartId,req.user);
+        let cart = await get_user_cart(lang,cartId,req.body.authenticated_user);
         if (cart==null) {
-            cart = await createCart(lang,req.user)
+            cart = await create_cart(lang,req.body.authenticated_user)
         }
         
         if(cart.id!=cartId){
-            let unconnectedCart = await getCartWithVariants(cartId);
+            let unconnectedCart = await get_cart_with_variants(cartId);
             if(unconnectedCart!=null){
                 let exists = cart.variants.map(x=>x.variantId);
                 
@@ -162,19 +162,19 @@ export default function make_cart_service(db_connection:PrismaClient){
                             }
                         }
                     },
-                    include:{variants:getInclude(lang) }
+                    include:{variants:get_include(lang) }
                 })
             }
         }
        
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: mapCartToResponse(cart)
-        }
+            content: map_cart_to_response(cart)
+        })
     }
     
-    async function addToCart(req:HttpRequest) {
+    async function add_to_cart(req:Request, res: Response) {
         let{cartId=""}={...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
         let variant = await db_connection.variant.findFirst({
@@ -182,16 +182,16 @@ export default function make_cart_service(db_connection:PrismaClient){
         })
         if (variant == null)
             throw new BaseError(417,"variant with this id not found",[]);
-        let cart = await getUserCart(lang,cartId,req.user)
+        let cart = await get_user_cart(lang,cartId,req.body.authenticated_user)
         
         if(cart==null)
             throw new BaseError(417,"cart with this id not found",[]);
             
-        let cartVariant = await getCartVariant(cart.id,variantId)
+        let cartVariant = await get_cart_variants(cart.id,variantId)
         console.log(cartVariant);
         
         if (cartVariant==null){
-            //let cart  = await getUserCartWithoutVariants(variantsData.id,req.user)
+            //let cart  = await getUserCartWithoutVariants(variantsData.id,req.body.authenticated_user)
             cart = await db_connection.cart.update({
                 where:{id:cart.id},
                 data:{
@@ -199,7 +199,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                         create: {variantId:Number(variantId)}
                     }
                 },
-                include:{variants:getInclude(lang) }
+                include:{variants:get_include(lang) }
             });
         }
         else{
@@ -220,17 +220,17 @@ export default function make_cart_service(db_connection:PrismaClient){
             }
             
         }
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: mapCartToResponse(cart)
-        }
+            content: map_cart_to_response(cart)
+        })
     }
 
-    async function removeFromCart(req:HttpRequest) {
+    async function remove_from_cart(req:Request, res: Response) {
         let {cartId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        let variantsData = await getUserCart(lang,cartId,req.user)
+        let variantsData = await get_user_cart(lang,cartId,req.body.authenticated_user)
 
         if(variantsData==null)
             throw new BaseError(417,"cart with this id not found",[]);
@@ -247,25 +247,27 @@ export default function make_cart_service(db_connection:PrismaClient){
                     }
                 }
             },
-            include:{variants:getInclude(lang) }
+            include:{variants:get_include(lang) }
         })
          
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: mapCartToResponse(variantsData)
-        }
+            content: map_cart_to_response(variantsData)
+        })
     }
 
-    async function decreaseCountFromCart(req:HttpRequest) {
+    async function decrease_from_cart(req:Request, res: Response) {
         let {cartId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        let variantsData = await getUserCart(lang,cartId,req.user)
-        let cartVariant = await getCartVariant(variantsData.id,variantId)
+        let cart = await get_user_cart(lang,cartId,req.body.authenticated_user)
+        if (cart == null)
+            return       
+        let cartVariant = await get_cart_variants(cart!.id,variantId)
        
         if(cartVariant!=null&&cartVariant.count==1){
-            variantsData = await db_connection.cart.update({
-                where:{id:variantsData.id},
+            cart = await db_connection.cart.update({
+                where:{id:cart.id},
                 data:{
                     variants:{
                         delete:{
@@ -276,14 +278,14 @@ export default function make_cart_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{variants:getInclude(lang) }
+                include:{variants:get_include(lang) }
             })
         }
         else{
             await db_connection.cartVariants.update({
                 where:{
                     variantId_cartId:{
-                        cartId:variantsData.id,
+                        cartId:cart.id,
                         variantId:Number(variantId),   
                     }
                 },
@@ -291,14 +293,14 @@ export default function make_cart_service(db_connection:PrismaClient){
                     count:{decrement:1}
                 }
             })
-            let ind = variantsData.variants.findIndex(x=>x.variantId==variantId)
-            variantsData.variants[ind].count-=1; 
+            let ind = cart.variants.findIndex(x=>x.variantId==variantId)
+            cart.variants[ind].count-=1; 
         }
          
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: mapCartToResponse(variantsData)
-        }
+            content: map_cart_to_response(cart)
+        })
     }
 }

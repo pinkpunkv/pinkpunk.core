@@ -1,4 +1,5 @@
-import express,{Express} from "express";
+require("express-async-errors");
+import express,{Express, NextFunction, Response, Request} from "express";
 import {config} from './config'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
@@ -7,9 +8,14 @@ import {product_router,product_admin_router,category_admin_router,category_route
     language_admin_router,language_router,tag_admin_router,tag_router,user_router, user_admin_router, 
     cart_router, wish_list_router,address_router, checkout_router, checkout_admin_router,
     color_admin_router, size_admin_router} from './routes'
-import cors from 'cors'
+import cors, { CorsOptions, CorsOptionsDelegate } from 'cors'
 import { user_status_middleware, has_access_by_role } from "./middleware";
 import session from 'express-session'
+
+import {asyncMiddleware} from 'middleware-async'
+import { BaseError } from "./exception";
+import { StatusCodes } from "http-status-codes";
+import { Prisma } from "@prisma/client";
 
 let app:Express = express();
 app.use(express.json());
@@ -19,28 +25,32 @@ app.use(cookieParser());
 
 
 var whitelist = ["http://localhost:3000","http://localhost:3001","http://localhost:3002","http://localhost:33555"]
-var corsOptions = {
-    origin: function (origin, callback) {
-        console.log(origin);
-        
-        if (whitelist.indexOf(origin) !== -1) {
-            callback(null, true)
-        } else {
-            callback(null, true)
-            //callback(new Error('Not allowed by CORS'))
-        }
-    }
-}
 
-app.use(cors(corsOptions))
+app.use(cors({
+   origin(requestOrigin, callback) {
+    console.log(requestOrigin);
+    
+    if (requestOrigin&&whitelist.indexOf(requestOrigin) !== -1) {
+        callback(null, true)
+    } else {
+        callback(null, false)
+        //callback(new Error('Not allowed by CORS'))
+    }
+   }, 
+}))
 app.use(session({
-    secret:  config.SECRET,
+    secret: config.SECRET!,
         resave: false,
         saveUninitialized: true,
         cookie: {          
             maxAge: 31536000000
         }
   }));
+
+app.use(asyncMiddleware((req,res,next)=>{
+    next()
+}))
+
 app.use(user_status_middleware)
 app.use("/api/v1/admin/*", has_access_by_role("admin"))
 
@@ -79,6 +89,15 @@ app.use('/api/v1/admin/color',color_admin_router)
 app.use('/api/v1/admin/size',size_admin_router)
 
 
+app.use(function onError(err:Error, req:Request, res:Response, next:NextFunction) {
+    console.log(err.stack);
+    if (err instanceof Prisma.PrismaClientKnownRequestError){
+      let message = err.message.split("\n");
+      return res.status(StatusCodes.BAD_REQUEST).send({status:StatusCodes.BAD_REQUEST, message:message[message.length-1],content:err.meta})
+    }
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({status:StatusCodes.INTERNAL_SERVER_ERROR, message:err.message})
+  })
+  
 app.listen(config.PORT,()=>{
     console.log(`app listening on port ${config.PORT}`)
 })

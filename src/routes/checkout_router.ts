@@ -1,19 +1,17 @@
 import express from'express'
 import {checkout_service} from '../service'
-import {req_middleware as m} from '../middleware'
-
 let checkout_router = express.Router();
 
-checkout_router.get('/orders',m(checkout_service.getUserCheckouts))
-checkout_router.get('/:checkoutId',m(checkout_service.getCheckout))
+checkout_router.get('/orders',checkout_service.get_user_checkouts)
+checkout_router.get('/:checkoutId',checkout_service.get_checkout)
 
-checkout_router.post('/preprocess',m(checkout_service.preprocessCheckout))
-checkout_router.post('/:checkoutId',m(checkout_service.addToCheckout))
-checkout_router.post('/:checkoutId/pay',m(checkout_service.payCheckout))
-checkout_router.post('/:checkoutId/place',m(checkout_service.placeOrder))
-checkout_router.put('/:orderId/status',m(checkout_service.updateCheckoutStatus))
-checkout_router.put('/:checkoutId',m(checkout_service.updateCheckout))
-checkout_router.delete("/decrease/:checkoutId",m(checkout_service.decreaseCountFromCheckout))
-checkout_router.delete('/:checkoutId',m(checkout_service.removeVariantFromCheckout))
+checkout_router.post('/preprocess',checkout_service.preprocess_checkout)
+checkout_router.post('/:checkoutId',checkout_service.add_to_checkout)
+checkout_router.post('/:checkoutId/pay',checkout_service.pay_checkout)
+checkout_router.post('/:checkoutId/place',checkout_service.place_order)
+checkout_router.put('/:orderId/status',checkout_service.update_checkout_status)
+checkout_router.put('/:checkoutId',checkout_service.update_checkout)
+checkout_router.delete("/decrease/:checkoutId",checkout_service.decrease_from_checkout)
+checkout_router.delete('/:checkoutId',checkout_service.remove_variant_from_checkout)
 
 export default checkout_router;

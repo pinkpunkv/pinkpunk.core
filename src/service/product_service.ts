@@ -1,21 +1,73 @@
-import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import { Prisma, PrismaClient } from '@prisma/client'
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 import Decimal from 'decimal.js';
 
 export default function make_client_product_service(db_connection:PrismaClient){
     return Object.freeze({
-        getProducts,
-        getProductsPathes,
-        searchProducts,
-        getProduct,
-        getProductByPath,
-        getFilters,
-        wantTo
+        get_products,
+        get_products_pathes,
+        search_products,
+        get_product,
+        get_product_by_path,
+        get_filters,
+        want_to
     });
-    async function wantTo(req:HttpRequest) {
-        let {email=null} = {...req.query}
+    function get_include(lang: string): Prisma.ProductInclude{
+        return {
+            fields:{
+                where:{
+                    language:{
+                        symbol:{
+                            equals: lang,
+                            mode: 'insensitive'
+                        }
+                    }
+                }
+            },
+            categories:{
+                include:{
+                    fields:{
+                        where:{
+                            language:{
+                                symbol:{
+                                    equals: lang,
+                                    mode: 'insensitive'
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            tags:true,
+            collection:{
+                include:{
+                    fields:true
+                }
+            },
+            images:{
+                include:{
+                    image:{
+                        select:{
+                            url:true
+                        }
+                    }
+                }
+            },
+            variants:{
+                where:{
+                    deleted:false
+                },
+                include:{
+                    images:true,
+                    color:true
+                }
+            }
+        } 
+    }
+    async function want_to(req:Request, res: Response) {
+        let {email=""} = {...req.query}
         let {id=0} = {...req.params};
         if (email==null||email=="")
             throw new BaseError(417,"email is required",[]);
@@ -48,14 +100,14 @@ export default function make_client_product_service(db_connection:PrismaClient){
             })
         })).wants
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:{wants:wants}
-        }  
+        }) 
         
     }
-    async function searchProducts(req:HttpRequest){
+    async function search_products(req:Request, res: Response){
         let{skip=0,take=5,search="",lang="ru"}={...req.query}
 
         let products = await db_connection.product.findMany({
@@ -73,38 +125,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             },
             skip:skip,
             take:take,
-            include:{
-                fields:{
-                    where:{
-                        language:{
-                            symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }
-                        }
-                    }
-                },
-                tags:true,
-                collection:{
-                    include:{
-                        fields:true
-                    }
-                },
-                images:{
-                    include:{
-                        image:{
-                            select:{
-                                url:true
-                            }
-                        }
-                    }
-                },
-                variants:{
-                    where:{
-                        deleted:false
-                    }
-                }
-            }
+            include:get_include(lang)
         });
         let categories = await db_connection.category.findMany({
             where:{
@@ -146,12 +167,12 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             },
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:{
-                products:products.map((x)=>mapProductToResponse(x)),
-                categories:categories.map((cat)=>{
+                products:products.map((x)=>map_product_to_response(x)),
+                categories:categories.map((cat:any)=>{
                     for (const field of cat.fields) {
                         cat[field.fieldName]=field.fieldValue
                     }
@@ -160,18 +181,18 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }),
                 total:total._count
             }
-        }
+        })
     }
-    async function getFilters(req:HttpRequest) {
-        class Prices{
-            min:Number
-            max:Number
-        }
+    interface Prices{
+        min:Number
+        max:Number
+    }
+    async function get_filters(req:Request, res: Response) {
         let sizes = await db_connection.size.findMany({where:{variants:{some:{deleted:false}}}})
         let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p where p.deleted=false and active = true`
         let colors = await db_connection.color.findMany({where:{variants:{some:{deleted:false}}}})
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: {
@@ -180,9 +201,9 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 min:prices[0].min,
                 max:prices[0].max
             }
-        }  
+        })  
     }
-    async function getProductByPath(req:HttpRequest) {
+    async function get_product_by_path(req:Request, res: Response) {
         let {path=''} = {...req.params};
         let{lang="ru"}={...req.query}
         
@@ -198,58 +219,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 },
                 active:true
             },
-            include:{
-                fields:{
-                    where:{
-                        language:{symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }}
-                    }
-                },
-                categories:{
-                    include:{
-                        fields:{
-                            where:{
-                                language:{
-                                    symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }
-                                }
-                            }
-                        }
-                    }
-                },
-                tags:true,
-                collection:{
-                    include:{
-                        fields:true
-                    }
-                },
-                images:{
-                    select:{
-                        image:{
-                            select:{
-                                url:true
-                            }
-                        },
-                        isMain:true,
-                        number:true
-                    },
-                    orderBy:{number:"asc"},
-                },
-               
-                variants:{
-                    where:{
-                        deleted:false
-                    },
-                    include:{
-                        images:true,
-                        color:true
-                    }
-                }
-            }
+            include:get_include(lang)
         })
         await db_connection.product.update({
             where:{id:product.id},
@@ -259,15 +229,15 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
-            content: mapProductToResponse(product)
-        }
+            content: map_product_to_response(product)
+        })
     }
-    async function getProductsPathes(req:HttpRequest){
+    async function get_products_pathes(req:Request, res: Response){
         let{lang="ru"}={...req.query}
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:(await db_connection.product.findMany({
@@ -286,9 +256,9 @@ export default function make_client_product_service(db_connection:PrismaClient){
                     }
                 }
             })).filter(x=>x.fields.length>0).map(x=> x.fields[0].fieldValue)
-        }
+        })
     }
-    async function getProducts(req:HttpRequest){
+    async function get_products(req:Request, res: Response){
         let{skip=0,take=10,lang="ru",sex=[],minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],colors=[],orderBy='{"views":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
         
@@ -340,69 +310,20 @@ export default function make_client_product_service(db_connection:PrismaClient){
             orderBy:{
                 [orderKey]:orderValue
             },
-            include:{
-                fields:{
-                    where:{
-                        language:{
-                            symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }
-                        }
-                    }
-                },
-                categories:{
-                    include:{
-                        fields:{
-                            where:{
-                                language:{
-                                    symbol:{
-                                        equals: lang,
-                                        mode: 'insensitive'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                tags:true,
-                collection:{
-                    include:{
-                        fields:true
-                    }
-                },
-                images:{
-                    include:{
-                        image:{
-                            select:{
-                                url:true
-                            }
-                        }
-                    }
-                },
-                variants:{
-                    where:{
-                        deleted:false
-                    },
-                    include:{
-                        images:true,
-                        color:true
-                    }
-                }
-            }
+            include:get_include(lang)
         });
     
         let total = await db_connection.product.aggregate({where:where,_count:true})
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:{
-                products:products.map(x=>mapProductToResponse(x)),
+                products:products.map(x=>map_product_to_response(x)),
                 total: total._count
             }
-        }
+        })
     }
-    function mapProductToResponse(product){
+    function map_product_to_response(product:any){
         for (let field of product.fields) {
             product[field.fieldName]=field.fieldValue
         }
@@ -426,67 +347,17 @@ export default function make_client_product_service(db_connection:PrismaClient){
         delete product.fields
         return product;
     }
-    async function getProduct(req:HttpRequest){
+    
+    async function get_product(req:Request, res: Response){
         let {id=0} = {...req.params};
         let{lang="ru"}={...req.query}
-        let res = await db_connection.$transaction(async()=>{
+        let result = await db_connection.$transaction(async()=>{
             let product = await db_connection.product.findFirstOrThrow({
                 where:{
                     active:true,
                     id:Number(id)
                 },
-                include:{
-                    fields:{
-                        where:{
-                            language:{symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }}
-                        }
-                    },
-                    categories:{
-                        include:{
-                            fields:{
-                                where:{
-                                    language:{
-                                        symbol:{
-                                            equals: lang,
-                                            mode: 'insensitive'
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    tags:true,
-                    collection:{
-                        include:{
-                            fields:true
-                        }
-                    },
-                    images:{
-                        select:{
-                            image:{
-                                select:{
-                                    url:true
-                                }
-                            },
-                            isMain:true,
-                            number:true
-                        },
-                        orderBy:{number:"asc"},
-                    },
-                   
-                    variants:{
-                        where:{
-                            deleted:false
-                        },
-                        include:{
-                            images:true,
-                            color:true
-                        }
-                    }
-                }
+                include:get_include(lang)
             })
             await db_connection.product.update({
                 where:{
@@ -501,31 +372,11 @@ export default function make_client_product_service(db_connection:PrismaClient){
             return product;
         })
         
-        
-        // product.fields.forEach(async(field)=>{
-        //     product[field.fieldName]=field.fieldValue
 
-        // })
-        // delete product.fields
-        // product.categories.forEach(async(cat)=>{
-        //     cat.fields.forEach(async(field)=>{
-        //         cat[field.fieldName]=field.fieldValue
-        //     })
-        //     delete cat.fields
-        // })
-        // product.collection?.fields.forEach((field)=>{
-        //     product.collection[field.fieldName] = field.fieldValue
-        // })
-        // product.images?.forEach((image)=>{
-        //     image['url']=image.image.url
-        //     delete image.image
-        // })
-        
-        // delete product.collection?.fields
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
-            content: mapProductToResponse(res)
-        }
+            content: map_product_to_response(result)
+        })
     }
 }

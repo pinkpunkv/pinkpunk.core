@@ -1,12 +1,10 @@
 import express, { Request,Response } from'express'
 import {address_service} from '../service'
-import {req_middleware} from '../middleware'
-
 let address_router = express.Router();
 
-address_router.get('/',req_middleware(address_service.getMyAddresses))
-address_router.post('/',req_middleware(address_service.createAddress))
-address_router.put('/:addressId',req_middleware(address_service.updateAddress))
-address_router.delete('/:addressId',req_middleware(address_service.deleteAddress))
+address_router.get('/',address_service.get_my_addresses)
+address_router.post('/',address_service.create_address)
+address_router.put('/:addressId',address_service.update_address)
+address_router.delete('/:addressId',address_service.delete_address)
 
 export default address_router;

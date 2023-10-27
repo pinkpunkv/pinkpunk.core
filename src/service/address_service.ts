@@ -1,17 +1,18 @@
-import { PrismaClient,Prisma } from '@prisma/client'
-import { HttpRequest } from "../common";
+import { PrismaClient } from '@prisma/client'
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import UserAttr from '../common/user_attr'
 import { BaseError } from '../exception';
+import { AddressDto } from '../dto';
 
 export default function make_address_service(db_connection:PrismaClient){
     return Object.freeze({
-        getMyAddresses,
-        createAddress,
-        deleteAddress,
-        updateAddress
+        get_my_addresses,
+        create_address,
+        delete_address,
+        update_address
     });
-    async function getUserAdresses(user:UserAttr) {
+    async function get_user_adresses(user:UserAttr) {
         return await db_connection.address.findMany({
             where:{
                 userId:user.id
@@ -21,105 +22,87 @@ export default function make_address_service(db_connection:PrismaClient){
             }
         })
     }
-    async function getUserAdress(addrId,user:UserAttr) {
+    async function get_user_adress(addr_id: string,user:UserAttr) {
         return await db_connection.address.findMany({
             where:{
-                id:addrId,
-                userId:user.isAnonimus?null:user.id
+                id:addr_id,
+                userId:user.is_anonimus?null:user.id
             },
             include:{
               fields:true   
             }
         })
     }
-    async function getMyAddresses(req:HttpRequest) {
-        if (req.user.isAnonimus)
+    async function get_my_addresses(req:Request, res: Response) {
+        if (req.body.authenticated_user.is_anonimus)
             return {
                 status:StatusCodes.OK,
                 message:"success",
                 content: []
             }
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: await getUserAdresses(req.user)
-        }
+            content: await get_user_adresses(req.body.authenticated_user)
+        })
     }
-    async function updateAddress(req:HttpRequest) {
+    async function update_address(req:Request, res: Response) {
         let addressId = req.params['addressId']
-        let {mask="",firstName="", lastName="", company="",streetNumber="",apartments="", zipCode="", city="",country=""} = {...req.body} 
-        if(await getUserAdress(addressId,req.user)==null)
+        let address_dto = new AddressDto(req.body.address)
+        if(await get_user_adress(addressId,req.body.authenticated_user)==null)
             throw new BaseError(417,"address with this id not found",[]);
         let address = await db_connection.address.update({
             where:{
                 id:addressId
             },
             data:{
-                mask:mask,
+                mask:address_dto.mask,
                 fields:{
                     deleteMany:{
                         addressId:addressId
                     },
-                    create:{
-                        apartments:apartments,
-                        city:city,
-                        type:"shipping",
-                        company:company,
-                        country:country,
-                        firstName:firstName,
-                        lastName:lastName,
-                        streetNumber:streetNumber,
-                        zipCode:zipCode
-                    } as Prisma.AddressFieldsCreateWithoutAddressInput
+                    createMany: {
+                        data: address_dto.fields
+                    } 
                 }
             },
             include:{
                 fields:true
             }
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: address
-        }
+        })
     }
-    async function deleteAddress(req:HttpRequest) {
-        let addressId = req.params['addressId']
-        if(await getUserAdress(addressId,req.user)==null)
+    async function delete_address(req:Request, res: Response) {
+        let address_id = req.params.addressId.toString()
+        if(await get_user_adress(address_id,req.body.authenticated_user)==null)
             throw new BaseError(417,"address with this id not found",[]);
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.address.delete({
                 where:{
-                    id:addressId
+                    id:address_id
                 },
                 include:{
                     fields:true
                 }
             })
-        }
+        })
     }
-    async function createAddress(req:HttpRequest) {
-        let {mask="",firstName="", lastName="", company="", apartment="",comment="",building="", street="", zipCode="", city="",country=""} = {...req.body} 
+    async function create_address(req:Request, res: Response) {
+        let address_dto = new AddressDto(req.body.address)
         let address = await db_connection.address.create({
             data:{
-                userId:req.user.id,
-                mask: mask,
+                userId:req.body.authenticated_user.id,
+                mask: address_dto.mask,
                 fields:{
-                    create:{
-                        apartment:apartment,
-                        street:street,
-                        comment:comment,
-                        building: building,
-                        city:city,
-                        type:"shipping",
-                        company:company,
-                        country:country,
-                        firstName:firstName,
-                        lastName:lastName,
-                        zipCode:zipCode
-                    } as Prisma.AddressFieldsCreateWithoutAddressInput
+                    createMany:{
+                        data: address_dto.fields
+                    }
                 },
             },
             include:{
@@ -127,10 +110,10 @@ export default function make_address_service(db_connection:PrismaClient){
             }
         })
 
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: address
-        }
+        })
     }
 }

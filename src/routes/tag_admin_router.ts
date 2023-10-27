@@ -1,11 +1,10 @@
 import express from'express'
 import {tag_admin_service} from '../service'
-import {req_middleware as m} from '../middleware'
 
 let tag_admin_router = express.Router();
 
-tag_admin_router.post('/',m(tag_admin_service.createTag))
-tag_admin_router.get('/',m(tag_admin_service.getTags))
-tag_admin_router.delete('/:tag',m(tag_admin_service.deleteTag))
+tag_admin_router.post('/',tag_admin_service.create_tag)
+tag_admin_router.get('/',tag_admin_service.get_tags)
+tag_admin_router.delete('/:tag',tag_admin_service.delete_tag)
 
 export default tag_admin_router;

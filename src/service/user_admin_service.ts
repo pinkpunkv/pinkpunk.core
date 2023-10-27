@@ -1,5 +1,5 @@
-import { PrismaClient, Prisma, User } from '@prisma/client';
-import { HttpRequest } from "../common";
+import { PrismaClient, Prisma, User, StatusEnumType } from '@prisma/client';
+import {Request, Response} from 'express'
 import {config} from '../config';
 import bcrypt from 'bcryptjs'
 import {StatusCodes} from 'http-status-codes'
@@ -9,20 +9,20 @@ export const excludedFields = ['password', 'verified', 'verificationCode'];
 export default function make_user_admin_service(db_connection:PrismaClient){
 
     return Object.freeze({
-        getAllUsers,
-        getUserInfo,
-        updateUserInfo,
-        updateUserStatus
+        get_users,
+        get_user_info,
+        update_user_info,
+        update_user_status
     })
 
-    async function findUniqueUser(where: Prisma.UserWhereUniqueInput,
+    async function find_user(where: Prisma.UserWhereUniqueInput,
         select?: Prisma.UserSelect) {
         return (await db_connection.user.findUnique({
             where,
             select,
           })) as User;
     }
-    async function getAllUsers(req:HttpRequest){
+    async function get_users(req:Request, res: Response){
         let{skip=0,take=20}={...req.query}
         let users = await db_connection.user.findMany({
             skip:skip,
@@ -40,9 +40,9 @@ export default function make_user_admin_service(db_connection:PrismaClient){
             }
         }
     }
-    async function updateUserStatus(req:HttpRequest) {
-        let userId = req.params['userId']
-        let status = req.query['status']
+    async function update_user_status(req:Request, res: Response) {
+        let userId = req.params.userId
+        let status = req.query.status!.toString() as StatusEnumType
         let user = await db_connection.user.update({
             where:{id: userId },
             data:{
@@ -56,15 +56,16 @@ export default function make_user_admin_service(db_connection:PrismaClient){
             content: user
         }
     }
-    async function updateUserInfo(req:HttpRequest) {
-        let userId = req.params['userId']
+    async function update_user_info(req:Request, res: Response) {
+        let userId = req.params.userId.toString()
         let data ={
-            firstName: req.body['firstName'],
-            lastName: req.body['lastName'],
-            phone: req.body['phone'],     
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            phone: req.body.phone,    
+            password:"" 
         }
         if(req.body['password']!=null)
-            data['password'] = await bcrypt.hash(req.body['password'],config.SECRET)
+            data.password = await bcrypt.hash(req.body.password,config.SECRET!)
 
         let user = await db_connection.user.update({
             where:{id: userId },
@@ -80,9 +81,9 @@ export default function make_user_admin_service(db_connection:PrismaClient){
 
     }
 
-    async function getUserInfo(req:HttpRequest) {
+    async function get_user_info(req:Request, res: Response) {
         let userId = req.params['userId']
-        let user = await findUniqueUser(
+        let user = await find_user(
             { id: userId }
         );
 

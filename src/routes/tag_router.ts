@@ -1,9 +1,7 @@
 import express from'express'
 import {tag_service} from '../service'
-import {req_middleware as m} from '../middleware'
-
 let tag_router = express.Router();
 
-tag_router.get('/',m(tag_service.getTagsWithProducts))
+tag_router.get('/',tag_service.get_tags_with_products)
 
 export default tag_router;

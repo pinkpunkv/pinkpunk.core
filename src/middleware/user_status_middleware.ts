@@ -1,21 +1,21 @@
 import { NextFunction, Request, Response } from "express";
-import { verifyJwt } from "../utils/jwt";
+import { verify_jwt } from "../utils/jwt";
 
 export default async function user_status_middleware(req:Request,res:Response,next:NextFunction){
-    let act:string = req.headers.authorization;
+    let act:string|undefined = req.headers.authorization;
 
-    if(!act){req['userAttr'] = {isAnonimus:true}; return next()}
+    if(!act){req.body.authenticated_user = {is_anonimus:true}; return next()}
     try{
    
-        let verified = verifyJwt(act.split(' ')[1],"accessTokenPrivateKey");
+        let verified = verify_jwt(act.split(' ')[1],"accessTokenPrivateKey");
 
-        req['userAttr'] = {id:verified['id'], isAnonimus:false, role:verified['role']}
+        req.body.authenticated_user = {id:verified.id, is_anonimus:false, role:verified.role}
         return next()
     }
     catch (e){
         console.log(e);
         
-        req['userAttr'] = {isAnonimus:true}
+        req.body.authenticated_user = {is_anonimus:true}
         return next()
     }
 }

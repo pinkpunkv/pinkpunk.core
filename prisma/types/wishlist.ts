@@ -50,7 +50,7 @@ export interface WishlistItemBody {
   wishlistToken?: string
 }
 
-export type GetWishlistHook = {
+export type get_wishlistlistHook = {
   data: Wishlist | null | undefined
   body: { includeProducts?: boolean }
   input: { includeProducts?: boolean }
@@ -77,7 +77,7 @@ export type WishlistSchema = {
   endpoint: {
     options: {}
     handlers: {
-      getWishlist: GetWishlistHook & {
+      get_wishlistlist: get_wishlistlistHook & {
         data: Wishlist | null
         body: { customerToken?: string }
       }

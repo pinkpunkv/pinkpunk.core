@@ -1,18 +1,18 @@
 import { PrismaClient } from '@prisma/client'
-import { HttpRequest } from "../common";
+import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { Variant } from '@prisma/client';
 
 export default function make_admin_variant_service(db_connection:PrismaClient){
     return Object.freeze({
-        getVariantProducts,
-        createVariantTemplate,
-        getVariantsTemplates,
-        addProductVariants,
-        deteleVariantsTemplates
+        get_variant_products,
+        create_variant_template,
+        get_variants_template,
+        add_product_variants,
+        detele_variants_templates
     });
 
-    async function getVariantProducts(req:HttpRequest){
+    async function get_variant_products(req:Request, res: Response){
         let {id=0} = {...req.params};
         let variants = await db_connection.variant.findMany({
             where:{id:id},
@@ -23,15 +23,15 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
             }
         });
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:variants
-        }
+        })
     }
-    async function createVariantTemplate(req:HttpRequest){
+    async function create_variant_template(req:Request, res: Response){
         let {size = "",color=""} ={...req.body};
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: await db_connection.variantTemplate.create({
@@ -40,29 +40,29 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                     color:color
                 }
             })
-        }
+        })
     }
-    async function getVariantsTemplates(req:HttpRequest){
-        return {
+    async function get_variants_template(req:Request, res: Response){
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: await db_connection.variantTemplate.findMany({})
-        }
+        })
     }
-    async function deteleVariantsTemplates(req:HttpRequest){
+    async function detele_variants_templates(req:Request, res: Response){
         let ids:number[] = {...req.body} as any
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: await db_connection.variantTemplate.deleteMany({where:{id:{in:ids}}})
-        }
+        })
     }
 
-    async function addProductVariants(req:HttpRequest){
+    async function add_product_variants(req:Request, res: Response){
         let {productId=-1} = {...req.query};
         let variants = req.body['variants']
         productId = Number(productId)
-        let res = await db_connection.$transaction(async()=>{
+        let result = await db_connection.$transaction(async()=>{
             let variantsData=[]
             let productVariants = await db_connection.variant.findMany({
                 where:{
@@ -80,7 +80,7 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
                     let variant = productVariants.at(productVariantInd)
                     variantsData.push(await db_connection.variant.update({
                         where:{
-                            id:variant.id
+                            id:variant!.id
                         },
                         data:{
                             colorId:variant_data.colorId,
@@ -124,10 +124,10 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
         })
         
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
-            content: res
-        }
+            content: result
+        })
     }
 }

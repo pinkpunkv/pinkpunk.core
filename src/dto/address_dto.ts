@@ -33,7 +33,7 @@ class AddressDto{
         this.id = model?.id || ""
         this.userId = model?.userId || ""
         this.mask = model?.mask || ""
-        this.fields = model?.fields?model.fields.map(x=>new AddressFieldDto(x)):[]
+        this.fields = model?.fields?model.fields.map((x:any)=>new AddressFieldDto(x)):[]
     }
 }
 
