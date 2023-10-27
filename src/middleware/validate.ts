@@ -9,7 +9,6 @@ export default function validate (schema: AnyZodObject) {
                 query: req.query,
                 body: req.body,
             });
-            console.log("validated");
             
             next();
         } catch (error) {

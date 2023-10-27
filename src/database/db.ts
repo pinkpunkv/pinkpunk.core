@@ -4,7 +4,6 @@ let conection:PrismaClient;
 
 export default function db(){
     if(conection){
-        console.log("sasi");
         return conection;
     }
     

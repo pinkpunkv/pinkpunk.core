@@ -54,7 +54,7 @@ app.use(asyncMiddleware((req,res,next)=>{
 
 app.use(user_status_middleware)
 app.use("/api/v1/admin/*", has_access_by_role("admin"))
-app.use("/api/v1/admin/*", log_middleware())
+app.use("/api/v1/admin/*",log_middleware())
 
 app.use('/api/v1/address', address_router)
 

@@ -6,6 +6,6 @@ export default function has_access_by_role(role:String){
 
         if(req.body.authenticated_user.is_anonimus||req.body.authenticated_user.role != role)return res.status(403).send({status:403,code:CustomerErrorCode.Forbidden,"message":"Forbidden"})
         
-        return next()
+        next()
     }
 }
