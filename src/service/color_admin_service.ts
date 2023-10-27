@@ -24,14 +24,14 @@ export default function make_color_admin_service(db_connection:PrismaClient){
         let total = await db_connection.color.aggregate({
             _count:true
         })
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
             content: {
                 colors:colors,
                 total: total._count
             }
-        }
+        })
     }
     async function create_color(req:Request, res: Response) {
         let {color="",colorText=""} = {...req.body}
@@ -42,11 +42,11 @@ export default function make_color_admin_service(db_connection:PrismaClient){
             }
         })
 
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
             content: colorData
-        }
+        })
     }
     async function update_color(req:Request, res: Response) {
         let colorId = req.params['colorId']
@@ -60,11 +60,11 @@ export default function make_color_admin_service(db_connection:PrismaClient){
             }
         })
 
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
             content: colorData
-        }
+        })
 
     }
 
@@ -73,12 +73,12 @@ export default function make_color_admin_service(db_connection:PrismaClient){
         let colorData = await db_connection.color.delete({
             where:{id: Number(colorId) }
         })
-        return {
-            status: StatusCodes.OK,
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
             message:"success",
             content: colorData
             
-        }
+        })
 
     }
 }
