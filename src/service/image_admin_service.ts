@@ -26,7 +26,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             for (let i = 0; i < Object.entries(req.files).length; i++) {
                 let file:any = req.files[i];
                 let file_path = path+file.originalname
-                let res = await s3client.putObject({ 
+                let result = await s3client.putObject({ 
                     Bucket: process.env.S3_BUCKET_NAME, 
                     Key: file_path, 
                     Body: file.buffer, 
