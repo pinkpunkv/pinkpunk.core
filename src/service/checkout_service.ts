@@ -543,7 +543,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: res
+            content: result
         })
     }
 
@@ -574,7 +574,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             }
         })
         totalAmount=totalAmount.mul(new Decimal(100))
-        let ressult = await db_connection.$transaction(async ()=>{ 
+        let result = await db_connection.$transaction(async ()=>{ 
             await db_connection.checkout.update({
                 where:{
                     id:checkout!.id
@@ -591,7 +591,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: ressult
+            content: result
         })
     }
 
