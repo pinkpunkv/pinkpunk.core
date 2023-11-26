@@ -499,7 +499,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 let new_orderId: any = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
                 checkout!.orderId = Number(new_orderId[0].nextval)
                 
-                let payres = await paymentSrvice.payForOrder(checkout!.orderId.toString(),totalAmount,token.token)
+                let payres = await paymentSrvice.pay_for_order(checkout!.orderId.toString(),totalAmount,token.token)
                 if(payres.data.errorCode)
                     throw new BaseError(500,"something went wrong",payres.data);
             
@@ -608,7 +608,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(token==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
-        let orderStatus = await paymentSrvice.getOrderStatus(orderId);
+        let orderStatus = await paymentSrvice.get_order_status(orderId);
         let checkout;
         if(orderStatus.data.orderStatus==2){
             checkout = await db_connection.checkout.findFirst({

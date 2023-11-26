@@ -33,6 +33,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                         image:true
                     }
                 },
+                wants: true,
                 currency:true
             }
         });
@@ -72,6 +73,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                         image:true
                     }
                 },
+                wants: true,
                 currency:true
             }
         })

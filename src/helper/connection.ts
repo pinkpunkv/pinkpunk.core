@@ -1,22 +1,15 @@
 
 import { S3 } from '@aws-sdk/client-s3';
 import {config} from '../config'
-let conection:S3;
 
 export default function connectS3(path: string | null = ''): S3 {
-    if (conection)
-    {
-        console.log(config.S3_ENDPOINT_URL);
-        
-        conection = new S3({
-            forcePathStyle: true,
-            endpoint: `${config.S3_ENDPOINT_URL}`,
-            region:'us-east-1',
-            credentials: {
-                accessKeyId: config.S3_ACCESS_KEY!,
-                secretAccessKey: config.S3_SECRET_KEY!,
-            },
-        })
-    }
-    return conection;
+    return new S3({
+        forcePathStyle: true,
+        endpoint: `${config.S3_ENDPOINT_URL}`,
+        region:'us-east-1',
+        credentials: {
+            accessKeyId: config.S3_ACCESS_KEY!,
+            secretAccessKey: config.S3_SECRET_KEY!,
+        },
+    });
 }
