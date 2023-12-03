@@ -31,14 +31,14 @@ export default function make_user_admin_service(db_connection:PrismaClient){
         let total = await db_connection.user.aggregate({
             _count:true
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message:"success",
             content: {
-                users:users,
+                users: users,
                 total: total._count
             }
-        }
+        })
     }
     async function update_user_status(req:Request, res: Response) {
         let userId = req.params.userId
@@ -50,11 +50,11 @@ export default function make_user_admin_service(db_connection:PrismaClient){
             }
         })
 
-        return {
+        return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message:"success",
             content: user
-        }
+        })
     }
     async function update_user_info(req:Request, res: Response) {
         let userId = req.params.userId.toString()
@@ -73,11 +73,11 @@ export default function make_user_admin_service(db_connection:PrismaClient){
         })
         // Sign Tokens
         
-        return {
+        return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message:"success",
             content: user
-        }
+        })
 
     }
 
@@ -87,12 +87,12 @@ export default function make_user_admin_service(db_connection:PrismaClient){
             { id: userId }
         );
 
-        return {
+        return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message:"success",
             content: user
             
-        }
+        })
 
     }
 }
