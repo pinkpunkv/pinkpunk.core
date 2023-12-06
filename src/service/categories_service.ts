@@ -63,7 +63,7 @@ export default function make_category_service(db_connection:PrismaClient){
             })
         })
     }
-    async function get_filters_info() {
+    async function get_filters_info(req:Request, res: Response) {
         let filters = await db_connection.product.groupBy({
             by:["sex"],
             where:{active:true},
@@ -71,7 +71,7 @@ export default function make_category_service(db_connection:PrismaClient){
                 _all:true
             }    
         })
-        return {
+        return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: filters.map((fil:any)=>{  
@@ -79,7 +79,7 @@ export default function make_category_service(db_connection:PrismaClient){
                 delete fil._count
                 return fil
             })
-        }
+        })
     }
     async function get_main_categories(req:Request, res: Response) {
         let {lang="ru"} = {...req.query};
