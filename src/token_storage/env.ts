@@ -1,3 +1,3 @@
-const PRIMARY_TOKEN = process.env['PRIMARY_TOKEN']
+const PRIMARY_TOKEN = process.env['PRIMARY_TOKEN']!
 
 export {PRIMARY_TOKEN}

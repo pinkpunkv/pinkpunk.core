@@ -33,8 +33,10 @@
     "@types/passport-jwt": "^3.0.8",
     "@types/validator": "^13.7.14",
     "amqplib": "^0.10.3",
+    "app-root-path": "^3.1.0",
     "aws-sdk": "^2.1279.0",
-    "axios": "^1.3.5",
+    "axios": "^1.6.2",
+    "axios-retry": "^4.0.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -51,14 +53,15 @@
     "multer": "^1.4.5-lts.1",
     "node-rabbitmq-client": "^3.0.2",
     "node-rsa": "^1.1.1",
+    "node-schedule": "^2.1.1",
     "oauth2-server-model-prisma": "^0.9.0",
     "passport": "^0.6.0",
     "passport-google-oidc": "^0.1.0",
     "passport-google-oidc-token": "^1.0.3",
     "passport-http-bearer": "^1.0.1",
     "prisma": "^4.7.1",
+    "string-template": "^1.0.0",
     "typescript": "^4.9.4",
-    "url-template": "^3.1.0",
     "validator": "^13.9.0",
     "zod": "^3.20.2"
   },
@@ -70,6 +73,8 @@
     "@types/express-session": "^1.17.9",
     "@types/jsonwebtoken": "^9.0.0",
     "@types/morgan": "^1.9.7",
-    "@types/node": "^18.11.15"
+    "@types/node": "^18.11.15",
+    "@types/node-schedule": "^2.1.5",
+    "@types/string-template": "^1.0.6"
   }
 }
