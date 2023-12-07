@@ -98,6 +98,9 @@ app.use(function onError(err:Error, req:Request, res:Response, next:NextFunction
       let message = err.message.split("\n");
       return res.status(StatusCodes.BAD_REQUEST).send({status:StatusCodes.BAD_REQUEST, message:message[message.length-1],content:err.meta})
     }
+    if (err instanceof BaseError){
+        return res.status(err.status).send(err)
+    }
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({status:StatusCodes.INTERNAL_SERVER_ERROR, message:err.message})
   })
   
