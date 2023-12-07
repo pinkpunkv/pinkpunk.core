@@ -78,7 +78,7 @@ export default function make_user_service(db_connection:PrismaClient){
                 }
             })
             let rconn = await create_message_broker_connection()
-            await rconn.publish_user_action("confirm", user.email, "ru", token.token)
+            await rconn.publish_user_action("confirm", user.email, "BY", token.token)
             return user
         })
         
@@ -184,7 +184,7 @@ export default function make_user_service(db_connection:PrismaClient){
         })
         
         let rconn = await create_message_broker_connection()
-        await rconn.publish_user_action("forgot", user.email, "ru", token.token)
+        await rconn.publish_user_action("forgot", user.email, "BY", token.token)
 
         return res.status(StatusCodes.CREATED).send({
             status:StatusCodes.CREATED,
