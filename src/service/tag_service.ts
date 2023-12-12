@@ -19,10 +19,12 @@ export default function make_tag_service(db_connection:PrismaClient){
                     include:{
                         fields:{
                             where:{
-                                language:{symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }}
+                                language:{
+                                    symbol:{
+                                        equals: lang,
+                                        mode: 'insensitive'
+                                    }
+                                }
                             }
                         },
                         categories:{
@@ -31,9 +33,9 @@ export default function make_tag_service(db_connection:PrismaClient){
                                     where:{
                                         language:{
                                             symbol:{
-                                equals: lang,
-                                mode: 'insensitive'
-                            }
+                                                equals: lang,
+                                                mode: 'insensitive'
+                                            }
                                         }
                                     }
                                 }

@@ -19,33 +19,36 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         get_user_checkouts
     });
 
-    function map_checkout(checkout: any){
+    function map_checkout(checkout: any): any {
         checkout.total = 0;
         checkout.currencySymbol = "BYN";
-        delete checkout.infoId
-        delete checkout.info?.id
+        delete checkout.infoId;
+        delete checkout.info?.id;
+    
         let totalAmount = new Decimal(0);
-        checkout.variants.forEach((x:any)=>{
-            x.id=x.variantId
-            x.product = x.variant.product
-            x.variant.product.fields.forEach(async(field:Field)=>{
-                x.product[field.fieldName]=field.fieldValue
-            })
-            x.variant.product.images?.forEach((image:any)=>{
-                x.product['image'] = image.image;
-            })
-            checkout.total+=x.count
-            totalAmount = totalAmount.add(new Decimal(x.count).mul(new Decimal(x.product.price)))
-        
-            x.maxCount = x.variant.count
-            x.size = x.variant.size
-            x.color = x.variant.color
-            delete x.variantId
-            delete x.checkoutId
-            delete x.variant
-            delete x.product.fields
-            delete x.product.images
-        })
+    
+        checkout.variants.forEach((item: any) => {
+            const { variantId, variant, count } = item;
+            const { product } = variant;
+    
+            item.id = variantId;
+            item.product = { ...product, image: product.images[0]?.image };
+            product.fields.forEach((field: Field) => item.product[field.fieldName] = field.fieldValue);
+    
+            checkout.total += count;
+            totalAmount = totalAmount.add(new Decimal(count).mul(new Decimal(product.price)));
+    
+            item.maxCount = variant.count;
+            item.size = variant.size;
+            item.color = variant.color;
+    
+            delete item.variantId;
+            delete item.checkoutId;
+            delete item.variant;
+            delete item.product.fields;
+            delete item.product.images;
+        });
+    
         checkout.totalAmount = totalAmount;
         return checkout;
     }
@@ -364,6 +367,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             content: map_checkout(checkout)
         })
     }
+
     async function get_checkouts(req:Request, res: Response) {
         let{skip=0,take=20,lang="ru",statuses="completed,pending,declined,preprocess",orderBy='{"orderDate":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]
@@ -421,6 +425,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             content: map_checkout(checkout)
         })
     }
+    
     async function remove_variant_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};

@@ -1,5 +1,3 @@
-import { PrismaClient } from '@prisma/client'
-import {StatusCodes} from 'http-status-codes'
 import {config} from '../config'
 import axios, { AxiosResponse } from 'axios';
 import Decimal from 'decimal.js';

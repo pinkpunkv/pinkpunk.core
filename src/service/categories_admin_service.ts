@@ -17,7 +17,6 @@ export default function make_admin_category_service(db_connection:PrismaClient){
             }
         })
         
-        
         let category = await db_connection.category.create({
             data:{
                 slug:slug,

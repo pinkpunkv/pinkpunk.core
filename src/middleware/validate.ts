@@ -12,16 +12,14 @@ export default function validate (schema: AnyZodObject) {
             
             next();
         } catch (error) {
-        if (error instanceof ZodError) {
-            console.log(error);
-            
-            return res.status(417).json({
-            status: 417,
-            message: "validation error",
-            errors:error.issues.map(x=> JSON.parse(x.message))
-            });
-        }
-        next(error);
+            if (error instanceof ZodError) {
+                return res.status(417).json({
+                    status: 417,
+                    message: "validation error",
+                    errors:error.issues.map(x=> JSON.parse(x.message))
+                });
+            }
+            next(error);
         }
     };
 }

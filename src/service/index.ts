@@ -42,16 +42,12 @@ let s3storage = connectS3(process.env.storage);
 let t_storage = token_storage(path.join(path.resolve(root.path), "/static/storage.json"))
 
 db_connection.$use(async (params, next) => {
-    // Check incoming query type
     if (params.model == 'Variant'||params.model=="Product") {
       if (params.action == 'delete') {
-        // Delete queries
-        // Change action to an update
         params.action = 'update'
         params.args['data'] = { deleted: true }
       }
       if (params.action == 'deleteMany') {
-        // Delete many queries
         params.action = 'updateMany'
         if (params.args.data != undefined) {
           params.args.data['deleted'] = true

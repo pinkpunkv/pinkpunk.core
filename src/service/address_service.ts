@@ -58,12 +58,8 @@ export default function make_address_service(db_connection:PrismaClient){
             data:{
                 mask:address_dto.mask,
                 fields:{
-                    deleteMany:{
-                        addressId:addressId
-                    },
-                    createMany: {
-                        data: address_dto.fields
-                    } 
+                    deleteMany:{ addressId:addressId },
+                    createMany: { data: address_dto.fields } 
                 }
             },
             include:{
@@ -84,12 +80,8 @@ export default function make_address_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.address.delete({
-                where:{
-                    id:address_id
-                },
-                include:{
-                    fields:true
-                }
+                where:{ id:address_id },
+                include:{ fields:true }
             })
         })
     }
@@ -99,11 +91,7 @@ export default function make_address_service(db_connection:PrismaClient){
             data:{
                 userId:req.body.authenticated_user.id,
                 mask: address_dto.mask,
-                fields:{
-                    createMany:{
-                        data: address_dto.fields
-                    }
-                },
+                fields:{ createMany:{ data: address_dto.fields } },
             },
             include:{
                 fields:true

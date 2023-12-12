@@ -15,25 +15,25 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
     async function get_variant_products(req:Request, res: Response){
         let {id=0} = {...req.params};
         let variants = await db_connection.variant.findMany({
-            where:{id:id},
-            distinct:['colorId','size'],
-            include:{
+            where: {id:id},
+            distinct: ['colorId','size'],
+            include: {
                 product:true,
                 color:true
             }
         });
         
         return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
-            message:"success",
-            content:variants
+            status: StatusCodes.OK,
+            message: "success",
+            content: variants
         })
     }
     async function create_variant_template(req:Request, res: Response){
         let {size = "",color=""} ={...req.body};
         return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
-            message:"success", 
+            status: StatusCodes.OK,
+            message: "success", 
             content: await db_connection.variantTemplate.create({
                 data:{
                     size:size,
@@ -44,17 +44,17 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
     }
     async function get_variants_template(req:Request, res: Response){
         return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
-            message:"success", 
+            status: StatusCodes.OK,
+            message: "success", 
             content: await db_connection.variantTemplate.findMany({})
         })
     }
     async function detele_variants_templates(req:Request, res: Response){
         let ids:number[] = {...req.body} as any
         return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
-            message:"success", 
-            content: await db_connection.variantTemplate.deleteMany({where:{id:{in:ids}}})
+            status: StatusCodes.OK,
+            message: "success", 
+            content: await db_connection.variantTemplate.deleteMany({ where: { id: { in: ids } } })
         })
     }
 
@@ -72,42 +72,36 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
             for (let variant_data of variants) {
                 variant_data.colorId = Number(variant_data.colorId)
                 let productVariantInd = productVariants.findIndex(x=>variant_data.colorId==x.colorId&&variant_data.size==x.size)
-                let size = await db_connection.size.findFirst({where:{size:variant_data.size}})
+                let size = await db_connection.size.findFirst({ where: { size: variant_data.size } })
                 if (size==null)
-                    size = await db_connection.size.create({data:{size:variant_data.size}}) 
+                    size = await db_connection.size.create({ data: { size: variant_data.size } }) 
                 if(productVariantInd!=-1)
                 {
                     let variant = productVariants.at(productVariantInd)
-                    variantsData.push(await db_connection.variant.update({
-                        where:{
-                            id:variant!.id
-                        },
-                        data:{
-                            colorId:variant_data.colorId,
-                            productId:productId,
-                            count:variant_data.count,
-                            images:{
-                                connect:variant_data.images
-                            },
-                            deleted:false
-                        }
-                    }))
+                    variantsData.push(
+                        await db_connection.variant.update({
+                            where: { id:variant!.id },
+                            data:{
+                                colorId: variant_data.colorId,
+                                productId: productId,
+                                count: variant_data.count,
+                                images: { connect:variant_data.images },
+                                deleted: false
+                            }
+                        })
+                    )
                     productVariants.splice(productVariantInd,1)
                 }
                 else{
                     variantsData.push(await db_connection.variant.create({
                             data:{
-                                size:size.size,
-                                colorId:variant_data.colorId,
-                                productId:productId,
-                                count:variant_data.count,
-                                images:{
-                                    connect:variant_data.images
-                                }
+                                size: size.size,
+                                colorId: variant_data.colorId,
+                                productId: productId,
+                                count: variant_data.count,
+                                images: { connect:variant_data.images }
                             },
-                            include:{
-                                color:true
-                            }
+                            include: { color:true }
                         })
                     )
                 }
@@ -115,9 +109,7 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
            
             await db_connection.variant.deleteMany({
                 where:{
-                    id:{
-                        in:productVariants.map(x=>x.id)
-                    }
+                    id:{ in:productVariants.map(x=>x.id) }
                 }
             })
             return variantsData;
@@ -125,8 +117,8 @@ export default function make_admin_variant_service(db_connection:PrismaClient){
         
         
         return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
-            message:"success", 
+            status: StatusCodes.OK,
+            message: "success", 
             content: result
         })
     }

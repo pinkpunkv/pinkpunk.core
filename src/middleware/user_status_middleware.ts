@@ -6,9 +6,7 @@ export default async function user_status_middleware(req:Request,res:Response,ne
 
     if(!act){req.body.authenticated_user = {is_anonimus:true}; return next()}
     try{
-   
         let verified = verify_jwt(act.split(' ')[1],"accessTokenPrivateKey");
-
         req.body.authenticated_user = {id:verified.id, is_anonimus:false, role:verified.role}
         return next()
     }
