@@ -259,16 +259,17 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {deliveryType = "pickup",email="",phone="",paymentType="cash",firstName="",lastName="", comment=""} = {...req.body}
         let addressData = new AddressDto(req.body['address'])
         let addressField = new AddressFieldDto(req.body['address'])
-
-        if (addressData==null && deliveryType != "pickup")
+        console.log(addressData);
+        
+        if (addressData.id==undefined && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
-
+        
         let address: Address | undefined;
         if (deliveryType!="pickup")
             address = await db_connection.address.upsert({
                 where:{
-                    id:addressData.id
+                    id:addressData.id!
                 },
                 create:{
                     userId:req.body.authenticated_user.id,
@@ -584,6 +585,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             })
             let rconn = await create_message_broker_connection()
+            rconn.publish_order_info
             await publish(checkout, products, totalProducts, token, totalAmount)
             return {orderId:checkout!.orderId};
         })
