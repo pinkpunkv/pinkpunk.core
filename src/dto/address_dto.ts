@@ -30,7 +30,7 @@ class AddressDto{
     mask: string
     fields: AddressFieldDto[]
     constructor(model: any) {
-        this.id = model?.id || undefined
+        this.id = model?.id || ""
         this.userId = model?.userId || ""
         this.mask = model?.mask || ""
         this.fields = model?.fields?model.fields.map((x:any)=>new AddressFieldDto(x)):[]

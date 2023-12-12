@@ -257,19 +257,18 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
         let {deliveryType = "pickup",email="",phone="",paymentType="cash",firstName="",lastName="", comment=""} = {...req.body}
-        let addressData = new AddressDto(req.body['address'])
-        let addressField = new AddressFieldDto(req.body['address'])
-        console.log(addressData);
-        
-        if (addressData.id==undefined && deliveryType != "pickup")
+        let addressData = req.body['address']?new AddressDto(req.body['address']):null
+        let addressField = req.body['address']?new AddressFieldDto(req.body['address']):null
+
+        if ((!addressData || !addressField) && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
         
         let address: Address | undefined;
-        if (deliveryType!="pickup")
+        if (deliveryType!="pickup"&&addressData&&addressField)
             address = await db_connection.address.upsert({
                 where:{
-                    id:addressData.id!
+                    id:addressData.id
                 },
                 create:{
                     userId:req.body.authenticated_user.id,
