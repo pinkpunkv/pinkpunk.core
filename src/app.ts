@@ -24,7 +24,6 @@ app.use(morgan('combined'))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
 var whitelist = ["http://localhost:3000","http://localhost:3001","http://localhost:3002","http://localhost:33555"]
 
 app.use(cors({
@@ -69,7 +68,7 @@ app.use('/api/v1/admin/variant', variant_admin_router)
 app.use('/api/v1/collection', collection_router)
 app.use('/api/v1/admin/collection', collection_admin_router)
 
-app.use("/api/v1/admin/image",image_admin_router)
+app.use("/api/v1/admin/image", image_admin_router)
 
 app.use('/api/v1/language', language_router)
 app.use('/api/v1/admin/language', language_admin_router)
@@ -77,18 +76,18 @@ app.use('/api/v1/admin/language', language_admin_router)
 app.use('/api/v1/tag', tag_router)
 app.use('/api/v1/admin/tag', tag_admin_router)
 
-app.use('/api/v1/user',user_router)
+app.use('/api/v1/user', user_router)
 app.use('/api/v1/admin/user',user_admin_router)
 
-app.use('/api/v1/cart',cart_router)
+app.use('/api/v1/cart', cart_router)
 
-app.use('/api/v1/wishList',wish_list_router)
+app.use('/api/v1/wishList', wish_list_router)
 
-app.use('/api/v1/checkout',checkout_router)
+app.use('/api/v1/checkout', checkout_router)
 app.use('/api/v1/admin/checkout',checkout_admin_router)
 
-app.use('/api/v1/admin/color',color_admin_router)
-app.use('/api/v1/admin/size',size_admin_router)
+app.use('/api/v1/admin/color', color_admin_router)
+app.use('/api/v1/admin/size', size_admin_router)
 
 app.use('/api/v1/post', post_router)
 

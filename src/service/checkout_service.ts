@@ -255,8 +255,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
     async function update_checkout(req:Request, res: Response) {
         let checkoutId = req.params["checkoutId"]
-        let {lang="ru"}= {...req.query}
-        let {deliveryType = "pickup",email="",phone="",paymentType="cash",firstName="",lastName="", comment=""} = {...req.body}
+        let {lang = "ru"}= {...req.query}
+        let {deliveryType = "pickup", email = "", phone = "", paymentType = "cash", firstName = "", lastName = "", comment = ""} = {...req.body}
         let addressData = req.body['address']?new AddressDto(req.body['address']):null
         let addressField = req.body['address']?new AddressFieldDto(req.body['address']):null
 
