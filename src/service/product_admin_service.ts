@@ -210,7 +210,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                             productId:productData.id
                         },
                         createMany:{
-                            data:images
+                            data:images.map(x=>{return{imageId:x.id,number:x.number,isMain:x.isMain}})
                         }
                     },
                     basePrice:Number(basePrice),
