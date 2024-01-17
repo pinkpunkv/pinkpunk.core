@@ -197,7 +197,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                     collectionId:collectionId,
                     fields:{
                         deleteMany:{id:{
-                            in:productData.fields.map(x=>x.id)
+                            in:productData.fields.map((x:any)=>x.id)
                         }},
                         create:fields
                     },
@@ -210,7 +210,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
                             productId:productData.id
                         },
                         createMany:{
-                            data:images.map(x=>{return{imageId:x.id,number:x.number,isMain:x.isMain}})
+                            data:images.map((x:any)=>{return{imageId:x.id,number:x.number,isMain:x.isMain}})
                         }
                     },
                     basePrice:Number(basePrice),
