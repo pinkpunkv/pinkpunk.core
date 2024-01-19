@@ -34,12 +34,12 @@ import make_post_service from './post_service'
 import {db} from '../database'
 import {connectS3} from '../helper'
 import { token_storage } from '../token_storage';
+import make_main_slider_service from './main_slider'
 import path from 'path'
-import root from 'app-root-path';
 
 let db_connection = db();
 let s3storage = connectS3(process.env.storage);
-let t_storage = token_storage(path.join(path.resolve(root.path), "/static/storage.json"))
+let t_storage = token_storage()
 
 db_connection.$use(async (params, next) => {
     if (params.model == 'Variant'||params.model=="Product") {
@@ -81,28 +81,30 @@ const checkout_admin_service = make_admin_checkout_service(db_connection)
 const color_admin_service = make_color_admin_service(db_connection)
 const size_admin_service = make_size_admin_service(db_connection)
 const post_service = make_post_service(db_connection, t_storage)
+const main_slider_service = make_main_slider_service(db_connection)
 
 export {
+  tag_service,
+  post_service,
+  user_service,
+  cart_service,
   address_service,
   product_service,
+  language_service,
+  checkout_service,
+  category_service,
+  tag_admin_service,
+  wish_list_service,
+  user_admin_service,
   collection_service,
+  size_admin_service,
+  color_admin_service,
+  main_slider_service,
+  image_admin_service,
   product_admin_service,
   variant_admin_service,
-  collection_admin_service,
-  category_service,
   category_admin_service,
-  image_admin_service,
-  tag_admin_service,
-  tag_service,
-  language_service,
   language_admin_service,
-  user_service,
-  user_admin_service,
-  cart_service,
-  wish_list_service,
-  checkout_service,
   checkout_admin_service,
-  color_admin_service,
-  size_admin_service,
-  post_service
+  collection_admin_service,
 }

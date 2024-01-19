@@ -32,9 +32,22 @@ model Product {
   categories      Category[]  @relation("CategoryToProduct")
   fields          Field[]     @relation("FieldToProduct")
   wishLists       WishList[]
+  sliders MainSliderSettings[]
   @@index([slug])
 }
+model MainSliderSettings {
+  id              Int        @id
+  title String
+  title2 String
+  mainButtonText String
+  mainButtonLink String
 
+  subtitle String
+  subtitleDesc String
+  subtitleButtonText String
+  subtitleButtonLink String
+  products Product[]
+}
 model Category {
   id              Int        @id @default(autoincrement())
   parentId        Int?

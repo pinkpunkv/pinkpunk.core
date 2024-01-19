@@ -254,11 +254,10 @@ export default function make_user_service(db_connection:PrismaClient){
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: res
+            content: null
         })
     }
     async function confirm_change_password(req:Request, res: Response) {
-        
         let ct = req.query.token!.toString()
         let token = await db_connection.token.findFirstOrThrow({
             where:{

@@ -2,15 +2,16 @@ import { Prisma, PrismaClient } from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
-import Decimal from 'decimal.js';
+
 
 export default function make_client_product_service(db_connection:PrismaClient){
     return Object.freeze({
-        get_products,
+        get_popular_and_new_products,
         get_products_pathes,
-        search_products,
-        get_product,
         get_product_by_path,
+        search_products,
+        get_products,
+        get_product,
         get_filters,
         want_to
     });
@@ -79,27 +80,27 @@ export default function make_client_product_service(db_connection:PrismaClient){
         })
         if (want==null)
         want = await db_connection.want.create({
-                data:{
-                    productId: Number(id),
-                    email:email,
-                    updatedAt:new Date().toISOString()
-                }
-            })
-
+            data:{
+                productId: Number(id),
+                email:email,
+                updatedAt:new Date().toISOString()
+            }
+        })
         
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content:{wants:want}
         }) 
-        
     }
+
     async function search_products(req:Request, res: Response){
         let{skip=0,take=5,search="",lang="ru"}={...req.query}
 
         let products = await db_connection.product.findMany({
             where:{
-                deleted:false,
+                deleted: false,
+                active: true,
                 fields:{
                     some:{
                         fieldName:"name",
@@ -189,6 +190,27 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 max:prices[0].max
             }
         })  
+    }
+    async function get_popular_and_new_products(req:Request, res: Response) {
+        let{lang="ru"}={...req.query}
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
+            message:"success", 
+            content: {
+                new: await db_connection.product.findMany({
+                    where:{deleted: false, active: true},
+                    orderBy: {createdAt: "asc"},
+                    include:get_include(lang),
+                    take: 10
+                }),
+                hype: await db_connection.product.findMany({
+                    where:{deleted: false, active: true},
+                    orderBy: {views: "desc"},
+                    include:get_include(lang),
+                    take: 10
+                })
+            }
+        })
     }
     async function get_product_by_path(req:Request, res: Response) {
         let {path=''} = {...req.params};

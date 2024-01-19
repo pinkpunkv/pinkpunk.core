@@ -45,3 +45,16 @@ export interface TokenData{
     expires_in: number
     expires_at: number
 }
+
+export interface MainSliderData{
+    title: string
+    title2: string
+    mainButtonText: string
+    mainButtonLink: string
+
+    subtitle: string
+    subtitleDesc: string
+    subtitleButtonText: string
+    subtitleButtonLink: string
+    products: number[]
+}

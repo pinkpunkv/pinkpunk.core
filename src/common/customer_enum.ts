@@ -4,7 +4,7 @@ export enum CustomerErrorCode {
     Taken = 'TAKEN',
     TooLong = 'TOO_LONG',
     TooShort = 'TOO_SHORT',
-    TooManyRequests = 'TOO_MANY REQUESTS',
+    TooManyRequests = 'TOO_MANY_REQUESTS',
     UnidentifiedCustomer = 'UNIDENTIFIED_CUSTOMER',
     CustomerDisabled = 'CUSTOMER_DISABLED',
     PasswordStartsOrEndsWithWhitespace = 'PASSWORD_STARTS_OR_ENDS_WITH_WHITESPACE',

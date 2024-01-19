@@ -1,8 +1,9 @@
 import { TokenStorage } from "./token_storage";
+import path from 'path'
+import root from 'app-root-path';
 
-function token_storage(file_path: string) : TokenStorage{
-    console.log(file_path)
-    return TokenStorage.getInstance(file_path)
+function token_storage() : TokenStorage{
+    return TokenStorage.getInstance(path.join(path.resolve(root.path), "/static/storage.json"))
 }
 
 export {
