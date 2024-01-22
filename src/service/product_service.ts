@@ -255,19 +255,9 @@ export default function make_client_product_service(db_connection:PrismaClient){
             content:(await db_connection.product.findMany({
                 where:{deleted:false},
                 select:{
-                    fields:{
-                        where:{
-                            fieldName:"path",
-                            language:{
-                                symbol:{
-                                    equals:lang,
-                                    mode: 'insensitive'
-                                }
-                            }
-                        }
-                    }
+                    slug: true
                 }
-            })).filter(x=>x.fields.length>0).map(x=> x.fields[0].fieldValue)
+            })).filter(x=>x.slug)
         })
     }
 
