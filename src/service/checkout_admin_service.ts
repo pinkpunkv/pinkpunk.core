@@ -235,14 +235,15 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
 
         let {deliveryType = "pickup", status="pending", variants = []} = {...req.body}
         let info_dto = new CheckoutInfoDto(req.body['info'])
-        let address_dto = new AddressDto(req.body['address'])
+        let address_dto = req.body['address']?new AddressDto(req.body['address']):null
 
         let checkout_ = await db_connection.$transaction(async ()=>{
             let checkout = await get_checkout_without_fields(checkoutId)
             if(checkout==null)
                 throw new BaseError(417,"checkout not found",[]);
-                
-            let address = await db_connection.address.upsert({
+            let address
+            if (address_dto)
+            address = await db_connection.address.upsert({
                 where:{id:address_dto.id},
                 create:{
                     userId:checkout.userId,
@@ -267,7 +268,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 include:{
                     fields:true
                 }
-                
+
             })
            
             if (checkout.infoId!=null)
