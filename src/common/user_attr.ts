@@ -1,4 +1,4 @@
-export default interface UserAttr{
+export interface RequestUser{
     id:string
     is_anonimus:boolean
     role:string

@@ -4,4 +4,4 @@ let size_admin_router = express.Router();
 
 size_admin_router.get("/",size_admin_service.get_all_sizes)
 
-export default size_admin_router;
+export {size_admin_router};

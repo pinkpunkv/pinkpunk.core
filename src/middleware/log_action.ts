@@ -4,7 +4,7 @@ import {db} from '../database'
 let db_connection = db();
 let loggable_methods = ['post', 'put', 'delete']
 
-export default function log_middleware(){
+export function log_action(){
     return async (req:Request,res:Response,next:NextFunction) => {
         console.log("URL");
         

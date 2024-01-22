@@ -52,6 +52,7 @@ export default function make_admin_product_service(db_connection:PrismaClient){
             }
         })
     }
+    
     async function get_product(req:Request, res: Response){
         let {id=0} = {...req.params};
         

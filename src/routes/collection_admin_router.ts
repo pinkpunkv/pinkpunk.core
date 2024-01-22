@@ -8,4 +8,4 @@ collection_admin_router.post('/',collection_admin_service.create_collection)
 collection_admin_router.put('/:id',collection_admin_service.update_collection)
 collection_admin_router.delete('/:id',collection_admin_service.delete_collection)
 
-export default collection_admin_router;
+export {collection_admin_router};

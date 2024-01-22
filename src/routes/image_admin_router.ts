@@ -11,4 +11,4 @@ image_admin_router.get("/",image_admin_service.get_files)
 image_admin_router.delete('/',image_admin_service.delete_images)
 image_admin_router.delete('/folder',image_admin_service.delete_folder)
 
-export default image_admin_router;
+export {image_admin_router};

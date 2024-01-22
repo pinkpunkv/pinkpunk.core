@@ -1,40 +1,40 @@
 import { PrismaClient,DeliveryType,Prisma, PaymentType , Address, CheckoutStatus, Checkout, Token, Field} from '@prisma/client'
 import { Request, Response } from "express";
 
-import UserAttr from '../common/user_attr'
+import {RequestUser} from '../common/user_attr'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
 import {CustomerErrorCode} from '../common'
 import { create_message_broker_connection } from '../helper';
 import Decimal from 'decimal.js';
-import {paymentSrvice} from '../helper'
+import {alpha_payment_service} from '../helper'
 
 import generateToken from '../utils/generate_token';
 import {AddressFieldDto, AddressDto} from '../dto'
 import { ProductMessage } from '../abstract/types';
 
 
-async function publish(checkout: Checkout & any, products:ProductMessage[], totalProducts: number, token: Token, totalAmount: Decimal) {
+async function publish(checkout: Checkout & any, products:ProductMessage[], total: number, token: Token, total_amount: Decimal) {
     let rconn = await create_message_broker_connection()
     await rconn.publish_order_info("order",checkout!.info!.email, token.token,"BY", {
         orderId:checkout!.orderId,
-        productsCount:totalProducts,
-        total:totalAmount.toString(),
+        productsCount:total,
+        total:total_amount.toString(),
         deliveryPrice:"0",
         products:products,
         info:{
-            contactFL:checkout!.info!.firstName+" "+checkout!.info!.lastName,
-            email:checkout!.info!.email,
-            phone:checkout!.info!.phone,
-            addressFL:checkout!.address!.fields[0].firstName+" "+checkout!.address!.fields[0].lastName,
-            address:`${checkout!.address!.fields[0].street} ${checkout!.address!.fields[0].apartment} ${checkout!.address!.fields[0].building}`,
-            postalCode:checkout!.address!.fields[0].zipCode,
-            city:checkout!.address!.fields[0].city,
-            country: checkout!.address!.fields[0].country
+            contactFL:checkout.info!.firstName+" "+checkout!.info!.lastName,
+            email:checkout.info!.email,
+            phone:checkout.info!.phone,
+            addressFL:checkout.address!.fields[0].firstName+" "+checkout!.address!.fields[0].lastName,
+            address:`${checkout.address!.fields[0].street} ${checkout!.address!.fields[0].apartment} ${checkout!.address!.fields[0].building}`,
+            postalCode:checkout.address!.fields[0].zipCode,
+            city:checkout.address!.fields[0].city,
+            country: checkout.address!.fields[0].country
         },
         discount:"0",
-        finalTotal:totalAmount.toString(),
+        finalTotal:total_amount.toString(),
     })
 }
 
@@ -84,7 +84,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         return checkout;
     }
 
-    async function getUserAdress(address_id: string,user:UserAttr) {
+    async function get_user_address(address_id: string,user:RequestUser) {
         return await db_connection.address.findFirst({
             where:user.is_anonimus?{
                 id:address_id,
@@ -99,7 +99,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function get_checkoutVariant(checkout_id:string,variant_id:number) {
+    async function get_checkout_variant(checkout_id:string,variant_id:number) {
         return await db_connection.checkoutVariants.findFirst({
             where:{checkoutId:checkout_id,variantId:variant_id},
             include:{
@@ -112,8 +112,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function getUserCart(cart_id:string, user:UserAttr) {
-        return db_connection.cart.findFirst({
+    async function get_user_cart(cart_id:string) {
+        return db_connection.cart.findFirstOrThrow({
             where:{id:cart_id},
             include:{
                 variants:{
@@ -134,14 +134,25 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function getUserCheckout(lang: string,checkout_id:string,user:UserAttr) {
-        return db_connection.checkout.findFirst({
+    async function get_checkout_or_throw(lang: string,checkout_id:string) {
+        return db_connection.checkout.findFirstOrThrow({
             where:{id:checkout_id},
             include:get_checkout_include(lang)
         })
     }
+    
+    async function get_checkout_by_status_or_throw(checkout_id:string, status: CheckoutStatus) {
+        return db_connection.checkout.findFirst({
+            where:{id:checkout_id,status:status},
+            include:{
+                variants:true,
+                info:true,
+                address:true
+            }
+        })
+    }
 
-    async function getUserCheckoutWithoutFields(checkout_id:string,user:UserAttr, status: CheckoutStatus) {
+    async function get_checkout_by_status(checkout_id:string, status: CheckoutStatus) {
         return db_connection.checkout.findFirst({
             where:{id:checkout_id,status:status},
             include:{
@@ -208,14 +219,13 @@ export default function make_checkout_service(db_connection:PrismaClient){
             content: checkouts.map(x=>map_checkout(x))
         })
     }
+
     async function preprocess_checkout(req:Request, res: Response) {
         let {lang="ru",checkoutId="",cartId=""}= {...req.query}
-        let checkout = await getUserCheckoutWithoutFields(checkoutId, req.body.authenticated_user, "preprocess")
+        let checkout = await get_checkout_by_status(checkoutId, "preprocess")
         
         let checkout_ = await db_connection.$transaction(async ()=>{
-            let cart = await getUserCart(cartId,req.body.authenticated_user)
-            if(cart==null)
-                throw new BaseError(417,"cart not found",[]);
+            let cart = await get_user_cart(cartId)
             checkout = await db_connection.checkout.upsert({
                 where:{
                     id:checkoutId
@@ -260,10 +270,14 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let addressData = req.body['address']?new AddressDto(req.body['address']):null
         let addressField = req.body['address']?new AddressFieldDto(req.body['address']):null
 
+        let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
+        if(checkout==null)
+            throw new BaseError(417,"checkout not found",[]);
+        
         if ((!addressData || !addressField) && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
-        
+
         let address: Address | undefined;
         if (deliveryType!="pickup"&&addressData&&addressField)
             address = await db_connection.address.upsert({
@@ -296,9 +310,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         // let address = await getUserAdress(addressId,req.body.authenticated_user)
         // if (address==null&&deliveryType!="pickup")
         //     throw new BaseError(417,"address not found",[]);
-        let checkout = await getUserCheckoutWithoutFields(checkoutId,req.body.authenticated_user,"preprocess")
-        if(checkout==null)
-            throw new BaseError(417,"checkout not found",[]);
+        
         
         let checkout_ = await db_connection.$transaction(async ()=>{
             return await db_connection.checkout.update({
@@ -340,34 +352,33 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
     async function add_to_checkout(req:Request, res: Response) {
-        let{checkoutId=""}={...req.params}
-        let {variantId=0,lang="ru"} = {...req.query};
-        variantId = Number(variantId)
-        let checkout = await getUserCheckout(lang,checkoutId,req.body.authenticated_user)
-        let variant = await db_connection.variant.findFirst({
+        let { checkoutId="" } = {...req.params}
+        let { variantId=0, lang="ru" } = {...req.query};
+        let checkout = await get_checkout_or_throw(lang,checkoutId)
+        let variant = await db_connection.variant.findFirstOrThrow({
             where:{
-                id: variantId,
+                id: Number(variantId),
                 deleted:false
             }
         })
-        if (variant == null)
-            throw new BaseError(417,"variant with this id not found",[]);
-        if(checkout==null)
-            throw new BaseError(417,"checkout with this id not found",[]);
-        let ind = checkout.variants.findIndex(x=>x.variantId==variantId)
+        let ind = checkout.variants.findIndex(x=>x.variantId==variant.id)
         if (ind!=-1&&variant.count==checkout.variants[ind].count)
-            return { status:StatusCodes.OK, message:"success", content: map_checkout(checkout)}
+            return res.status(StatusCodes.OK).send({ 
+                status:StatusCodes.OK, 
+                message:"success", 
+                content: map_checkout(checkout)
+            })
         
         let checkoutVariant = await db_connection.checkoutVariants.upsert({
             where:{
                 checkoutId_variantId:{
                     checkoutId:checkout.id,
-                    variantId:variantId,   
+                    variantId:variant.id,   
                 }
             },
             create:{
                 checkoutId:checkout.id,
-                variantId:variantId
+                variantId:variant.id
             },
             update:{
                 count:{increment:1}
@@ -388,32 +399,35 @@ export default function make_checkout_service(db_connection:PrismaClient){
             content: map_checkout(checkout)
         })
     }
+
     async function get_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {lang="ru"} = {...req.query};
-        let checkout = await getUserCheckout(lang,checkoutId,req.body.authenticated_user)
-        if(checkout==null)
-            throw new BaseError(417,"checkout with this id not found",[]);
-         
+        let checkout = await get_checkout_or_throw(lang, checkoutId)
+        
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
             content: map_checkout(checkout)
         })
     }
+
     async function remove_variant_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        let checkout = await getUserCheckoutWithoutFields(checkoutId,req.body.authenticated_user, CheckoutStatus.preprocess)
-        if(checkout==null)
-            throw new BaseError(417,"checkout with this id not found",[]);
+        let checkout = await get_checkout_or_throw(lang, checkoutId)
+
+        let variant = await db_connection.variant.findFirstOrThrow({
+            where:{id: Number(variantId), deleted: false}
+        })
+
         checkout = await db_connection.checkout.update({
             where:{id:checkout.id},
             data:{
                 variants:{
                     delete:{
                         checkoutId_variantId:{
-                            variantId:Number(variantId),
+                            variantId:variant.id,
                             checkoutId:checkout.id
                         }
                     }
@@ -421,6 +435,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             },
             include:get_checkout_include(lang)
         })
+
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
@@ -431,14 +446,14 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function decrease_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        let checkout = await getUserCheckout(lang,checkoutId,req.body.authenticated_user)
-        if(checkout==null)
-            throw new BaseError(417,"checkout with this id not found",[]);
-        let checkoutVariant = await get_checkoutVariant(checkoutId,variantId);
-        if(checkoutVariant == null)
+        let checkout = await get_checkout_or_throw(lang,checkoutId)
+        
+        let checkout_variant = await get_checkout_variant(checkoutId, variantId);
+        if(checkout_variant == null)
             throw new BaseError(417,"checkout variant with this id not found",[]);
+
         let ind = checkout.variants.findIndex(x=>x.variantId==variantId)
-        if(checkoutVariant.count==1){
+        if(checkout_variant.count==1){
             await db_connection.checkoutVariants.delete({
                 where:{
                     checkoutId_variantId:{
@@ -475,14 +490,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {checkoutId=""} = {...req.params}
         let {lang="ru"} = {...req.query};
         
-        let checkout = await getUserCheckout(lang,checkoutId,req.body.authenticated_user)
-        if(checkout==null)
-            throw new BaseError(417,"checkout not found",[]);
+        let checkout = await get_checkout_or_throw(lang, checkoutId)
         
         if(checkout.info==null)
             throw new BaseError(417,"user details is required",[]);
 
-        let [totalProducts, products, totalAmount] = _calcCheckoutData(checkout.variants);
+        let [totalProducts, products, totalAmount] = get_checkot_data(checkout.variants);
         
         let result;
         if (checkout.paymentType=="online"){
@@ -496,10 +509,10 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     }
                 })
                 
-                let new_orderId: any = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
-                checkout!.orderId = Number(new_orderId[0].nextval)
+                let new_order_id: any = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
+                checkout!.orderId = Number(new_order_id[0].nextval)
                 
-                let payres = await paymentSrvice.pay_for_order(checkout!.orderId.toString(),totalAmount,token.token)
+                let payres = await alpha_payment_service.create_payment(checkout!.orderId.toString(),totalAmount,token.token)
                 if(payres.data.errorCode)
                     throw new BaseError(500,"something went wrong",payres.data);
             
@@ -551,20 +564,20 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {checkoutId=""} = {...req.params}
         let {lang="ru"} = {...req.query};
         
-        let checkout = await getUserCheckout(lang,checkoutId,req.body.authenticated_user)
-        if(checkout==null)
-            throw new BaseError(417,"checkout not found",[]);
+        let checkout = await get_checkout_or_throw(lang,checkoutId)
+
         if(checkout.paymentType=="online")
             throw new BaseError(417,"invalid payment type",[]);
+        
         if(checkout.status=="pending")
             return {
-                status:StatusCodes.CREATED,
+                status:StatusCodes.OK,
                 message:"success",
                 content: {
                     orderId:checkout.orderId
                 }
             }
-        let [totalProducts, products, totalAmount] = _calcCheckoutData(checkout.variants);
+        let [product_total, products, total_amount] = get_checkot_data(checkout.variants);
             
         let token = await db_connection.token.create({
             data:{ 
@@ -573,7 +586,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 objectId:checkout.orderId.toString()
             }
         })
-        totalAmount=totalAmount.mul(new Decimal(100))
+        total_amount = total_amount.mul(new Decimal(100))
         let result = await db_connection.$transaction(async ()=>{ 
             await db_connection.checkout.update({
                 where:{
@@ -585,12 +598,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
             })
             let rconn = await create_message_broker_connection()
             rconn.publish_order_info
-            await publish(checkout, products, totalProducts, token, totalAmount)
+            await publish(checkout, products, product_total, token, total_amount)
             return {orderId:checkout!.orderId};
         })
 
-        return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
+        return res.status(StatusCodes.CREATED).send({
+            status:StatusCodes.CREATED,
             message:"success",
             content: result
         })
@@ -609,7 +622,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(token==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
-        let orderStatus = await paymentSrvice.get_order_status(orderId);
+        let orderStatus = await alpha_payment_service.get_payment_status(orderId);
         let checkout;
         if(orderStatus.data.orderStatus==2){
             checkout = await db_connection.checkout.findFirst({
@@ -632,7 +645,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         else
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"unsuccessful payment status"}])
         
-        let [totalProducts, products, totalAmount]  = _calcCheckoutData(checkout.variants);
+        let [totalProducts, products, totalAmount]  = get_checkot_data(checkout.variants);
             
         let rconn = await create_message_broker_connection()
         await publish(checkout, products, totalProducts, token, totalAmount)
@@ -644,7 +657,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    function _calcCheckoutData(variants:any[]):[number, any[], Decimal]{
+    function get_checkot_data(variants:any[]):[number, any[], Decimal]{
         let totalProducts = 0;
         let products:ProductMessage[]=[];
         let totalAmount = new Decimal(0);

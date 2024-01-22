@@ -12,4 +12,4 @@ checkout_admin_router.post('/:checkoutId',checkout_admin_service.add_to_checkout
 checkout_admin_router.delete("/decrease/:checkoutId",checkout_admin_service.decrease_from_checkout)
 checkout_admin_router.delete('/:checkoutId',checkout_admin_service.remove_variant_from_checkout)
 
-export default checkout_admin_router;
+export {checkout_admin_router};

@@ -10,6 +10,7 @@ import {StatusCodes} from 'http-status-codes'
 import {CustomerErrorCode} from '../common'
 import { create_message_broker_connection } from '../helper';
 import { set_cookie } from '../helper/cookie_setter';
+
 export const excludedFields = ['password', 'verified', 'verificationCode'];
 
 
@@ -225,6 +226,7 @@ export default function make_user_service(db_connection:PrismaClient){
             content: result
         })
     }
+
     async function confirm(req:Request, res: Response) {
         
         let ct = req.query.token!.toString()
@@ -257,6 +259,7 @@ export default function make_user_service(db_connection:PrismaClient){
             content: null
         })
     }
+
     async function confirm_change_password(req:Request, res: Response) {
         let ct = req.query.token!.toString()
         let token = await db_connection.token.findFirstOrThrow({
@@ -289,8 +292,8 @@ export default function make_user_service(db_connection:PrismaClient){
             content: result
         })
     }
-    async function get_user_info(req:Request, res: Response) {
-        
+
+    async function get_user_info(req:Request, res: Response) {    
         let user = await findUniqueUser(
             { id: req.body.authenticated_user.id }
         );

@@ -3,12 +3,16 @@ import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
+interface Prices{
+    min:Number
+    max:Number
+}
 
 export default function make_client_product_service(db_connection:PrismaClient){
     return Object.freeze({
         get_popular_and_new_products,
         get_products_pathes,
-        get_product_by_path,
+        get_product_by_slug,
         search_products,
         get_products,
         get_product,
@@ -115,6 +119,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             take:take,
             include:get_include(lang)
         });
+
         let categories = await db_connection.category.findMany({
             where:{
                 fields:{
@@ -171,10 +176,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             }
         })
     }
-    interface Prices{
-        min:Number
-        max:Number
-    }
+    
     async function get_filters(req:Request, res: Response) {
         let sizes = await db_connection.size.findMany({where:{variants:{some:{deleted:false}}}})
         let prices = await db_connection.$queryRaw<Prices[]>`SELECT min(price) as min,max(price)as max from "Product" p where p.deleted=false and active = true`
@@ -191,6 +193,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             }
         })  
     }
+
     async function get_popular_and_new_products(req:Request, res: Response) {
         let{lang="ru"}={...req.query}
         return res.status(StatusCodes.OK).send({
@@ -212,24 +215,20 @@ export default function make_client_product_service(db_connection:PrismaClient){
             }
         })
     }
-    async function get_product_by_path(req:Request, res: Response) {
-        let {path=''} = {...req.params};
+
+    async function get_product_by_slug(req:Request, res: Response) {
+        let {slug=''} = {...req.params};
         let{lang="ru"}={...req.query}
         
         let product = await db_connection.product.findFirstOrThrow({
             where:{
+                slug: slug,
                 deleted:false,
-            
-                fields:{
-                  some:{
-                    fieldName:"path",
-                    fieldValue:"/"+path
-                  }  
-                },
                 active:true
             },
             include:get_include(lang)
         })
+
         await db_connection.product.update({
             where:{id:product.id},
             data:{
@@ -238,12 +237,16 @@ export default function make_client_product_service(db_connection:PrismaClient){
                 }
             }
         })
+
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success", 
             content: map_product_to_response(product)
         })
     }
+
+
+
     async function get_products_pathes(req:Request, res: Response){
         let{lang="ru"}={...req.query}
         return res.status(StatusCodes.OK).send({
@@ -267,6 +270,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             })).filter(x=>x.fields.length>0).map(x=> x.fields[0].fieldValue)
         })
     }
+
     async function get_products(req:Request, res: Response){
         let{skip=0,take=10,lang="ru",sex=[],minPrice=0,maxPrice=Number.MAX_VALUE,categories=[],tags=[],sizes=[],colors=[],orderBy='{"views":"desc"}'}={...req.query}
         let [orderKey,orderValue] = Object.entries(JSON.parse(orderBy))[0]

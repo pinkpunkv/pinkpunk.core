@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
-import { S3,ListObjectsV2Command,PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3,ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { BaseError } from '../exception';
 import * as ef from 'express-fileupload';
+
 const imageRegex= /[\/.](gif|jpg|jpeg|tiff|png)$/i;
+
 export default function make_image_admin_service(db_connection:PrismaClient,s3client:S3){
     
     return Object.freeze({
@@ -18,8 +20,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
 
     
     async function upload_images(req:Request, res: Response) {
-        let path:string = req.query.path!.toString()
-        path = pathFilter(path);
+        let path:string = pathFilter(req.query.path!.toString());
         return await db_connection.$transaction(async()=>{
             if (req.files==null)
                 throw new BaseError(417,"files is null",[]);
@@ -27,7 +28,7 @@ export default function make_image_admin_service(db_connection:PrismaClient,s3cl
             for (let i = 0; i < Object.entries(req.files).length; i++) {
                 let file:any = req.files[i];
                 let file_path = path+file.originalname
-                let result = await s3client.putObject({ 
+                await s3client.putObject({ 
                     Bucket: process.env.S3_BUCKET_NAME, 
                     Key: file_path, 
                     Body: file.buffer, 

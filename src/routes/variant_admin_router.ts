@@ -9,4 +9,4 @@ variant_admin_router.get('/template',variant_admin_service.create_variant_templa
 variant_admin_router.post('/template',variant_admin_service.get_variants_template)
 variant_admin_router.delete('/template',variant_admin_service.detele_variants_templates)
 
-export default variant_admin_router;
+export {variant_admin_router};

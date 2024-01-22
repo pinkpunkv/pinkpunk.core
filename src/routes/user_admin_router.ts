@@ -8,4 +8,4 @@ user_admin_router.put('/:userId',user_admin_service.update_user_info)
 user_admin_router.put('/:userId/status',user_admin_service.update_user_status)
 
 
-export default user_admin_router;
+export {user_admin_router};

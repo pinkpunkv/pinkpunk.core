@@ -2,7 +2,7 @@
 import { S3 } from '@aws-sdk/client-s3';
 import {config} from '../config'
 
-export default function connectS3(path: string | null = ''): S3 {
+export function file_storage(path: string | null = ''): S3 {
     return new S3({
         forcePathStyle: true,
         endpoint: `${config.S3_ENDPOINT_URL}`,

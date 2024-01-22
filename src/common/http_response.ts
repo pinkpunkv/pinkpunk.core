@@ -1,7 +1,6 @@
-export default class HttpResponse{
+export class HttpResponse{
     status:number;
     message:string;
-    cookies:any;
     content:string;
 
     constructor(status:number,message:string,content:string){

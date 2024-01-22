@@ -8,4 +8,4 @@ category_admin_router.post('/',category_admin_service.create_category)
 category_admin_router.delete('/:id',category_admin_service.delete_category)
 category_admin_router.put('/:id',category_admin_service.update_category)
 
-export default category_admin_router;
+export {category_admin_router};

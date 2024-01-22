@@ -8,4 +8,4 @@ language_admin_router.get('/',language_admin_service.get_languages)
 language_admin_router.delete('/:id',language_admin_service.delete_language)
 language_admin_router.put('/:id',language_admin_service.update_language)
 
-export default language_admin_router;
+export {language_admin_router};

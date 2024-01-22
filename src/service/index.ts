@@ -32,13 +32,13 @@ import make_color_admin_service from './color_admin_service'
 import make_size_admin_service from './size_admin_service'
 import make_post_service from './post_service'
 import {db} from '../database'
-import {connectS3} from '../helper'
+import {file_storage} from '../helper'
 import { token_storage } from '../token_storage';
 import make_main_slider_service from './main_slider'
 import path from 'path'
 
 let db_connection = db();
-let s3storage = connectS3(process.env.storage);
+let s3storage = file_storage(process.env.storage);
 let t_storage = token_storage()
 
 db_connection.$use(async (params, next) => {

@@ -14,4 +14,4 @@ checkout_router.put('/:checkoutId',checkout_service.update_checkout)
 checkout_router.delete("/decrease/:checkoutId",checkout_service.decrease_from_checkout)
 checkout_router.delete('/:checkoutId',checkout_service.remove_variant_from_checkout)
 
-export default checkout_router;
+export {checkout_router};

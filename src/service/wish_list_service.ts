@@ -1,7 +1,7 @@
 import { PrismaClient, User , Prisma} from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
-import UserAttr from 'src/common/user_attr';
+import {RequestUser} from 'src/common/user_attr';
 
 import { BaseError } from '../exception';
 
@@ -59,7 +59,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         } as Prisma.ProductFindManyArgs
     }
 
-    async function _create(lang:string,user:UserAttr) {
+    async function _create(lang:string,user:RequestUser) {
         return  await db_connection.wishList.create({
             data:user.is_anonimus?{}:{
                 user:{
@@ -72,7 +72,7 @@ export default function make_wish_list_service(db_connection:PrismaClient){
         })
     }
 
-    async function _get_data(lang:string,wishlist_id:string, user:UserAttr) {
+    async function _get_data(lang:string,wishlist_id:string, user:RequestUser) {
         return await db_connection.wishList.findFirst({
             where:user.is_anonimus?{
                 id:wishlist_id,

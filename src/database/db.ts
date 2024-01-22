@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-let conection:PrismaClient;
+let conection:PrismaClient|null;
 
-export default function db(){
+export function db() : PrismaClient{
     if(conection){
         return conection;
     }

@@ -1,7 +1,7 @@
 import { PrismaClient,DeliveryType, Prisma, CheckoutStatus, Address, CheckoutInfo, Field } from '@prisma/client'
 import {Request, Response} from 'express'
 import {AddressDto, CheckoutInfoDto} from '../dto'
-import UserAttr from '../common/user_attr'
+import {RequestUser} from '../common/user_attr'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 

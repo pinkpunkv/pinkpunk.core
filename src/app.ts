@@ -9,14 +9,14 @@ import {product_router,product_admin_router,category_admin_router,category_route
     cart_router, wish_list_router,address_router, checkout_router, checkout_admin_router,
     color_admin_router, size_admin_router, post_router, main_slider_router} from './routes'
 import cors, { CorsOptions, CorsOptionsDelegate } from 'cors'
-import { user_status_middleware, has_access_by_role } from "./middleware";
+import { user_status, has_role } from "./middleware";
 import session from 'express-session'
 
 import {asyncMiddleware} from 'middleware-async'
 import { BaseError } from "./exception";
 import { StatusCodes } from "http-status-codes";
 import { Prisma } from "@prisma/client";
-import log_middleware from "./middleware/log_middleware";
+import {log_action} from "./middleware/log_action";
 
 let app:Express = express();
 app.use(express.json());
@@ -51,9 +51,9 @@ app.use(asyncMiddleware((req,res,next)=>{
     next()
 }))
 
-app.use(user_status_middleware)
-app.use("/api/v1/admin/*", has_access_by_role("admin"))
-app.use("/api/v1/admin/*", log_middleware())
+app.use(user_status)
+app.use("/api/v1/admin/*", has_role("admin"))
+app.use("/api/v1/admin/*", log_action())
 
 app.use('/api/v1/address', address_router)
 

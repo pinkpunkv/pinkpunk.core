@@ -1,9 +1,11 @@
 import * as amqp from 'amqplib';
 import {config} from '../config'
 import { CheckoutMessage } from 'src/abstract/types';
+
 let channel:amqp.Channel;
 let QUEUE = "user"
-export default async function create_message_broker_connection(){
+
+export async function create_message_broker_connection(){
   if (!channel){
     let connection = await amqp.connect(config.rabbitMQURL!);
     channel = await connection.createChannel();

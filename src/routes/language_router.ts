@@ -1,10 +1,10 @@
 import express from'express'
 import {language_service} from '../service'
-import { wrapp_cache } from '../middleware/cache_middleware';
+import { cached } from '../middleware/cache';
 
 let language_router = express.Router();
 
 
-language_router.get('/', wrapp_cache(), language_service.get_languages)
+language_router.get('/', cached(), language_service.get_languages)
 
-export default language_router;
+export {language_router};
