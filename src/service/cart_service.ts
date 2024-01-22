@@ -119,6 +119,8 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
     
     async function get_variant_or_throw(variant_id: number):Promise<Variant> {
+        console.log(variant_id);
+        
         return await db_connection.variant.findFirstOrThrow({
             where:{id: variant_id}
         })
@@ -221,9 +223,9 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
 
     async function remove_from_cart(req:Request, res: Response) {
-        let {cartId=""} = {...req.params}
+        let {cart_id=""} = {...req.params}
         let {variantId=0, lang="ru"} = {...req.query};
-        let cart = await get_cart_by_id_or_throw(lang,cartId)
+        let cart = await get_cart_by_id_or_throw(lang, cart_id)
         let variant = await get_variant_or_throw(Number(variantId));
         cart = await db_connection.cart.update({
             where:{id:cart.id},
