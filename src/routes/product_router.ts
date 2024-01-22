@@ -5,7 +5,7 @@ let product_router = express.Router();
 
 product_router.get('/', cached(), product_service.get_products)
 product_router.get('/popular_new', cached(), product_service.get_popular_and_new_products)
-// product_router.get('/path', cached(), product_service.get_products_pathes)
+product_router.get('/path', cached(), product_service.get_products_pathes)
 product_router.get('/:slug', cached(), product_service.get_product_by_slug)
 product_router.get('/filters', cached(), product_service.get_filters)
 
