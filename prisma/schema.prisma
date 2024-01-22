@@ -20,9 +20,9 @@ model Product {
   views           Decimal     @default(0)
   wants           Want[]
   currencySymbol  String?        
-  currency        Currency?   @relation(fields: [currencySymbol], references: [symbol])
+  currency        Currency?   @relation(fields: [currencySymbol], references: [symbol], onDelete: NoAction)
   collectionId    Int?
-  collection      Collection? @relation(fields: [collectionId], references: [id])
+  collection      Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
   images          ProductsImages[]
   deleted         Boolean     @default(false)
   createdAt       DateTime    @default(now())
@@ -55,7 +55,7 @@ model Category {
   mainSliderImages Image[]
   isMain          Boolean    @default(false)
   slug            String     @unique @default("")
-  parent          Category?  @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
+  parent          Category?  @relation("parent", fields: [parentId], references: [id], onDelete: SetNull)
   childs          Category[] @relation("parent")
   fields          Field[]    @relation("CategoryToField")
   products        Product[]  @relation("CategoryToProduct")
@@ -72,7 +72,7 @@ model Language {
   symbol   String   @unique
   fields   Field[]
   imageId  Int?
-  image    Image?   @relation(fields: [imageId], references: [id])
+  image    Image?   @relation(fields: [imageId], references: [id], onDelete: SetNull)
 }
 
 model Image {
@@ -90,7 +90,7 @@ model Field {
   fieldName   String
   fieldValue  String
   languageId  Int
-  language    Language     @relation(fields: [languageId], references: [id])
+  language    Language     @relation(fields: [languageId], references: [id], onDelete: Cascade)
   categories  Category[]   @relation("CategoryToField")
   collections Collection[] @relation("CollectionToField")
   products    Product[]    @relation("FieldToProduct")
@@ -145,9 +145,9 @@ model User{
   checkouts   Checkout[] 
   logs AdminLog[] @ignore
   cartId      String? @unique
-  cart        Cart? @relation(fields: [cartId], references: [id])
+  cart        Cart? @relation(fields: [cartId], references: [id], onDelete: SetNull)
   wishlistId  String? @unique
-  wishList    WishList? @relation(fields: [wishlistId], references: [id])
+  wishList    WishList? @relation(fields: [wishlistId], references: [id], onDelete: SetNull)
   @@unique([email, verificationCode])
   @@index([email, verificationCode])
 }
@@ -252,7 +252,7 @@ enum PaymentType {
 
 model Address{
   id      String      @id @default(uuid())
-  user    User? @relation(fields: [userId], references: [id])
+  user    User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String? 
   mask    String
   fields  AddressFields[]
@@ -301,13 +301,13 @@ model Checkout {
   paymentType   PaymentType @default(cash)
   transactionId Int?
   infoId        Int?
-  info          CheckoutInfo? @relation(fields: [infoId], references: [id])
+  info          CheckoutInfo? @relation(fields: [infoId], references: [id], onDelete: SetNull)
   userId        String?
-  user          User? @relation(fields: [userId], references: [id])
+  user          User? @relation(fields: [userId], references: [id], onDelete: NoAction)
   variants      CheckoutVariants[]
   orderDate     DateTime @default(now())
   addressId     String? 
-  address       Address? @relation(fields: [addressId], references: [id])
+  address       Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
 }
 
 model CheckoutVariants {
