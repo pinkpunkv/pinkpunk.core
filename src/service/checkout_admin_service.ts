@@ -267,14 +267,14 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 },
                 data:{
                     mask:address_dto.mask,
-                    fields:{
+                    fields:address_dto.fields.length>0?{
                         deleteMany:{
                             addressId:address_dto.id
                         },
                         createMany:{
                             data: address_dto.fields
                         }
-                    }
+                    }:{}
                 },
                 include:{
                     fields:true
