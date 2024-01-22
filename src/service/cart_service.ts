@@ -180,14 +180,14 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
     
     async function add_to_cart(req:Request, res: Response) {
-        let{cartId=""}={...req.params}
+        let{cart_id=""}={...req.params}
         let {variantId=0, lang="ru"} = {...req.query};
 
         let variant = await db_connection.variant.findFirstOrThrow({
             where:{id:Number(variantId), deleted:false}
         })
        
-        let cart = await get_cart_by_id_or_throw(lang, cartId)
+        let cart = await get_cart_by_id_or_throw(lang, cart_id)
         // if(cart==null) throw new BaseError(417,"cart with this id not found",[]);
             
         let cart_variant = await get_cart_variants(cart.id,variantId)
