@@ -1,18 +1,18 @@
-import { PrismaClient,DeliveryType,Prisma, PaymentType , Address, CheckoutStatus, Checkout, Token, Field} from '@prisma/client'
+import { PrismaClient,DeliveryType,Prisma, PaymentType , Address, CheckoutStatus, Checkout, Token, Field, PromoCode, CheckoutVariants, AddressFields, CheckoutInfo, Variant} from '@prisma/client'
 import { Request, Response } from "express";
 
 import {RequestUser} from '../common/request_user'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
-import {CustomerErrorCode} from '../common'
+import {CustomerErrorCode, HttpValidationException} from '../common'
 import { create_message_broker_connection } from '../helper';
 import Decimal from 'decimal.js';
 import {alpha_payment_service} from '../helper'
 
 import generateToken from '../utils/generate_token';
 import {AddressFieldDto, AddressDto} from '../dto'
-import { ProductMessage } from '../abstract/types';
+import { ProductMessage, ValidationErrorWithConstraints } from '../abstract/types';
 import { order_delivery_type_validator } from '../helper/validator';
 
 
@@ -39,6 +39,18 @@ async function publish(checkout: Checkout & any, products:ProductMessage[], tota
     })
 }
 
+type CheckoutWithInfo = Checkout&{
+    variants: CheckoutVariants[];
+    info: CheckoutInfo | null,
+    address: Address | null;
+}
+
+type CheckoutWithExtraInfo = Checkout&{
+    variants: CheckoutVariants[];
+    info: CheckoutInfo | null,
+    address: Address & {fields: AddressFields[]} | null;
+}
+
 export default function make_checkout_service(db_connection:PrismaClient){
     return Object.freeze({
         preprocess_checkout,
@@ -50,6 +62,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         pay_checkout,
         place_order,
         update_checkout_status,
+        use_promo,
         get_user_checkouts
     });
 
@@ -135,15 +148,15 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function get_checkout_or_throw(lang: string,checkout_id:string) {
-        return db_connection.checkout.findFirstOrThrow({
+    async function get_checkout_or_throw(lang: string,checkout_id:string): Promise<CheckoutWithExtraInfo> {
+        return await db_connection.checkout.findFirstOrThrow({
             where:{id:checkout_id},
-            include:get_checkout_include(lang)
+            include:get_checkout_include(lang),
         })
     }
     
-    async function get_checkout_by_status_or_throw(checkout_id:string, status: CheckoutStatus) {
-        return db_connection.checkout.findFirst({
+    async function get_checkout_by_status_or_throw(checkout_id:string, status: CheckoutStatus): Promise<CheckoutWithInfo> {
+        return db_connection.checkout.findFirstOrThrow({
             where:{id:checkout_id,status:status},
             include:{
                 variants:true,
@@ -153,7 +166,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function get_checkout_by_status(checkout_id:string, status: CheckoutStatus) {
+    async function get_checkout_by_status(checkout_id:string, status: CheckoutStatus): Promise<CheckoutWithInfo|null> {
         return db_connection.checkout.findFirst({
             where:{id:checkout_id,status:status},
             include:{
@@ -191,9 +204,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
     }
     function get_checkout_include(lang:string){
         return {
-            variants:{ include:{ variant:get_include(lang)}},
+            variants:{ include:{ variant: get_include(lang)}},
             info:true,
-            address:{include:{fields:true}}
+            address:{include:{fields:true}},
         }
     }
     
@@ -265,43 +278,70 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
+    async function use_promo(req:Request, res: Response) {
+        if (!req.query["promoCode"]) throw new HttpValidationException([new ValidationErrorWithConstraints({"promoCode":"field i srequired"})])
+        let code = req.query["promoCode"]!.toString()
+        let checkoutId = req.params["checkoutId"]
+        let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
+        let promo_code = await db_connection.promoCode.findFirstOrThrow({
+            where:{
+                code: code
+            }
+        })
+        
+        await db_connection.checkout.update({
+            where:{id: checkout.id},
+            data:{
+                promos:{
+                    connect: promo_code
+                }
+            }
+        })
+
+        return res.status(StatusCodes.CREATED).send({
+            status:StatusCodes.CREATED,
+            message:"success",
+            content: {
+
+            }
+        })
+    }
+    
     async function update_checkout(req:Request, res: Response) {
         let checkoutId = req.params["checkoutId"]
         let {lang = "ru"}= {...req.query}
         let {deliveryType = "pickup", email = "", phone = "", paymentType = "cash", firstName = "", lastName = "", comment = ""} = {...req.body}
-        let addressData = req.body['address']?new AddressDto(req.body['address']):null
-        let addressField = req.body['address']?new AddressFieldDto(req.body['address']):null
+        let address_data = req.body['address']?new AddressDto(req.body['address']):null
+        let address_field = req.body['address']?new AddressFieldDto(req.body['address']):null
 
         let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
-        if(checkout==null)
-            throw new BaseError(417,"checkout not found",[]);
         
-        if ((!addressData || !addressField) && deliveryType != "pickup")
+        if ((!address_data || !address_field) && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
 
         let address: Address | undefined;
-        if (deliveryType!="pickup"&&addressData&&addressField)
+        if (deliveryType!="pickup"&&address_data&&address_field)
             address = await db_connection.address.upsert({
                 where:{
-                    id:addressData.id
+                    id:address_data.id
                 },
                 create:{
                     userId:req.body.authenticated_user.id,
-                    mask: addressData.mask,
+                    mask: address_data.mask,
                     fields:{
-                        create:addressField
+                        create:address_field
                     },
                 },
                 update:{
-                    mask:addressData.mask,
-                    fields:addressData.id?{
+                    mask:address_data.mask,
+                    fields:address_data.id?{
                         deleteMany:{
-                            addressId:addressData.id
+                            addressId:address_data.id
                         },
-                        create:addressField
+                        create:address_field
                     }:{
-                        create:addressField
+                        create:address_field
                     }
                 },
                 include:{
@@ -641,7 +681,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         else
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer, message:"unsuccessful payment status"}])
         
-        let [totalProducts, products, totalAmount]  = get_checkot_data(checkout.variants);
+        let [totalProducts, products, totalAmount]  = get_checkot_data(checkout.variants, checkout.pr);
             
         // let rconn = await create_message_broker_connection()
         // await publish(checkout, products, totalProducts, token, totalAmount)
@@ -653,15 +693,15 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    function get_checkot_data(variants:any[]):[number, any[], Decimal]{
-        let totalProducts = 0;
+    function get_checkot_data(variants:any[], promos:PromoCode[]):[number, any[], Decimal]{
+        let total_products = 0;
         let products:ProductMessage[]=[];
-        let totalAmount = new Decimal(0);
+        let total_amount = new Decimal(0);
             
         for (const variant of variants) {
-            totalProducts+=variant.count;
+            total_products+=variant.count;
             let product = variant['variant'].product 
-            let itemAmount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
+            let item_amount = new Decimal(variant['variant'].product.price).mul(new Decimal(variant.count))
             products.push({
                 name:product.fields.filter((x:any)=>x.fieldName=="name")[0],
                 color:variant.variant['color'].colorText,
@@ -671,8 +711,11 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 count:variant.count,
                 image:product.images[0].url
             })
-            totalAmount=totalAmount.add(itemAmount)
+            total_amount=total_amount.add(item_amount)
         }
-        return [totalProducts, products, totalAmount]
+        for (const promo of promos){
+            total_amount = total_amount.mul(new Decimal(1).minus(new Decimal(promo.amount)))
+        }
+        return [total_products, products, total_amount]
     }
 }

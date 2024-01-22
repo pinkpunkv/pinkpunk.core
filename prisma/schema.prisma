@@ -308,6 +308,7 @@ model Checkout {
   orderDate     DateTime @default(now())
   addressId     String? 
   address       Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  promos PromoCode[]
 }
 
 model CheckoutVariants {
@@ -339,4 +340,26 @@ model AdminLog {
   user      User @relation(fields: [userId], references: [id])
   request   String
   data      String
+}
+
+
+enum PromoType { 
+  multi
+  sigle
+}
+
+model PromoCode{
+  code String @id
+  amount Decimal
+  type PromoType
+  mappings PromoMapping[]
+  checkouts Checkout[]
+}
+
+model PromoMapping{
+  code String
+  promo PromoCode @relation(fields: [code], references: [code], onDelete: Cascade)
+  label String
+  vaue String
+  @@id([code, label])
 }
