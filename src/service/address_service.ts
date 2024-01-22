@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
-import {RequestUser} from '../common/user_attr'
+import {RequestUser} from '../common/request_user'
 import { BaseError } from '../exception';
 import { AddressDto } from '../dto';
 

@@ -1,7 +1,7 @@
 import { PrismaClient,Prisma, Cart, CartVariants, Variant } from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
-import {RequestUser} from '../common/user_attr'
+import {RequestUser} from '../common/request_user'
 import Decimal from 'decimal.js';
 import { BaseError } from '../exception';
 

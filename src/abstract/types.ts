@@ -1,3 +1,5 @@
+import { ValidationError } from "class-validator"
+
 export interface ProductName {
     id: number
     fieldName: string,
@@ -57,4 +59,18 @@ export interface MainSliderData{
     subtitleButtonText: string
     subtitleButtonLink: string
     products: number[]
+}
+
+export class ValidationErrorWithConstraints extends ValidationError{
+    constructor(constraints?: {
+        [type: string]: string;
+    }){
+        super();
+        this.constraints = constraints
+    }
+}
+
+export interface IValidate<T>{
+    validate(entity:T, errors: ValidationError[]):Promise<ValidationError[]>;
+    validate_or_reject(entity:T, errors: ValidationError[]):Promise<T>;
 }

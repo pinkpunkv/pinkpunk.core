@@ -1,7 +1,7 @@
 import { PrismaClient,DeliveryType,Prisma, PaymentType , Address, CheckoutStatus, Checkout, Token, Field} from '@prisma/client'
 import { Request, Response } from "express";
 
-import {RequestUser} from '../common/user_attr'
+import {RequestUser} from '../common/request_user'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
@@ -13,6 +13,7 @@ import {alpha_payment_service} from '../helper'
 import generateToken from '../utils/generate_token';
 import {AddressFieldDto, AddressDto} from '../dto'
 import { ProductMessage } from '../abstract/types';
+import { order_delivery_type_validator } from '../helper/validator';
 
 
 async function publish(checkout: Checkout & any, products:ProductMessage[], total: number, token: Token, total_amount: Decimal) {
@@ -492,70 +493,66 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {lang="ru"} = {...req.query};
         
         let checkout = await get_checkout_or_throw(lang, checkoutId)
-        
-        if(checkout.info==null)
-            throw new BaseError(417,"user details is required",[]);
+        await order_delivery_type_validator[checkout.deliveryType].validate_or_reject(checkout, [])
 
-        let [totalProducts, products, totalAmount] = get_checkot_data(checkout.variants);
+        if(checkout.status=="pending")
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content: {
+                    orderId:checkout.orderId
+                }
+            }
+
+        if(checkout.info==null)
+            throw new BaseError(417, "user details is required",[]);
+
+        let order_info = await db_connection.$transaction(async ()=>{
+            let order_id = checkout.orderId
+            let order_info: any = {}
+            let [totalProducts, products, totalAmount] = get_checkot_data(checkout.variants);
+            let token = await db_connection.token.create({
+                data:{ 
+                    token:generateToken(),
+                    type:"order",
+                    objectId:checkout!.orderId.toString()
+                }
+            })
+            if (checkout.paymentType == PaymentType.online){
+                let order_status = await alpha_payment_service.get_payment_status(order_id.toString());
         
-        let order_id;
-        if (checkout.paymentType=="online"){
-            totalAmount=totalAmount.mul(new Decimal(100))
-            order_id = await db_connection.$transaction(async ()=>{ 
-                let token = await db_connection.token.create({
-                    data:{
-                        token:generateToken(),
-                        type:"order",
-                        objectId:checkout!.orderId.toString()
-                    }
-                })
-                let new_order_id: number = Number(
+                if(order_status.data.orderStatus==2)
+                    return order_info
+
+                order_id = Number(
                     (await db_connection.$queryRaw<{nextval:Number}[]>`SELECT nextval('"public"."Checkout_orderId_seq"')`)[0].nextval
                 );
                 
-                let payres = await alpha_payment_service.create_payment(checkout!.orderId.toString(),totalAmount,token.token)
+                let payres = await alpha_payment_service.create_payment(order_id.toString(), totalAmount, token.token)
                 if(payres.data.errorCode)
                     throw new BaseError(500,"something went wrong",payres.data);
-            
-                await db_connection.checkout.update({
-                    where:{
-                        id:checkout.id
-                    },
-                    data:{
-                        status:"pending",
-                        orderId: new_order_id
-                    }
-                })
-                
-                return new_order_id;
+                order_info.formUrl = payres.data.formUrl!
+            }
+
+            await db_connection.checkout.update({
+                where:{
+                    id:checkout!.id
+                },
+                data:{
+                    orderId: order_id,
+                    status:"pending"
+                }
             })
-        }
-        else
-            order_id = await db_connection.$transaction(async ()=>{
-                let token = await db_connection.token.create({
-                    data:{ 
-                        token:generateToken(),
-                        type:"order",
-                        objectId:checkout!.orderId.toString()
-                    }
-                })
-                await db_connection.checkout.update({
-                    where:{
-                        id:checkout!.id
-                    },
-                    data:{
-                        status:"pending"
-                    }
-                })
-                await publish(checkout, products, totalProducts, token, totalAmount)
-                return {orderId:checkout.orderId};
-            })
+            order_info.orderId = order_id
+            await publish(checkout, products, totalProducts, token, totalAmount)
+            return order_info;
+        })
         
         
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: order_id
+            content: order_info
         })
     }
 
@@ -621,9 +618,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(token==null)
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
-        let orderStatus = await alpha_payment_service.get_payment_status(orderId);
+        let order_status = await alpha_payment_service.get_payment_status(orderId);
         let checkout;
-        if(orderStatus.data.orderStatus==2){
+        if(order_status.data.orderStatus==2){
             checkout = await db_connection.checkout.findFirstOrThrow({
                 where:{
                     orderId:Number(orderId)

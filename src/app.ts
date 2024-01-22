@@ -17,6 +17,7 @@ import { BaseError } from "./exception";
 import { StatusCodes } from "http-status-codes";
 import { Prisma } from "@prisma/client";
 import {log_action} from "./middleware/log_action";
+import { HttpValidationException } from "./common";
 
 let app:Express = express();
 app.use(express.json());
@@ -96,6 +97,9 @@ app.use(function onError(err:Error, req:Request, res:Response, next:NextFunction
     if (err instanceof Prisma.PrismaClientKnownRequestError){
       let message = err.message.split("\n");
       return res.status(StatusCodes.BAD_REQUEST).send({status:StatusCodes.BAD_REQUEST, message:message[message.length-1],content:err.meta})
+    }
+    if (err instanceof HttpValidationException){
+        return res.status(err.status).send(err)
     }
     if (err instanceof BaseError){
         return res.status(err.status).send(err)

@@ -253,7 +253,7 @@ export default function make_client_product_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content:(await db_connection.product.findMany({
-                where:{deleted:false},
+                where:{deleted:false, active: true},
                 select:{
                     slug: true
                 }
