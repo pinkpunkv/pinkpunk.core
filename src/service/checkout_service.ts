@@ -195,6 +195,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             address:{include:{fields:true}}
         }
     }
+    
     async function get_user_checkouts(req:Request, res: Response) {
         let {lang="ru"}= {...req.query}
         if (req.body.authenticated_user.is_anonimus)
@@ -497,10 +498,10 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
         let [totalProducts, products, totalAmount] = get_checkot_data(checkout.variants);
         
-        let result;
+        let order_id;
         if (checkout.paymentType=="online"){
             totalAmount=totalAmount.mul(new Decimal(100))
-            result = await db_connection.$transaction(async ()=>{ 
+            order_id = await db_connection.$transaction(async ()=>{ 
                 let token = await db_connection.token.create({
                     data:{
                         token:generateToken(),
@@ -508,9 +509,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         objectId:checkout!.orderId.toString()
                     }
                 })
-                
-                let new_order_id: any = await db_connection.$queryRaw`SELECT nextval('"public"."Checkout_orderId_seq"')`;
-                checkout!.orderId = Number(new_order_id[0].nextval)
+                let new_order_id: number = Number(
+                    (await db_connection.$queryRaw<{nextval:Number}[]>`SELECT nextval('"public"."Checkout_orderId_seq"')`)[0].nextval
+                );
                 
                 let payres = await alpha_payment_service.create_payment(checkout!.orderId.toString(),totalAmount,token.token)
                 if(payres.data.errorCode)
@@ -518,21 +519,19 @@ export default function make_checkout_service(db_connection:PrismaClient){
             
                 await db_connection.checkout.update({
                     where:{
-                        id:checkout!.id
+                        id:checkout.id
                     },
                     data:{
                         status:"pending",
-                        orderId:{
-                            set:checkout!.orderId 
-                        }
+                        orderId: new_order_id
                     }
                 })
                 
-                return payres.data;
+                return new_order_id;
             })
         }
         else
-            result = await db_connection.$transaction(async ()=>{
+            order_id = await db_connection.$transaction(async ()=>{
                 let token = await db_connection.token.create({
                     data:{ 
                         token:generateToken(),
@@ -549,14 +548,14 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     }
                 })
                 await publish(checkout, products, totalProducts, token, totalAmount)
-                return {orderId:checkout!.orderId};
+                return {orderId:checkout.orderId};
             })
         
         
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
-            content: result
+            content: order_id
         })
     }
 
@@ -565,9 +564,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {lang="ru"} = {...req.query};
         
         let checkout = await get_checkout_or_throw(lang,checkoutId)
-
-        if(checkout.paymentType=="online")
-            throw new BaseError(417,"invalid payment type",[]);
+        
+        // if(checkout.paymentType=="online")
+        //     throw new BaseError(417,"invalid payment type",[]);
         
         if(checkout.status=="pending")
             return {
@@ -586,7 +585,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 objectId:checkout.orderId.toString()
             }
         })
-        total_amount = total_amount.mul(new Decimal(100))
+
         let result = await db_connection.$transaction(async ()=>{ 
             await db_connection.checkout.update({
                 where:{
@@ -596,10 +595,10 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     status:"pending"
                 }
             })
-            let rconn = await create_message_broker_connection()
-            rconn.publish_order_info
-            await publish(checkout, products, product_total, token, total_amount)
-            return {orderId:checkout!.orderId};
+            // let rconn = await create_message_broker_connection()
+            // rconn.publish_order_info()
+            await publish(checkout, products, product_total, token, total_amount.mul(new Decimal(100)))
+            return {orderId:checkout.orderId};
         })
 
         return res.status(StatusCodes.CREATED).send({
@@ -625,13 +624,13 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let orderStatus = await alpha_payment_service.get_payment_status(orderId);
         let checkout;
         if(orderStatus.data.orderStatus==2){
-            checkout = await db_connection.checkout.findFirst({
+            checkout = await db_connection.checkout.findFirstOrThrow({
                 where:{
                     orderId:Number(orderId)
                 }
             })
-            if(checkout==null)
-                throw new BaseError(417,"order with this id not found",[]);
+            // if(checkout==null)
+            //     throw new BaseError(417,"order with this id not found",[]);
             checkout = await db_connection.checkout.update({
                 where:{
                     id:checkout.id
@@ -643,12 +642,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
             })
         }
         else
-            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"unsuccessful payment status"}])
+            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer, message:"unsuccessful payment status"}])
         
         let [totalProducts, products, totalAmount]  = get_checkot_data(checkout.variants);
             
-        let rconn = await create_message_broker_connection()
-        await publish(checkout, products, totalProducts, token, totalAmount)
+        // let rconn = await create_message_broker_connection()
+        // await publish(checkout, products, totalProducts, token, totalAmount)
 
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
