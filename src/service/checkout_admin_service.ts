@@ -232,21 +232,19 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
     async function update_checkout(req:Request, res: Response) {
         let checkoutId = req.params["checkoutId"]
         let {lang="ru"}= {...req.query}
-        console.log(req.body);
 
         let {deliveryType = "pickup", status="pending", variants = []} = {...req.body}
         let info_dto = new CheckoutInfoDto(req.body['info'])
         let address_dto = new AddressDto(req.body['address'])
 
-        let address;
         let checkout_ = await db_connection.$transaction(async ()=>{
             let checkout = await get_checkout_without_fields(checkoutId)
             if(checkout==null)
                 throw new BaseError(417,"checkout not found",[]);
                 
-            if(address_dto.id==null)
-            address = await db_connection.address.create({
-                data:{
+            let address = await db_connection.address.upsert({
+                where:{id:address_dto.id},
+                create:{
                     userId:checkout.userId,
                     mask: address_dto.mask,
                     fields:{
@@ -255,17 +253,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{
-                    fields:true
-                }
-                
-            })
-            else
-            address = await db_connection.address.update({
-                where:{
-                    id:address_dto.id
-                },
-                data:{
+                update:{
                     mask:address_dto.mask,
                     fields:address_dto.fields.length>0?{
                         deleteMany:{
@@ -279,7 +267,9 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 include:{
                     fields:true
                 }
+                
             })
+           
             if (checkout.infoId!=null)
                 await db_connection.checkoutInfo.delete({
                     where:{id:checkout.infoId}
@@ -290,7 +280,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 },
                 data:{
                     "status":status as CheckoutStatus,
-                    address:address!=null?{connect:{id:address?.id}}:{},
+                    address:address?{connect:{id:address.id}}:{},
                     deliveryType:deliveryType as DeliveryType,
                     info:{
                         create:{
