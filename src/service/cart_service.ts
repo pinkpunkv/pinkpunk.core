@@ -119,8 +119,6 @@ export default function make_cart_service(db_connection:PrismaClient){
     }
     
     async function get_variant_or_throw(variant_id: number):Promise<Variant> {
-        console.log(variant_id);
-        
         return await db_connection.variant.findFirstOrThrow({
             where:{id: variant_id}
         })
@@ -224,6 +222,7 @@ export default function make_cart_service(db_connection:PrismaClient){
 
     async function remove_from_cart(req:Request, res: Response) {
         let {cart_id=""} = {...req.params}
+       
         let {variantId=0, lang="ru"} = {...req.query};
         let cart = await get_cart_by_id_or_throw(lang, cart_id)
         let variant = await get_variant_or_throw(Number(variantId));
@@ -248,10 +247,10 @@ export default function make_cart_service(db_connection:PrismaClient){
 
     async function decrease_from_cart(req:Request, res: Response) {
         let {cart_id=""} = {...req.params}
-        let {variant_id=0,lang="ru"} = {...req.query};
-        let variant = await get_variant_or_throw(Number(variant_id));
+        let {variantId=0,lang="ru"} = {...req.query};
+        let variant = await get_variant_or_throw(Number(variantId));
         let cart = await get_cart_by_id_or_throw(lang,cart_id)   
-        let cart_variant = await get_cart_variants(cart.id, variant_id)
+        let cart_variant = await get_cart_variants(cart.id, variantId)
        
         if(cart_variant!=null&&cart_variant.count==1){
             cart = await db_connection.cart.update({
@@ -273,7 +272,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                 },
                 data:{ count:{decrement:1} }
             })
-            let ind = cart.variants.findIndex(x=>x.variantId==variant_id)
+            let ind = cart.variants.findIndex(x=>x.variantId==variantId)
             cart.variants[ind].count-=1; 
         }
          
