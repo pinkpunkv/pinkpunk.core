@@ -264,7 +264,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let exists = await db_connection.checkout.findFirst({where:{id:checkoutId}, select:{id:true}})
         let checkout_ = await db_connection.$transaction(async ()=>{
             let cart = await get_user_cart(cartId)
-            await db_connection.checkout.upsert({
+            return await db_connection.checkout.upsert({
                 where:{
                     id:checkoutId
                 },
@@ -287,9 +287,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         }
                     },
                 },
+                include:get_checkout_include(lang)
             })
-            
-            return await get_checkout_by_status(checkoutId, "preprocess");
         })
         
         
