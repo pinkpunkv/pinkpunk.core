@@ -35,6 +35,7 @@ import {db} from '../database'
 import {file_storage} from '../helper'
 import { token_storage } from '../token_storage';
 import make_main_slider_service from './main_slider'
+import make_promo_admin_service from './promo_admin_service'
 import path from 'path'
 
 let db_connection = db();
@@ -82,6 +83,7 @@ const color_admin_service = make_color_admin_service(db_connection)
 const size_admin_service = make_size_admin_service(db_connection)
 const post_service = make_post_service(db_connection, t_storage)
 const main_slider_service = make_main_slider_service(db_connection)
+const promo_admin_service = make_promo_admin_service(db_connection)
 
 export {
   tag_service,
@@ -99,6 +101,7 @@ export {
   collection_service,
   size_admin_service,
   color_admin_service,
+  promo_admin_service,
   main_slider_service,
   image_admin_service,
   product_admin_service,

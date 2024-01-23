@@ -15,6 +15,7 @@
     "paths": {
       "@abstract/*": ["src/abstract/*"],
       "@model/*": ["src/model/*"],
+      "@common/*": ["src/common/*"],
     }
   },
   "include": [

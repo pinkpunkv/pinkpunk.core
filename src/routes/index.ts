@@ -21,3 +21,4 @@ export * from "./color_admin_router";
 export * from "./size_admin_router";
 export * from './post_router'
 export * from './main_slider_router'
+export * from './promo_admin_router'
