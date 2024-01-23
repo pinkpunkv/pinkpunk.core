@@ -12,6 +12,12 @@
     "esModuleInterop": true,
     "outDir": "dist",
     "baseUrl": ".",
-    
-  }
+    "paths": {
+      "@abstract/*": ["src/abstract/*"],
+      "@model/*": ["src/model/*"],
+    }
+  },
+  "include": [
+    "src/"
+  ]
 }

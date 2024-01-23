@@ -255,6 +255,7 @@ model Address{
   user    User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String? 
   mask    String
+  
   fields  AddressFields[]
   orders  Checkout[]
 }
@@ -277,6 +278,7 @@ model AddressFields{
   city      String
   country   String
 }
+
 enum CheckoutStatus {
   preprocess
   pending
@@ -284,6 +286,7 @@ enum CheckoutStatus {
   declined
   delivered
 }
+
 model CheckoutInfo {
   id        Int    @id @default(autoincrement())
   email     String 
@@ -293,6 +296,7 @@ model CheckoutInfo {
   comment   String?
   checkout  Checkout[]
 }
+
 model Checkout {
   id            String      @id @default(uuid())
   status        CheckoutStatus 
@@ -308,7 +312,8 @@ model Checkout {
   orderDate     DateTime @default(now())
   addressId     String? 
   address       Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  promos PromoCode[]
+  promo_id String?
+  promo PromoCode? @relation(fields: [promo_id], references: [code], onDelete: NoAction)
 }
 
 model CheckoutVariants {

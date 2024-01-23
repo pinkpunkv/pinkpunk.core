@@ -1,6 +1,6 @@
 import * as amqp from 'amqplib';
 import {config} from '../config'
-import { CheckoutMessage } from 'src/abstract/types';
+import { CheckoutMessageDto } from 'src/abstract/types';
 
 let channel:amqp.Channel;
 let QUEUE = "user"
@@ -15,7 +15,7 @@ export async function create_message_broker_connection(){
     publish_user_action
   });
   
-  async function publish_order_info(type:string, email:string,confirm_token:string, lang: string, message:CheckoutMessage) {
+  async function publish_order_info(type:string, email:string,confirm_token:string, lang: string, message:CheckoutMessageDto) {
     let que = await channel.assertQueue(QUEUE,{
       durable: false
     });
