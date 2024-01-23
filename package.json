@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/src/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias -p tsconfig.json",
     "start": "npm run build && node .",
     "migrate": "npx prisma generate && npx prisma db push",
     "seed": "npx prisma db seed"
@@ -78,6 +78,7 @@
     "@types/morgan": "^1.9.7",
     "@types/node": "^18.11.15",
     "@types/node-schedule": "^2.1.5",
-    "@types/string-template": "^1.0.6"
+    "@types/string-template": "^1.0.6",
+    "tsc-alias": "^1.8.8"
   }
 }

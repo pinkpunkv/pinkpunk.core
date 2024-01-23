@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import { HttpValidationException } from '../common';
-import { ValidationErrorWithConstraints } from 'src/abstract/types';
+import { ValidationErrorWithConstraints } from '@abstract/types';
 
 export default function make_promo_service(db_connection:PrismaClient){
     return Object.freeze({
