@@ -1,4 +1,5 @@
 require("express-async-errors");
+import 'reflect-metadata';
 import express,{Express, NextFunction, Response, Request} from "express";
 import {config} from './config'
 import morgan from 'morgan'

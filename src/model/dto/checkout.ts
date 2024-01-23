@@ -33,6 +33,7 @@ export class CheckoutVariantDto{
 
 export class CheckoutClientResponseDto{
     total: number = 0
+    baseTotalAmount: Decimal = new Decimal(0)
     totalAmount: Decimal = new Decimal(0)
     currencySymbol: string = "BYN"
     info?: CheckoutInfoDto

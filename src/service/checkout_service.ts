@@ -300,8 +300,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
     }
 
     async function use_promo(req:Request, res: Response) {
-        if (!req.query["promoCode"]) throw new HttpValidationException([new ValidationErrorWithConstraints({"promoCode":"field i srequired"})])
-        let code = req.query["promoCode"]!.toString()
+        if (!req.query["code"]) throw new HttpValidationException([new ValidationErrorWithConstraints({"code":"field i srequired"})])
+        let code = req.query["code"]!.toString()
         let checkoutId = req.params["checkoutId"]
         let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
         let promo_code = await db_connection.promoCode.findFirstOrThrow({
@@ -313,9 +313,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         await db_connection.checkout.update({
             where:{id: checkout.id},
             data:{
-                promo:{
-                    connect: promo_code
-                }
+                code: promo_code.code
             }
         })
 

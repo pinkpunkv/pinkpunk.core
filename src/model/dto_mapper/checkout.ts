@@ -9,8 +9,9 @@ const checkout_client_dto_mapper = {
         for(const variant of checkout.variants){
             dto.variants.push(checkout_variant_client_dto_mapper.from(variant))
             dto.total+=variant.count
-            dto.totalAmount = dto.totalAmount.add(new Decimal(variant.count).mul(new Decimal(variant.variant.product.price)))
+            dto.baseTotalAmount = dto.baseTotalAmount.add(new Decimal(variant.count).mul(new Decimal(variant.variant.product.price)))
         }
+        dto.totalAmount = checkout.promo?dto.baseTotalAmount.mul(new Decimal(1).minus(checkout.promo.amount)):dto.baseTotalAmount
         return dto
     }
 }

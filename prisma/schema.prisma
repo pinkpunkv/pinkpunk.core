@@ -312,8 +312,8 @@ model Checkout {
   orderDate     DateTime @default(now())
   addressId     String? 
   address       Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  promo_id String?
-  promo PromoCode? @relation(fields: [promo_id], references: [code], onDelete: NoAction)
+  code String?
+  promo PromoCode? @relation(fields: [code], references: [code], onDelete: NoAction)
 }
 
 model CheckoutVariants {

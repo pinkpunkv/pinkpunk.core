@@ -63,6 +63,7 @@
     "passport-google-oidc-token": "^1.0.3",
     "passport-http-bearer": "^1.0.1",
     "prisma": "^4.7.1",
+    "reflect-metadata": "^0.2.1",
     "string-template": "^1.0.0",
     "typescript": "^4.9.4",
     "validator": "^13.9.0",
