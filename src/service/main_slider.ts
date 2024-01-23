@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client'
 import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
-import { MainSliderData } from '../abstract/types';
+import { MainSliderDto } from '../abstract/types';
 
 
 export default function make_main_slider_service(db_connection:PrismaClient){
@@ -90,7 +90,7 @@ export default function make_main_slider_service(db_connection:PrismaClient){
     }
 
     async function update_settings(req: Request, res: Response) {
-        let new_settings = req.body as MainSliderData;
+        let new_settings = req.body as MainSliderDto;
         let products = await db_connection.product.findMany({
             where:{
                 id:{in:new_settings.products}

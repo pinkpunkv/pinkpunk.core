@@ -1,15 +1,16 @@
+import { Address, AddressFields, Checkout, CheckoutInfo, CheckoutVariants, Color, Field, Product, ProductsImages, PromoCode, Tag, Variant } from "@prisma/client"
 import { ValidationError } from "class-validator"
 
-export interface ProductName {
+export interface ProductNameDto {
     id: number
     fieldName: string,
     fieldValue: string,
     languageId: number
 }
 
-export interface ProductMessage{
-    name: ProductName
-    color: string
+export interface ProductMessageDto{
+    name: ProductNameDto
+    color: string | null
     size: string
     basePrice: number
     price: number
@@ -17,11 +18,10 @@ export interface ProductMessage{
     image: string
 }
 
-export interface CheckoutMessageInfo{
+export interface CheckoutUserInfoDto{
     contactFL:string
     email:string
     phone:string
-
     addressFL:string
     address:string
     postalCode:string
@@ -29,10 +29,10 @@ export interface CheckoutMessageInfo{
     country: string
 }
 
-export interface CheckoutMessage{
-    info:CheckoutMessageInfo
+export interface CheckoutMessageDto{
+    info:CheckoutUserInfoDto
     orderId:number
-    products:Array<ProductMessage>
+    products:ProductMessageDto[]
     productsCount:number
     total:string
     deliveryPrice:string
@@ -48,7 +48,7 @@ export interface TokenData{
     expires_at: number
 }
 
-export interface MainSliderData{
+export interface MainSliderDto{
     title: string
     title2: string
     mainButtonText: string
@@ -73,4 +73,18 @@ export class ValidationErrorWithConstraints extends ValidationError{
 export interface IValidate<T>{
     validate(entity:T, errors: ValidationError[]):Promise<ValidationError[]>;
     validate_or_reject(entity:T, errors: ValidationError[]):Promise<T>;
+}
+
+export type ProductWithInfo = Product&{fields:Field[], images: {image:{url:string}}[], tags: Tag[]}
+export type CheckoutWithInfo = Checkout&{
+    variants: CheckoutVariants[];
+    info: CheckoutInfo | null,
+    address: Address | null;
+}
+export type CheckoutVariantInfo = CheckoutVariants&{variant:Variant&{product:ProductWithInfo, color: Color}}
+export type CheckoutWithExtraInfo = Checkout&{
+    variants: CheckoutVariantInfo[];
+    info: CheckoutInfo | null,
+    address: Address & {fields: AddressFields[]} | null;
+    promo: PromoCode | null
 }

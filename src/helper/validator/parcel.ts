@@ -6,7 +6,7 @@ import { ValidationError } from "class-validator";
 const parcel_order_validator: IValidate<Checkout> = {
     validate: async function (dto: Checkout, errors: ValidationError[]): Promise<ValidationError[]> {
         if (dto.paymentType!=PaymentType.online) errors.push(new ValidationErrorWithConstraints({"paymentType":"invalid paymnt type"}))
-        if (!dto.infoId) errors.push(new ValidationErrorWithConstraints({"info":"billing info is required"}))
+        if (!dto.addressId) errors.push(new ValidationErrorWithConstraints({"info":"billing info is required"}))
         return await errors;
     },
     validate_or_reject: async function (dto: Checkout, errors: ValidationError[]): Promise<Checkout> {

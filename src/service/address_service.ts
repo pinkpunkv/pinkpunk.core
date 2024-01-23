@@ -3,7 +3,7 @@ import {Request, Response} from 'express'
 import {StatusCodes} from 'http-status-codes'
 import {RequestUser} from '../common/request_user'
 import { BaseError } from '../exception';
-import { AddressDto } from '../dto';
+import { AddressDto } from '../model/dto';
 
 export default function make_address_service(db_connection:PrismaClient){
     return Object.freeze({

@@ -1,0 +1,16 @@
+-- DropForeignKey
+ALTER TABLE "AddressFields" DROP CONSTRAINT "AddressFields_addressId_fkey";
+
+-- AlterTable
+ALTER TABLE "Address" ADD COLUMN     "apartment" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "building" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "city" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "comment" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "company" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "country" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "firstName" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "lastName" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "street" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "type" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "zipCode" TEXT NOT NULL DEFAULT '',
+ALTER COLUMN "mask" SET DEFAULT '';
