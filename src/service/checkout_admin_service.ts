@@ -161,42 +161,46 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         let address_dto = new AddressDto(req.body.address)
         
         let checkout_ = await db_connection.$transaction(async ()=>{
-            let address;
-            if(address_dto.id==null)
-            address = await db_connection.address.create({
+            // let address;
+            // if(address_dto.id==null)
+            let address = await db_connection.address.create({
                 data:{
                     // userId:checkout.userId,
                     mask: address_dto.mask,
-                    fields:{
+                    fields:address_dto.fields.length>0?{
                         createMany:{
                           data: address_dto.fields  
                         } 
-                    },
+                    }:{},
                 },
                 include:{
                     fields:true
                 }
             })
-            else
-            address = await db_connection.address.update({
-                where:{
-                    id:address_dto.id
-                },
-                data:{
-                    mask:address_dto.mask,
-                    fields:{
-                        deleteMany:{
-                            addressId:address_dto.id
-                        },
-                        createMany:{
-                            data:address_dto.fields
-                        }
-                    }
-                },
-                include:{
-                    fields:true
-                }
-            })
+            // else
+            // address = await db_connection.address.update({
+            //     where:{
+            //         id:address_dto.id
+            //     },
+            //     data:{
+            //         mask:address_dto.mask,
+            //         fields:address_dto.fields.length>0?{
+            //             deleteMany:{
+            //                 addressId:address_dto.id
+            //             },
+            //             createMany:{
+            //                 data:address_dto.fields
+            //             }
+            //         }:{
+            //             deleteMany:{
+            //                 addressId:address_dto.id
+            //             },
+            //         }
+            //     },
+            //     include:{
+            //         fields:true
+            //     }
+            // })
             return await db_connection.checkout.create({
                 data:{
                     "status":status as CheckoutStatus,

@@ -22,14 +22,14 @@ import { product_message_dto_mapper } from '@model/dto_mapper/product';
 
 function get_checkot_data(checkout: CheckoutWithExtraInfo):[number, Decimal, Decimal]{
     let total_products = 0;
-    let total_amount = new Decimal(0);
+    let base_total_amount = new Decimal(0);
         
     for (const checkout_variant of checkout.variants) {
         total_products+=checkout_variant.count;
-        total_amount=total_amount.add(new Decimal(checkout_variant.variant.product.price).mul(new Decimal(checkout_variant.count)))
+        base_total_amount=base_total_amount.add(new Decimal(checkout_variant.variant.product.price).mul(new Decimal(checkout_variant.count)))
     }
     
-    return [total_products, total_amount, checkout.promo?total_amount.mul(new Decimal(1).minus(checkout.promo.amount)):total_amount]
+    return [total_products, base_total_amount, checkout.promo?base_total_amount.mul(new Decimal(1).minus(checkout.promo.amount)):base_total_amount]
 }
 
 async function publish(checkout: CheckoutWithExtraInfo, token: Token) {
