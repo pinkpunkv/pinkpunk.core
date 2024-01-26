@@ -14,7 +14,7 @@ import Decimal from 'decimal.js';
 import {alpha_payment_service} from '../helper'
 
 import generateToken from '../utils/generate_token';
-import {AddressFieldDto, AddressDto} from '../model/dto'
+import {AddressDto} from '../model/dto'
 import { CheckoutWithExtraInfo, CheckoutWithInfo, ProductMessageDto, ValidationErrorWithConstraints } from '@abstract/types';
 import { order_delivery_type_validator } from '../helper/validator';
 import { checkout_client_dto_mapper } from '@model/dto_mapper/checkout';
@@ -50,11 +50,11 @@ async function publish(checkout: CheckoutWithExtraInfo, token: Token) {
                 contactFL:checkout.info!.firstName+" "+checkout!.info!.lastName,
                 email:checkout.info!.email,
                 phone:checkout.info!.phone,
-                addressFL:checkout.address!.fields[0].firstName+" "+checkout!.address!.fields[0].lastName,
-                address:`${checkout.address!.fields[0].street} ${checkout!.address!.fields[0].apartment} ${checkout!.address!.fields[0].building}`,
-                postalCode:checkout.address!.fields[0].zipCode,
-                city:checkout.address!.fields[0].city,
-                country: checkout.address!.fields[0].country
+                addressFL:checkout.address!.firstName+" "+checkout!.address!.lastName,
+                address:`${checkout.address!.street} ${checkout!.address!.apartment} ${checkout!.address!.building}`,
+                postalCode:checkout.address!.zipCode,
+                city:checkout.address!.city,
+                country: checkout.address!.country
             },
             discount:checkout.promo?checkout.promo.amount.toString():"0",
             finalTotal:total_amount.toString(),
@@ -145,7 +145,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     }
                 },
                 info:true,
-                address:{include:{fields:true}},
+                address:true,
                 promo: true
             },
         })
@@ -261,7 +261,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
     async function preprocess_checkout(req:Request, res: Response) {
         let {lang="ru",checkoutId="",cartId=""}= {...req.query}
-        let exists = await db_connection.checkout.findFirst({where:{id:checkoutId}, select:{id:true}})
+        // let exists = await db_connection.checkout.findFirst({where:{id:checkoutId}, select:{id:true}})
         let checkout_ = await db_connection.$transaction(async ()=>{
             let cart = await get_user_cart(cartId)
             return await db_connection.checkout.upsert({
@@ -279,9 +279,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 },
                 update:{
                     variants:{
-                        deleteMany:exists?{
-                            checkoutId:exists.id
-                        }:{},
+                        deleteMany:{
+                            checkoutId:checkoutId
+                        },
                         createMany:{
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})
                         }
@@ -329,16 +329,16 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {lang = "ru"}= {...req.query}
         let {deliveryType = "pickup", email = "", phone = "", paymentType = "cash", firstName = "", lastName = "", comment = ""} = {...req.body}
         let address_data = req.body['address']?new AddressDto(req.body['address']):null
-        let address_field = req.body['address']?new AddressFieldDto(req.body['address']):null
+        // let address_field = req.body['address']?new AddressFieldDto(req.body['address']):null
 
         let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
         
-        if ((!address_data || !address_field) && deliveryType != "pickup")
+        if ((!address_data) && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
 
         let address: Address | undefined;
-        if (deliveryType!="pickup"&&address_data&&address_field)
+        if (deliveryType!="pickup"&&address_data)
             address = await db_connection.address.upsert({
                 where:{
                     id:address_data.id
@@ -346,23 +346,34 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 create:{
                     userId:req.body.authenticated_user.id,
                     mask: address_data.mask,
-                    fields:{
-                        create:address_field
-                    },
+                    apartment: address_data.apartment,
+                    building: address_data.building,
+                    city: address_data.city,
+                    comment: address_data.comment,
+                    company: address_data.company,
+                    country: address_data.country,
+                    firstName: address_data.firstName,
+                    lastName: address_data.lastName,
+                    street: address_data.street,
+                    type: address_data.type,
+                    zipCode: address_data.zipCode
+                    // fields:{
+                    //     create:address_field
+                    // },
                 },
                 update:{
                     mask:address_data.mask,
-                    fields:address_data.id?{
-                        deleteMany:{
-                            addressId:address_data.id
-                        },
-                        create:address_field
-                    }:{
-                        create:address_field
-                    }
-                },
-                include:{
-                    fields:true
+                    apartment: address_data.apartment,
+                    building: address_data.building,
+                    city: address_data.city,
+                    comment: address_data.comment,
+                    company: address_data.company,
+                    country: address_data.country,
+                    firstName: address_data.firstName,
+                    lastName: address_data.lastName,
+                    street: address_data.street,
+                    type: address_data.type,
+                    zipCode: address_data.zipCode
                 }
             })
         

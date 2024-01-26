@@ -73,7 +73,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             include:{
                 info:true,
                 variants:get_include(lang),
-                address:{include:{fields:true}}
+                address:true
             }
         })
     }
@@ -141,7 +141,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 info:true,
                 user: true,
                 variants:get_include(lang),
-                address:{include:{fields:true}}
+                address:true
             }
         })
 
@@ -167,14 +167,17 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 data:{
                     // userId:checkout.userId,
                     mask: address_dto.mask,
-                    fields:address_dto.fields.length>0?{
-                        createMany:{
-                          data: address_dto.fields  
-                        } 
-                    }:{},
-                },
-                include:{
-                    fields:true
+                    apartment: address_dto.apartment,
+                    building: address_dto.building,
+                    city: address_dto.city,
+                    comment: address_dto.comment,
+                    company: address_dto.company,
+                    country: address_dto.country,
+                    firstName: address_dto.firstName,
+                    lastName: address_dto.lastName,
+                    street: address_dto.street,
+                    type: address_dto.type,
+                    zipCode: address_dto.zipCode
                 }
             })
             // else
@@ -223,7 +226,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 include:{
                     info:true,
                     variants:get_include(lang),
-                    address:{include:{fields:true}}
+                    address:true
                 }
             })
         })
@@ -254,25 +257,31 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 create:{
                     userId:checkout.userId,
                     mask: address_dto.mask,
-                    fields:{
-                        createMany:{
-                            data: address_dto.fields
-                        }
-                    }
+                    apartment: address_dto.apartment,
+                    building: address_dto.building,
+                    city: address_dto.city,
+                    comment: address_dto.comment,
+                    company: address_dto.company,
+                    country: address_dto.country,
+                    firstName: address_dto.firstName,
+                    lastName: address_dto.lastName,
+                    street: address_dto.street,
+                    type: address_dto.type,
+                    zipCode: address_dto.zipCode
                 },
                 update:{
-                    mask:address_dto.mask,
-                    fields:address_dto.fields.length>0?{
-                        deleteMany:{
-                            addressId:address_dto.id
-                        },
-                        createMany:{
-                            data: address_dto.fields
-                        }
-                    }:{}
-                },
-                include:{
-                    fields:true
+                    mask: address_dto.mask,
+                    apartment: address_dto.apartment,
+                    building: address_dto.building,
+                    city: address_dto.city,
+                    comment: address_dto.comment,
+                    company: address_dto.company,
+                    country: address_dto.country,
+                    firstName: address_dto.firstName,
+                    lastName: address_dto.lastName,
+                    street: address_dto.street,
+                    type: address_dto.type,
+                    zipCode: address_dto.zipCode
                 }
 
             })
@@ -308,7 +317,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 include:{
                     info:true,
                     variants:get_include(lang),
-                    address:{include:{fields:true}}
+                    address:true
                 }
             })
         })
@@ -337,7 +346,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                         create: {variantId: Number(variantId)}
                     }
                 },
-                include:{info:true,variants:get_include(lang),address:{include:{fields:true}}}
+                include:{info:true,variants:get_include(lang),address:true}
             });
         }
         else{
@@ -384,7 +393,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 info:true,
                 user: true,
                 variants:get_include(lang),
-                address:{include:{fields:true}}
+                address:true
             }
         })
 
@@ -474,7 +483,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                         }
                     }
                 },
-                include:{variants:get_include(lang), address:{include:{fields:true}},info:true }
+                include:{variants:get_include(lang), address:true,info:true }
             })
         }
         else{

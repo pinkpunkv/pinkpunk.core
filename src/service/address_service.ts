@@ -17,9 +17,6 @@ export default function make_address_service(db_connection:PrismaClient){
         return await db_connection.address.findMany({
             where:{
                 userId:user.id
-            },
-            include:{
-              fields:true   
             }
         })
     }
@@ -29,8 +26,7 @@ export default function make_address_service(db_connection:PrismaClient){
             where:{
                 id:addr_id,
                 userId:user.is_anonimus?null:user.id
-            },
-            include:{ fields:true }
+            }
         })
     }
 
@@ -57,12 +53,23 @@ export default function make_address_service(db_connection:PrismaClient){
             where:{ id:addressId },
             data:{
                 mask:address_dto.mask,
-                fields:{
-                    deleteMany:{ addressId:addressId },
-                    createMany:{ data: address_dto.fields } 
-                }
-            },
-            include:{ fields:true }
+                userId:req.body.authenticated_user.id,
+                apartment: address_dto.apartment,
+                building: address_dto.building,
+                city: address_dto.city,
+                comment: address_dto.comment,
+                company: address_dto.company,
+                country: address_dto.country,
+                firstName: address_dto.firstName,
+                lastName: address_dto.lastName,
+                street: address_dto.street,
+                type: address_dto.type,
+                zipCode: address_dto.zipCode
+                // fields:{
+                //     deleteMany:{ addressId:addressId },
+                //     createMany:{ data: address_dto.fields } 
+                // }
+            }
         })
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
@@ -77,8 +84,7 @@ export default function make_address_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content: await db_connection.address.delete({
-                where:{ id:address_id },
-                include:{ fields: true }
+                where:{ id:address_id }
             })
         })
     }
@@ -89,10 +95,18 @@ export default function make_address_service(db_connection:PrismaClient){
             data:{
                 userId:req.body.authenticated_user.id,
                 mask: address_dto.mask,
-                fields:{ createMany:{ data: address_dto.fields } },
-            },
-            include:{
-                fields:true
+                apartment: address_dto.apartment,
+                building: address_dto.building,
+                city: address_dto.city,
+                comment: address_dto.comment,
+                company: address_dto.company,
+                country: address_dto.country,
+                firstName: address_dto.firstName,
+                lastName: address_dto.lastName,
+                street: address_dto.street,
+                type: address_dto.type,
+                zipCode: address_dto.zipCode
+                // fields:{ createMany:{ data: address_dto.fields } },
             }
         })
 

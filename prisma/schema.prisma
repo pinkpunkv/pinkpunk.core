@@ -256,7 +256,22 @@ model Address{
   userId  String? 
   mask    String
   
-  fields  AddressFields[]
+  type      String @default("")
+
+  firstName String @default("")
+  lastName  String @default("")
+  company   String @default("")
+  
+  street    String @default("")
+  building  String @default("")
+  apartment String @default("")
+  comment   String @default("")
+
+  zipCode   String @default("")
+  city      String @default("")
+  country   String @default("")
+
+  // fields  AddressFields[]
   orders  Checkout[]
 }
 
@@ -264,7 +279,7 @@ model AddressFields{
   id        Int      @id @default(autoincrement())
   type      String
   addressId String
-  address   Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  // address   Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
   firstName String
   lastName  String
   company   String

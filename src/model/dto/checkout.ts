@@ -1,5 +1,6 @@
 import Decimal from "decimal.js"
 import { ProductClientDto } from "./product"
+import { AddressDto } from "./address"
 
 export class CheckoutInfoDto{
     email: string
@@ -32,10 +33,12 @@ export class CheckoutVariantDto{
 }
 
 export class CheckoutClientResponseDto{
+    id!: string
     total: number = 0
     baseTotalAmount: Decimal = new Decimal(0)
     totalAmount: Decimal = new Decimal(0)
     currencySymbol: string = "BYN"
+    address?: AddressDto
     info?: CheckoutInfoDto
     variants: CheckoutVariantDto[] = []
 }

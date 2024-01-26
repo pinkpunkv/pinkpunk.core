@@ -85,7 +85,7 @@ export type CheckoutVariantInfo = CheckoutVariants&{variant:Variant&{product:Pro
 export type CheckoutWithExtraInfo = Checkout&{
     variants: CheckoutVariantInfo[];
     info: CheckoutInfo | null,
-    address: Address & {fields: AddressFields[]} | null;
+    address: Address | null;
     promo: PromoCode | null
 }
 
