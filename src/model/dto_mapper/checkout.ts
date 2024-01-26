@@ -9,6 +9,8 @@ const checkout_client_dto_mapper = {
     from: function(checkout: CheckoutWithExtraInfo):CheckoutClientResponseDto{
         let dto = new CheckoutClientResponseDto()
         dto.id = checkout.id
+        dto.deliveryType = checkout.deliveryType
+        dto.paymentType = checkout.paymentType
         dto.info = checkout.info?checkout_info_mapper.from(checkout.info):undefined
         dto.address = checkout.address?address_dto_mapper.from(checkout.address):undefined
         for(const variant of checkout.variants){
