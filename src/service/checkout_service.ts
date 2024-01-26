@@ -230,7 +230,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             },
             info:true,
-            address:{include:{fields:true}},
+            address:true,
         } as Prisma.CheckoutInclude
     }
     
