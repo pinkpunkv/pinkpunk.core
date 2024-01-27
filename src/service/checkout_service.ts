@@ -594,7 +594,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 order_id = Number(
                     (await db_connection.$queryRaw<{nextval:Number}[]>`SELECT nextval('"public"."Checkout_orderId_seq"')`)[0].nextval
                 );
-                let payres = await alpha_payment_service.create_payment(order_id.toString(), total_amount, token.token)
+                let payres = await alpha_payment_service.create_payment(order_id.toString(), total_amount.mul(new Decimal(100)), token.token)
                 if( payres.data.errorCode ) throw new BaseError(500, "something went wrong", payres.data);
                 
                 order_info.formUrl = payres.data.formUrl!
