@@ -491,7 +491,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkout = await get_checkout_or_throw(lang, checkoutId)
 
         let variant = await db_connection.checkoutVariants.findFirstOrThrow({
-            where:{checkoutId:checkout.id, variantId:variantId}
+            where:{checkoutId:checkout.id, variantId:Number(variantId)}
         })
 
         await db_connection.checkout.update({
@@ -521,7 +521,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         console.log(checkoutId);
         let checkout = await get_checkout_or_throw(lang,checkoutId)
         
-        let checkout_variant = await get_checkout_variant(checkoutId, variantId);
+        let checkout_variant = await get_checkout_variant(checkoutId, Number(variantId));
         if(checkout_variant == null) throw new BaseError(417,"checkout variant with this id not found",[]);
 
         let ind = checkout.variants.findIndex(x=>x.variantId==variantId)
@@ -530,7 +530,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 where:{
                     checkoutId_variantId:{
                         checkoutId:checkout.id,
-                        variantId:Number(variantId),   
+                        variantId:checkout_variant.variantId,   
                     }
                 }
             })
