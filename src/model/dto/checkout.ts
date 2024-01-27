@@ -36,6 +36,7 @@ export class CheckoutVariantDto{
 export class CheckoutClientResponseDto{
     id!: string
     total: number = 0
+    orderId!: number
     paymentType!: PaymentType
     deliveryType!: DeliveryType
     baseTotalAmount: Decimal = new Decimal(0)

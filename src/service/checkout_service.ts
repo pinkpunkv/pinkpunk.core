@@ -50,9 +50,9 @@ async function publish(checkout: CheckoutWithExtraInfo, token: Token) {
                 contactFL:checkout.info!.firstName+" "+checkout!.info!.lastName,
                 email:checkout.info!.email,
                 phone:checkout.info!.phone,
-                addressFL:checkout.address!.firstName+" "+checkout!.address!.lastName,
-                address:`${checkout.address!.street} ${checkout!.address!.apartment} ${checkout!.address!.building}`,
-                postalCode:checkout.address!.zipCode,
+                addressFL:checkout.address?checkout.address.firstName+" "+checkout!.address.lastName:"",
+                address:checkout.address?`${checkout.address.street} ${checkout.address.apartment} ${checkout.address.building}`:"",
+                postalCode:checkout.address?checkout.address.zipCode:"",
                 city:checkout.address!.city,
                 country: checkout.address!.country
             },
