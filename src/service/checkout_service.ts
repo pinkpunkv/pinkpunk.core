@@ -53,8 +53,8 @@ async function publish(checkout: CheckoutWithExtraInfo, token: Token) {
                 addressFL:checkout.address?checkout.address.firstName+" "+checkout!.address.lastName:"",
                 address:checkout.address?`${checkout.address.street} ${checkout.address.apartment} ${checkout.address.building}`:"",
                 postalCode:checkout.address?checkout.address.zipCode:"",
-                city:checkout.address!.city,
-                country: checkout.address!.country
+                city:checkout.address?checkout.address.city:"",
+                country: checkout.address?checkout.address.country:""
             },
             discount:checkout.promo?checkout.promo.amount.toString():"0",
             finalTotal:total_amount.toString(),
