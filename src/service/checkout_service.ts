@@ -574,8 +574,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             }
 
-        if(checkout.info==null)
-            throw new BaseError(417, "user details is required",[]);
+        // if(checkout.info==null)
+        //     throw new BaseError(417, "user details is required",[]);
         
         let order_info = await db_connection.$transaction(async ()=>{
             let order_id = checkout.orderId
