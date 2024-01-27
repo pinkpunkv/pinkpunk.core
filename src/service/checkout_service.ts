@@ -336,53 +336,53 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if ((!address_data) && deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
-
-        let address: Address | undefined;
-        if (deliveryType!="pickup"&&address_data)
-            address = await db_connection.address.upsert({
-                where:{
-                    id:address_data.id
-                },
-                create:{
-                    userId:req.body.authenticated_user.id,
-                    mask: address_data.mask,
-                    apartment: address_data.apartment,
-                    building: address_data.building,
-                    city: address_data.city,
-                    comment: address_data.comment,
-                    company: address_data.company,
-                    country: address_data.country,
-                    firstName: address_data.firstName,
-                    lastName: address_data.lastName,
-                    street: address_data.street,
-                    type: address_data.type,
-                    zipCode: address_data.zipCode
-                    // fields:{
-                    //     create:address_field
-                    // },
-                },
-                update:{
-                    mask:address_data.mask,
-                    apartment: address_data.apartment,
-                    building: address_data.building,
-                    city: address_data.city,
-                    comment: address_data.comment,
-                    company: address_data.company,
-                    country: address_data.country,
-                    firstName: address_data.firstName,
-                    lastName: address_data.lastName,
-                    street: address_data.street,
-                    type: address_data.type,
-                    zipCode: address_data.zipCode
-                }
-            })
-        
+        let checkout_ = await db_connection.$transaction(async ()=>{
+            let address: Address | undefined;
+            if (deliveryType!="pickup"&&address_data)
+                address = await db_connection.address.upsert({
+                    where:{
+                        id:address_data.id
+                    },
+                    create:{
+                        userId:req.body.authenticated_user.id,
+                        mask: address_data.mask,
+                        apartment: address_data.apartment,
+                        building: address_data.building,
+                        city: address_data.city,
+                        comment: address_data.comment,
+                        company: address_data.company,
+                        country: address_data.country,
+                        firstName: address_data.firstName,
+                        lastName: address_data.lastName,
+                        street: address_data.street,
+                        type: address_data.type,
+                        zipCode: address_data.zipCode
+                        // fields:{
+                        //     create:address_field
+                        // },
+                    },
+                    update:{
+                        mask:address_data.mask,
+                        apartment: address_data.apartment,
+                        building: address_data.building,
+                        city: address_data.city,
+                        comment: address_data.comment,
+                        company: address_data.company,
+                        country: address_data.country,
+                        firstName: address_data.firstName,
+                        lastName: address_data.lastName,
+                        street: address_data.street,
+                        type: address_data.type,
+                        zipCode: address_data.zipCode
+                    }
+                })
+            
         // let address = await getUserAdress(addressId,req.body.authenticated_user)
         // if (address==null&&deliveryType!="pickup")
         //     throw new BaseError(417,"address not found",[]);
         
         
-        let checkout_ = await db_connection.$transaction(async ()=>{
+        
             return await db_connection.checkout.update({
                 where:{
                     id:checkout!.id
@@ -486,6 +486,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function remove_variant_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
+        console.log(checkoutId);
+        
         let checkout = await get_checkout_or_throw(lang, checkoutId)
 
         let variant = await db_connection.checkoutVariants.findFirstOrThrow({
