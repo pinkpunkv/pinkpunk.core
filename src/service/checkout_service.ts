@@ -518,6 +518,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function decrease_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
+        console.log(checkoutId);
         let checkout = await get_checkout_or_throw(lang,checkoutId)
         
         let checkout_variant = await get_checkout_variant(checkoutId, variantId);
