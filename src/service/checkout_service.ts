@@ -12,7 +12,7 @@ import {CustomerErrorCode, HttpValidationException} from '../common'
 import { create_message_broker_connection } from '../helper';
 import Decimal from 'decimal.js';
 import {alpha_payment_service} from '../helper'
-
+import {checkout_include} from './include/checkout'
 import generateToken from '../utils/generate_token';
 import {AddressDto} from '../model/dto'
 import { CheckoutWithExtraInfo, CheckoutWithInfo, ProductMessageDto, ValidationErrorWithConstraints } from '@abstract/types';
@@ -74,8 +74,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         pay_checkout,
         place_order,
         update_checkout_status,
-        use_promo,
-        get_user_checkouts
+        use_promo
     });
 
     async function get_checkout_variant(checkout_id:string,variant_id:number) {
@@ -91,7 +90,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function get_user_cart(cart_id:string) {
+    async function get_user_cart_or_throw(cart_id:string) {
         return db_connection.cart.findFirstOrThrow({
             where:{id:cart_id},
             include:{
@@ -173,100 +172,17 @@ export default function make_checkout_service(db_connection:PrismaClient){
             }
         })
     }
-
-    function get_include(lang: string) {
-        return {
-            include:{
-                product:{
-                    include:{
-                        fields:{
-                            where:{language:{ symbol:{equals: lang,mode: 'insensitive'}}}
-                        },
-                        tags:true,
-                        images:{
-                            select:{
-                                image:{
-                                    select:{
-                                        url:true
-                                    }
-                                }
-                            },
-                            take:1
-                        }
-                    }
-                },
-                color:true
-            },
-        }  as Prisma.VariantFindManyArgs
-    }
-
-    function get_checkout_include(lang:string){
-        return {
-            variants:{ 
-                include:{ 
-                    variant: {
-                        include:{
-                            product:{
-                                include:{
-                                    fields:{
-                                        where:{language:{ symbol:{equals: lang,mode: 'insensitive'}}}
-                                    },
-                                    tags:true,
-                                    images:{
-                                        select:{
-                                            image:{
-                                                select:{
-                                                    url:true
-                                                }
-                                            }
-                                        },
-                                        take:1
-                                    }
-                                }
-                            },
-                            color:true
-                        }
-                    }
-                }
-            },
-            info:true,
-            address:true,
-        } as Prisma.CheckoutInclude
-    }
     
-    async function get_user_checkouts(req:Request, res: Response) {
-        let {lang="ru"}= {...req.query}
-        if (req.body.authenticated_user.is_anonimus)
-            return {
-                status:StatusCodes.OK,
-                message:"success",
-                content: []
-            }
-        let checkouts = await db_connection.checkout.findMany({
-            where:{
-                userId:req.body.authenticated_user.id,
-                status:{
-                    in:["delivered","pending","completed"]
-                }
-            },
-            include:get_checkout_include(lang)
-        })
-
-        return res.status(StatusCodes.OK).send({
-            status:StatusCodes.OK,
-            message:"success",
-            content: checkouts.map(x=>checkout_client_dto_mapper.from(x as CheckoutWithExtraInfo))
-        })
-    }
+    
 
     async function preprocess_checkout(req:Request, res: Response) {
         let {lang="ru",checkoutId="",cartId=""}= {...req.query}
         // let exists = await db_connection.checkout.findFirst({where:{id:checkoutId}, select:{id:true}})
+        let cart = await get_user_cart_or_throw(cartId.toString())
         let checkout_ = await db_connection.$transaction(async ()=>{
-            let cart = await get_user_cart(cartId)
             return await db_connection.checkout.upsert({
                 where:{
-                    id:checkoutId
+                    id:checkoutId.toString()
                 },
                 create:{
                     status:'preprocess',
@@ -287,7 +203,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         }
                     },
                 },
-                include:get_checkout_include(lang)
+                include:checkout_include.get_checkout_include(lang)
             })
         })
         
@@ -411,7 +327,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                     },
                     paymentType:paymentType as PaymentType
                 },
-                include:get_checkout_include(lang)
+                include:checkout_include.get_checkout_include(lang)
             })
         })
         
@@ -455,7 +371,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 count:{increment:1}
             },
             include:{
-                variant:get_include(lang)
+                variant:checkout_include.get_include(lang)
             }
         })
         
@@ -698,7 +614,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 data:{
                     status:"completed"
                 },
-                include:get_checkout_include(lang)
+                include:checkout_include.get_checkout_include(lang)
             })
         }
         else

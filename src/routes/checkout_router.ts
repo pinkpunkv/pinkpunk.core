@@ -2,7 +2,6 @@ import express from'express'
 import {checkout_service} from '../service'
 let checkout_router = express.Router();
 
-checkout_router.get('/orders',checkout_service.get_user_checkouts)
 checkout_router.get('/:checkoutId',checkout_service.get_checkout)
 
 checkout_router.post('/preprocess',checkout_service.preprocess_checkout)

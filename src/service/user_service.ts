@@ -10,6 +10,9 @@ import {StatusCodes} from 'http-status-codes'
 import {CustomerErrorCode} from '../common'
 import { create_message_broker_connection } from '../helper';
 import { set_cookie } from '../helper/cookie_setter';
+import { checkout_include } from './include/checkout';
+import { checkout_client_dto_mapper } from '@model/dto_mapper/checkout';
+import { CheckoutWithExtraInfo } from '@abstract/types';
 
 export const excludedFields = ['password', 'verified', 'verificationCode'];
 
@@ -24,7 +27,8 @@ export default function make_user_service(db_connection:PrismaClient){
         forgot_password,
         confirm_change_password,
         confirm_user_registration,
-        confirm
+        confirm,
+        get_user_orders
     })
     
     
@@ -290,6 +294,31 @@ export default function make_user_service(db_connection:PrismaClient){
             status:StatusCodes.OK,
             message:"success",
             content: result
+        })
+    }
+
+    async function get_user_orders(req:Request, res: Response) {
+        let {lang="ru"}= {...req.query}
+        if (req.body.authenticated_user.is_anonimus)
+            return {
+                status:StatusCodes.OK,
+                message:"success",
+                content: []
+            }
+        let checkouts = await db_connection.checkout.findMany({
+            where:{
+                userId:req.body.authenticated_user.id,
+                // status:{
+                //     in:["delivered","pending","completed"]
+                // }
+            },
+            include:checkout_include.get_checkout_include(lang)
+        })
+
+        return res.status(StatusCodes.OK).send({
+            status:StatusCodes.OK,
+            message:"success",
+            content: checkouts.map(x=>checkout_client_dto_mapper.from(x as CheckoutWithExtraInfo))
         })
     }
 
