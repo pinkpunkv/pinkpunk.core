@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 
 const checkout_include = {
-    get_include:function get_include(lang: string) {
+    get_variant_include:function get_include(lang: string) {
         return {
             include:{
                 product:{
@@ -58,6 +58,7 @@ const checkout_include = {
             },
             info:true,
             address:true,
+            promo: true
         } as Prisma.CheckoutInclude
     }
 }

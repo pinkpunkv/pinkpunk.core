@@ -115,40 +115,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function get_checkout_or_throw(lang: string,checkout_id:string): Promise<CheckoutWithExtraInfo> {
         let checkout = await db_connection.checkout.findFirstOrThrow({
             where:{id:checkout_id},
-            include:{
-                variants:{ 
-                    include:{ 
-                        variant: {
-                            include:{
-                                product:{
-                                    include:{
-                                        fields:{
-                                            where:{language:{ symbol:{equals: lang,mode: 'insensitive'}}}
-                                        },
-                                        tags:true,
-                                        images:{
-                                            select:{
-                                                image:{
-                                                    select:{
-                                                        url:true
-                                                    }
-                                                }
-                                            },
-                                            take:1
-                                        }
-                                    }
-                                },
-                                color:true
-                            }
-                        }
-                    }
-                },
-                info:true,
-                address:true,
-                promo: true
-            },
+            include:checkout_include.get_checkout_include(lang)
         })
-        return checkout
+        return checkout as CheckoutWithExtraInfo
     }
     
     async function get_checkout_by_status_or_throw(checkout_id:string, status: CheckoutStatus): Promise<CheckoutWithInfo> {
@@ -161,23 +130,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
             }
         })
     }
-
-    async function get_checkout_by_status(checkout_id:string, status: CheckoutStatus): Promise<CheckoutWithInfo|null> {
-        return db_connection.checkout.findFirst({
-            where:{id:checkout_id,status:status},
-            include:{
-                variants:true,
-                info:true,
-                address:true
-            }
-        })
-    }
     
-    
-
     async function preprocess_checkout(req:Request, res: Response) {
         let {lang="ru",checkoutId="",cartId=""}= {...req.query}
-        // let exists = await db_connection.checkout.findFirst({where:{id:checkoutId}, select:{id:true}})
         let cart = await get_user_cart_or_throw(cartId.toString())
         let checkout_ = await db_connection.$transaction(async ()=>{
             return await db_connection.checkout.upsert({
@@ -220,17 +175,11 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let code = req.query["code"]!.toString()
         let checkoutId = req.params["checkoutId"]
         let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
-        let promo_code = await db_connection.promoCode.findFirstOrThrow({
-            where:{
-                code: code
-            }
-        })
+        let promo_code = await db_connection.promoCode.findFirstOrThrow({where:{code: code}})
         
         await db_connection.checkout.update({
             where:{id: checkout.id},
-            data:{
-                code: promo_code.code
-            }
+            data:{code: promo_code.code}
         })
 
         return res.status(StatusCodes.CREATED).send({
@@ -245,8 +194,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let {lang = "ru"}= {...req.query}
         let {deliveryType = "pickup", email = "", phone = "", paymentType = "cash", firstName = "", lastName = "", comment = ""} = {...req.body}
         let address_data = req.body['address']?new AddressDto(req.body['address']):null
-        // let address_field = req.body['address']?new AddressFieldDto(req.body['address']):null
-
+       
         let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
         
         if ((!address_data) && deliveryType != "pickup")
@@ -273,9 +221,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         street: address_data.street,
                         type: address_data.type,
                         zipCode: address_data.zipCode
-                        // fields:{
-                        //     create:address_field
-                        // },
                     },
                     update:{
                         mask:address_data.mask,
@@ -292,13 +237,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                         zipCode: address_data.zipCode
                     }
                 })
-            
-        // let address = await getUserAdress(addressId,req.body.authenticated_user)
-        // if (address==null&&deliveryType!="pickup")
-        //     throw new BaseError(417,"address not found",[]);
-        
-        
-        
+
             return await db_connection.checkout.update({
                 where:{
                     id:checkout!.id
@@ -371,7 +310,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 count:{increment:1}
             },
             include:{
-                variant:checkout_include.get_include(lang)
+                variant:checkout_include.get_variant_include(lang)
             }
         })
         
@@ -457,7 +396,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 where:{
                     checkoutId_variantId:{
                         checkoutId:checkout.id,
-                        variantId:Number(variantId),   
+                        variantId:checkout_variant.variantId,   
                     }
                 },
                 data:{
