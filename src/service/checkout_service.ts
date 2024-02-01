@@ -459,7 +459,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 where:{ id:checkout!.id },
                 data:{
                     orderId: order_id,
-                    status:"pending"
+                    status:"pending",
+                    orderDate:new Date()
                 }
             })
             order_info.orderId = order_id
@@ -493,7 +494,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             })
 
-        let [product_total, total_amount, base_total_amount] = get_checkot_data(checkout);
+        // let [product_total, total_amount, base_total_amount] = get_checkot_data(checkout);
             
         let token = await db_connection.token.create({
             data:{ 
@@ -546,6 +547,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         if(order_status.data.orderStatus==2){
             // if(checkout==null)
             //     throw new BaseError(417,"order with this id not found",[]);
+            
             checkout = await db_connection.checkout.update({
                 where:{
                     id:checkout.id
@@ -555,6 +557,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 },
                 include:checkout_include.get_checkout_include(lang)
             })
+
         }
         else
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer, message:"unsuccessful payment status"}])
