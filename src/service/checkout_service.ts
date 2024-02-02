@@ -72,7 +72,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         add_to_checkout,
         get_checkout,
         pay_checkout,
-        place_order,
+        // place_order,
         update_checkout_status,
         use_promo
     });
@@ -454,15 +454,28 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 
                 order_info.formUrl = payres.data.formUrl!
             }
+            
+            for(let checkout_variant of checkout.variants)
+                await db_connection.variant.update({
+                    where:{id:checkout_variant.variantId},
+                    data:{
+                        count:{
+                            decrement: checkout_variant.count
+                        }
+                    }
+                })
 
             await db_connection.checkout.update({
                 where:{ id:checkout!.id },
                 data:{
                     orderId: order_id,
                     status:"pending",
-                    orderDate:new Date()
+                    orderDate:new Date(),
                 }
             })
+
+            
+
             order_info.orderId = order_id
             await publish(checkout, token)
             return order_info;
@@ -476,55 +489,55 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    async function place_order(req:Request, res: Response) {
-        let {checkoutId=""} = {...req.params}
-        let {lang="ru"} = {...req.query};
+    // async function place_order(req:Request, res: Response) {
+    //     let {checkoutId=""} = {...req.params}
+    //     let {lang="ru"} = {...req.query};
         
-        let checkout = await get_checkout_or_throw(lang,checkoutId)
+    //     let checkout = await get_checkout_or_throw(lang,checkoutId)
         
-        // if(checkout.paymentType=="online")
-        //     throw new BaseError(417,"invalid payment type",[]);
+    //     // if(checkout.paymentType=="online")
+    //     //     throw new BaseError(417,"invalid payment type",[]);
         
-        if(checkout.status=="pending")
-            return res.status(StatusCodes.CREATED).send({
-                status:StatusCodes.OK,
-                message:"success",
-                content: {
-                    orderId:checkout.orderId
-                }
-            })
+    //     if(checkout.status=="pending")
+    //         return res.status(StatusCodes.CREATED).send({
+    //             status:StatusCodes.OK,
+    //             message:"success",
+    //             content: {
+    //                 orderId:checkout.orderId
+    //             }
+    //         })
 
-        // let [product_total, total_amount, base_total_amount] = get_checkot_data(checkout);
+    //     // let [product_total, total_amount, base_total_amount] = get_checkot_data(checkout);
             
-        let token = await db_connection.token.create({
-            data:{ 
-                token:generateToken(),
-                type:"order",
-                objectId:checkout.orderId.toString()
-            }
-        })
+    //     let token = await db_connection.token.create({
+    //         data:{ 
+    //             token:generateToken(),
+    //             type:"order",
+    //             objectId:checkout.orderId.toString()
+    //         }
+    //     })
 
-        let result = await db_connection.$transaction(async ()=>{ 
-            await db_connection.checkout.update({
-                where:{
-                    id:checkout!.id
-                },
-                data:{
-                    status:"pending"
-                }
-            })
-            // let rconn = await create_message_broker_connection()
-            // rconn.publish_order_info()
-            await publish(checkout, token)
-            return {orderId:checkout.orderId};
-        })
+    //     let result = await db_connection.$transaction(async ()=>{ 
+    //         await db_connection.checkout.update({
+    //             where:{
+    //                 id:checkout!.id
+    //             },
+    //             data:{
+    //                 status:"pending"
+    //             }
+    //         })
+    //         // let rconn = await create_message_broker_connection()
+    //         // rconn.publish_order_info()
+    //         await publish(checkout, token)
+    //         return {orderId:checkout.orderId};
+    //     })
 
-        return res.status(StatusCodes.CREATED).send({
-            status:StatusCodes.CREATED,
-            message:"success",
-            content: result
-        })
-    }
+    //     return res.status(StatusCodes.CREATED).send({
+    //         status:StatusCodes.CREATED,
+    //         message:"success",
+    //         content: result
+    //     })
+    // }
 
     async function update_checkout_status(req:Request, res: Response) {
         let {orderId=""} = {...req.params}

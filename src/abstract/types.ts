@@ -1,4 +1,4 @@
-import { Address, AddressFields, Checkout, CheckoutInfo, CheckoutVariants, Color, Field, Product, ProductsImages, PromoCode, Tag, Variant } from "@prisma/client"
+import { Address, AddressFields, Checkout, CheckoutInfo, CheckoutVariants, Color, Field, Prisma, Product, ProductsImages, PromoCode, Tag, Variant } from "@prisma/client"
 import { ValidationError } from "class-validator"
 
 export interface ProductNameDto {
@@ -39,6 +39,16 @@ export interface CheckoutMessageDto{
     discount:string
     finalTotal:string    
 }
+
+export interface ICRUD<T,ID>{
+    create(entity:T):Promise<T>;
+    update(id:ID, entity:T):Promise<T>;
+    remove(id:ID):Promise<T>;
+    get(id:ID):Promise<T>;
+    get_all(params:PaginationParams):Promise<T[]>;
+}
+
+export type CHeckoutVariantId = Prisma.CheckoutVariantsCheckoutIdVariantIdCompoundUniqueInput
 
 
 export interface TokenData{

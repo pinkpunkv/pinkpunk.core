@@ -6,8 +6,15 @@ import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
 import Decimal from 'decimal.js';
+import { checkout_include } from './include/checkout'
+import { CheckoutWithExtraInfo } from '@abstract/types'
+import make_variant_service from './meant_service/variant'
+import make_checkout_variant_service from './meant_service/checkout_variant'
 
 export default function make_admin_checkout_service(db_connection:PrismaClient){
+    let variant_service = make_variant_service(db_connection)
+    let checkout_variant_service = make_checkout_variant_service(db_connection)
+    
     return Object.freeze({
         update_checkout,
         create_checkout,
@@ -19,6 +26,20 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         get_user_checkouts
     });
 
+    async function get_checkout_variant(checkout_id: string,variantId: number) {
+        return await db_connection.checkoutVariants.findFirst({
+            where:{checkoutId:checkout_id, variantId: variantId},
+            include:{
+                variant:{
+                    select:{
+                        color: true,
+                        count:true
+                    }
+                }
+            }
+        })
+    }
+    
     function map_checkout(checkout: any): any {
         checkout.total = 0;
         checkout.currencySymbol = "BYN";
@@ -54,28 +75,11 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
     }
 
 
-    async function get_checkout_variant(checkout_id: string,variantId: number) {
-        return await db_connection.checkoutVariants.findFirst({
-            where:{checkoutId:checkout_id, variantId: variantId},
-            include:{
-                variant:{
-                    select:{
-                        color: true,
-                        count:true
-                    }
-                }
-            }
-        })
-    }
-    async function get_checkout(lang: string, checkout_id: string) {
-        return db_connection.checkout.findFirst({
+    async function get_checkout(lang: string, checkout_id: string) : Promise<CheckoutWithExtraInfo>{
+        return await db_connection.checkout.findFirst({
             where:{id:checkout_id},
-            include:{
-                info:true,
-                variants:get_include(lang),
-                address:true
-            }
-        })
+            include: checkout_include.get_checkout_include(lang),
+        }) as CheckoutWithExtraInfo
     }
 
     async function get_checkout_without_fields(checkout_id: string) {
@@ -89,38 +93,6 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    function get_include(lang: string) {
-        return {
-            include:{
-                variant:{
-                    include:{
-                        product:{
-                            include:{
-                                fields:{
-                                    where:{language:{ symbol:{equals: lang,mode: 'insensitive'}}}
-                                },
-                                tags:true,
-                                images:{
-                                    where:{
-                                        isMain:true
-                                    },
-                                    select:{
-                                        image:{
-                                            select:{
-                                                url:true
-                                            }
-                                        }
-                                    },
-                                    take:1
-                                }
-                            }
-                        },
-                        color:true
-                    }
-                }
-            }    
-        } as Prisma.CheckoutVariantsFindManyArgs
-    }
     async function get_user_checkouts(req:Request, res: Response) {
         let {lang="ru",statuses="completed,pending,declined,preprocess",userId=""}= {...req.query}
         let statuses_ = statuses.split(",") as Prisma.Enumerable<CheckoutStatus>
@@ -137,12 +109,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     in:statuses_
                 }
             },
-            include:{
-                info:true,
-                user: true,
-                variants:get_include(lang),
-                address:true
-            }
+            include:checkout_include.get_checkout_include(lang)
         })
 
         return res.status(StatusCodes.OK).send({
@@ -154,80 +121,49 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
     
     async function create_checkout(req:Request, res: Response) {
         let {lang="ru"}= {...req.query}
-        console.log(req.body);
+        // console.log(req.body);
         
         let {deliveryType = "pickup", status="pending", variants = []} = {...req.body}
         let info_dto = new CheckoutInfoDto(req.body.info)
         let address_dto = new AddressDto(req.body.address)
         
         let checkout_ = await db_connection.$transaction(async ()=>{
-            // let address;
-            // if(address_dto.id==null)
-            let address = await db_connection.address.create({
-                data:{
-                    // userId:checkout.userId,
-                    mask: address_dto.mask,
-                    apartment: address_dto.apartment,
-                    building: address_dto.building,
-                    city: address_dto.city,
-                    comment: address_dto.comment,
-                    company: address_dto.company,
-                    country: address_dto.country,
-                    firstName: address_dto.firstName,
-                    lastName: address_dto.lastName,
-                    street: address_dto.street,
-                    type: address_dto.type,
-                    zipCode: address_dto.zipCode
-                }
-            })
-            // else
-            // address = await db_connection.address.update({
-            //     where:{
-            //         id:address_dto.id
-            //     },
-            //     data:{
-            //         mask:address_dto.mask,
-            //         fields:address_dto.fields.length>0?{
-            //             deleteMany:{
-            //                 addressId:address_dto.id
-            //             },
-            //             createMany:{
-            //                 data:address_dto.fields
-            //             }
-            //         }:{
-            //             deleteMany:{
-            //                 addressId:address_dto.id
-            //             },
-            //         }
-            //     },
-            //     include:{
-            //         fields:true
-            //     }
-            // })
+        
             return await db_connection.checkout.create({
                 data:{
-                    "status":status as CheckoutStatus,
-                    address:address!=null?{connect:{id:address?.id}}:{},
+                    status:status as CheckoutStatus,
+                    address:address_dto?{
+                        create:{
+                            mask: address_dto.mask,
+                            apartment: address_dto.apartment,
+                            building: address_dto.building,
+                            city: address_dto.city,
+                            comment: address_dto.comment,
+                            company: address_dto.company,
+                            country: address_dto.country,
+                            firstName: address_dto.firstName,
+                            lastName: address_dto.lastName,
+                            street: address_dto.street,
+                            type: address_dto.type,
+                            zipCode: address_dto.zipCode
+                        }
+                    }:{},
                     deliveryType:deliveryType as DeliveryType,
                     variants: {
                         createMany: {
                             data: variants.map((x:any)=>{return {variantId:x.id, count:x.count}})
                         }
                     },
-                    info:{
+                    info:info_dto?{
                         create:{
                             email:info_dto.email,
                             phone:info_dto.phone,
                             firstName:info_dto.firstName,
                             lastName:info_dto.lastName
                         }
-                    },
+                    }:{},
                 },
-                include:{
-                    info:true,
-                    variants:get_include(lang),
-                    address:true
-                }
+                include:checkout_include.get_checkout_include(lang)
             })
         })
         
@@ -314,11 +250,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                         }
                     },
                 },
-                include:{
-                    info:true,
-                    variants:get_include(lang),
-                    address:true
-                }
+                include:checkout_include.get_checkout_include(lang)
             })
         })
         
@@ -346,8 +278,8 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                         create: {variantId: Number(variantId)}
                     }
                 },
-                include:{info:true,variants:get_include(lang),address:true}
-            });
+                include:checkout_include.get_checkout_include(lang)
+            }) as CheckoutWithExtraInfo;
         }
         else{
             if(checkoutVariant.variant.count>=checkoutVariant.count+1){
@@ -385,16 +317,9 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 [orderKey]:orderValue
             },
             where:{
-                status:{
-                    in:statuses_
-                }
+                status:{ in:statuses_ }
             },
-            include:{
-                info:true,
-                user: true,
-                variants:get_include(lang),
-                address:true
-            }
+            include:checkout_include.get_checkout_include(lang)
         })
 
         let total = await db_connection.checkout.aggregate({
@@ -405,7 +330,6 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 }
             }
         })
-
          
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
@@ -445,15 +369,12 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             data:{
                 variants:{
                     delete:{
-                        checkoutId_variantId:{
-                            variantId: Number(variantId),
-                            checkoutId:checkout.id
-                        }
+                        checkoutId_variantId:{ variantId: Number(variantId), checkoutId:checkout.id }
                     }
                 }
             },
-            include:{variants:get_include(lang),address:true,info:true }
-        })
+            include:checkout_include.get_checkout_include(lang)
+        }) as CheckoutWithExtraInfo
          
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
@@ -476,15 +397,12 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 data:{
                     variants:{
                         delete:{
-                            checkoutId_variantId:{
-                                variantId: Number(variantId),
-                                checkoutId:checkout.id
-                            }
+                            checkoutId_variantId:{ variantId: Number(variantId), checkoutId:checkout.id }
                         }
                     }
                 },
-                include:{variants:get_include(lang), address:true,info:true }
-            })
+                include:checkout_include.get_checkout_include(lang)
+            }) as CheckoutWithExtraInfo
         }
         else{
             await db_connection.checkoutVariants.update({
