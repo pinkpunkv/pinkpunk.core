@@ -26,9 +26,9 @@
 // }
 class AddressDto{
     id!: string | ""
-    userId!: string | ""
-    mask!: string | ""
-    type!: string | "shipping"
+    userId!: string | undefined
+    mask: string = ""
+    type: string = "shipping"
     firstName!: string | ""
     lastName!: string | ""
     company!: string | ""
