@@ -6,7 +6,7 @@ const address_dto_mapper = {
         return {
             id: address.id,
             mask:address.mask,
-            userId:address.userId,
+            userId:address.userId || "",
             apartment: address.apartment,
             building: address.building,
             city: address.city,

@@ -4,6 +4,7 @@ import {StatusCodes} from 'http-status-codes'
 import {RequestUser} from '../common/request_user'
 import { BaseError } from '../exception';
 import { AddressDto } from '../model/dto';
+import { plainToClass } from 'class-transformer';
 
 export default function make_address_service(db_connection:PrismaClient){
     return Object.freeze({
@@ -46,7 +47,7 @@ export default function make_address_service(db_connection:PrismaClient){
 
     async function update_address(req:Request, res: Response) {
         let addressId = req.params['addressId']
-        let address_dto = new AddressDto(req.body.address)
+        let address_dto = plainToClass(AddressDto,req.body.address)
         if(await get_user_adress(addressId,req.body.authenticated_user)==null)
             throw new BaseError(417,"address with this id not found",[]);
         let address = await db_connection.address.update({
@@ -90,7 +91,7 @@ export default function make_address_service(db_connection:PrismaClient){
     }
     
     async function create_address(req:Request, res: Response) {
-        let address_dto = new AddressDto(req.body.address)
+        let address_dto = plainToClass(AddressDto,req.body.address)
         let address = await db_connection.address.create({
             data:{
                 userId:req.body.authenticated_user.id,
