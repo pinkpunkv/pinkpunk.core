@@ -139,9 +139,10 @@ export default function make_cart_service(db_connection:PrismaClient){
             update:{
                 cartId: cart_id,
                 variantId: variant.id,
-                count:cart_variant&&variant.count>=cart_variant.count+1?{
+                count:  cart_variant&&variant.count>=cart_variant.count+1?{
                     increment:1
-                }:{}
+                }:
+                variant.count
             },
             include:{
                 variant:cart_include.get_variant_include(lang)
