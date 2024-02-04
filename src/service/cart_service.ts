@@ -98,13 +98,14 @@ export default function make_cart_service(db_connection:PrismaClient){
    
     async function get_cart(req:Request, res: Response) {
         let {lang="ru", cartId=""} = {...req.query};
+        
         let cart = await db_connection.cart.upsert({
             where:{id:cartId},
             create:{
-                user: req.body.authenticated_user.is_anonimus?null:req.body.authenticated_user.id,
+                userId: req.body.authenticated_user.is_anonimus?null:req.body.authenticated_user.id,
             },
             update:{
-                user: req.body.authenticated_user.is_anonimus?null:req.body.authenticated_user.id,
+                userId: req.body.authenticated_user.is_anonimus?null:req.body.authenticated_user.id,
             },
             include:{variants:cart_include.get_cart_include(lang) }
         });

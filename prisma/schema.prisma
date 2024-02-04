@@ -176,6 +176,7 @@ enum RoleEnumType {
 
 model Cart{
   id        String  @id @default(uuid())
+  userId    String?
   user      User?
   variants  CartVariants[]
 }
