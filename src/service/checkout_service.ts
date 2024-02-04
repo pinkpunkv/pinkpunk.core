@@ -205,66 +205,65 @@ export default function make_checkout_service(db_connection:PrismaClient){
             throw new BaseError(417,"address data is required",[]);
 
         let checkout_ = await db_connection.$transaction(async ()=>{
-
+            let address = address_data?await db_connection.address.upsert({
+                where:{id: checkout.addressId || undefined},
+                create:{
+                    userId:req.body.authenticated_user.id,
+                    mask: address_data.mask,
+                    apartment: address_data.apartment,
+                    building: address_data.building,
+                    city: address_data.city,
+                    comment: address_data.comment,
+                    company: address_data.company,
+                    country: address_data.country,
+                    firstName: address_data.firstName,
+                    lastName: address_data.lastName,
+                    street: address_data.street,
+                    type: address_data.type,
+                    zipCode: address_data.zipCode
+                },
+                update:{
+                    mask:address_data.mask,
+                    apartment: address_data.apartment,
+                    building: address_data.building,
+                    city: address_data.city,
+                    comment: address_data.comment,
+                    company: address_data.company,
+                    country: address_data.country,
+                    firstName: address_data.firstName,
+                    lastName: address_data.lastName,
+                    street: address_data.street,
+                    type: address_data.type,
+                    zipCode: address_data.zipCode
+                }
+            }):null
+            let info = checkout_info?await db_connection.checkoutInfo.upsert({
+                where:{id:checkout.infoId || undefined},
+                create:{
+                    email:checkout_info.email,
+                    phone:checkout_info.phone,
+                    firstName:checkout_info.firstName,
+                    lastName:checkout_info.lastName,
+                    comment:checkout_info.comment
+                },
+                update:{
+                    // id:checkout.infoId,
+                    email:checkout_info.email,
+                    phone:checkout_info.phone,
+                    firstName:checkout_info.firstName,
+                    lastName:checkout_info.lastName,
+                    comment:checkout_info.comment
+                }
+            }):null
             return await db_connection.checkout.update({
                 where:{
                     id:checkout!.id
                 },
                 data:{
-                    address:address_data?{
-                        upsert:{
-                            create:{
-                                userId:req.body.authenticated_user.id,
-                                mask: address_data.mask,
-                                apartment: address_data.apartment,
-                                building: address_data.building,
-                                city: address_data.city,
-                                comment: address_data.comment,
-                                company: address_data.company,
-                                country: address_data.country,
-                                firstName: address_data.firstName,
-                                lastName: address_data.lastName,
-                                street: address_data.street,
-                                type: address_data.type,
-                                zipCode: address_data.zipCode
-                            },
-                            update:{
-                                mask:address_data.mask,
-                                apartment: address_data.apartment,
-                                building: address_data.building,
-                                city: address_data.city,
-                                comment: address_data.comment,
-                                company: address_data.company,
-                                country: address_data.country,
-                                firstName: address_data.firstName,
-                                lastName: address_data.lastName,
-                                street: address_data.street,
-                                type: address_data.type,
-                                zipCode: address_data.zipCode
-                            }
-                        }
-                    }:{},
+                    addressId:address?address.id:null,
                     deliveryType:checkout_dto.deliveryType,
                     paymentType:checkout_dto.paymentType,
-                    info:{
-                        upsert:{
-                            create:{
-                                email:checkout_info.email,
-                                phone:checkout_info.phone,
-                                firstName:checkout_info.firstName,
-                                lastName:checkout_info.lastName,
-                                comment:checkout_info.comment
-                            },
-                            update:{
-                                // id:checkout.infoId,
-                                email:checkout_info.email,
-                                phone:checkout_info.phone,
-                                firstName:checkout_info.firstName,
-                                lastName:checkout_info.lastName,
-                                comment:checkout_info.comment
-                            }
-                        }
-                    },
+                    infoId:info?info.id:null,
                 },
                 include:checkout_include.get_checkout_include(lang)
             })

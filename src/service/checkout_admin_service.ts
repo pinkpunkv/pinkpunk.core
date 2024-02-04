@@ -196,73 +196,67 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
             for(let variant of checkout_dto.variants)
                 await variant_service.move_count(variant.variantId, "decrement", variant.count)
 
+            let address = address_dto?await db_connection.address.upsert({
+                where:{id: checkout.addressId || undefined},
+                create:{
+                    userId:req.body.authenticated_user.id,
+                    mask: address_dto.mask,
+                    apartment: address_dto.apartment,
+                    building: address_dto.building,
+                    city: address_dto.city,
+                    comment: address_dto.comment,
+                    company: address_dto.company,
+                    country: address_dto.country,
+                    firstName: address_dto.firstName,
+                    lastName: address_dto.lastName,
+                    street: address_dto.street,
+                    type: address_dto.type,
+                    zipCode: address_dto.zipCode
+                },
+                update:{
+                    mask:address_dto.mask,
+                    apartment: address_dto.apartment,
+                    building: address_dto.building,
+                    city: address_dto.city,
+                    comment: address_dto.comment,
+                    company: address_dto.company,
+                    country: address_dto.country,
+                    firstName: address_dto.firstName,
+                    lastName: address_dto.lastName,
+                    street: address_dto.street,
+                    type: address_dto.type,
+                    zipCode: address_dto.zipCode
+                }
+            }):null
+            
+            let info = info_dto?await db_connection.checkoutInfo.upsert({
+                where:{id:checkout.infoId || undefined},
+                create:{
+                    email:info_dto.email,
+                    phone:info_dto.phone,
+                    firstName:info_dto.firstName,
+                    lastName:info_dto.lastName,
+                    comment:info_dto.comment
+                },
+                update:{
+                    // id:checkout.infoId,
+                    email:info_dto.email,
+                    phone:info_dto.phone,
+                    firstName:info_dto.firstName,
+                    lastName:info_dto.lastName,
+                    comment:info_dto.comment
+                }
+            }):null
+
             return await db_connection.checkout.update({
                 where:{
-                    id:checkout.id
+                    id:checkout!.id
                 },
                 data:{
+                    addressId:address?address.id:null,
                     deliveryType:checkout_dto.deliveryType,
-                    status:checkout_dto.status,
-                    address:address_dto?{
-                        upsert:{
-                            create:{
-                                userId:checkout.userId,
-                                mask: address_dto.mask,
-                                apartment: address_dto.apartment,
-                                building: address_dto.building,
-                                city: address_dto.city,
-                                comment: address_dto.comment,
-                                company: address_dto.company,
-                                country: address_dto.country,
-                                firstName: address_dto.firstName,
-                                lastName: address_dto.lastName,
-                                street: address_dto.street,
-                                type: address_dto.type,
-                                zipCode: address_dto.zipCode
-                            },
-                            update:{
-                                mask: address_dto.mask,
-                                apartment: address_dto.apartment,
-                                building: address_dto.building,
-                                city: address_dto.city,
-                                comment: address_dto.comment,
-                                company: address_dto.company,
-                                country: address_dto.country,
-                                firstName: address_dto.firstName,
-                                lastName: address_dto.lastName,
-                                street: address_dto.street,
-                                type: address_dto.type,
-                                zipCode: address_dto.zipCode
-                            }
-                        }
-                    }:{},
-                    info:info_dto?{
-                        upsert:{
-                            create:{
-                                email:info_dto.email,
-                                phone:info_dto.phone,
-                                firstName:info_dto.firstName,
-                                lastName:info_dto.lastName,
-                                comment: info_dto.comment
-                            },
-                            update:{
-                                email:info_dto.email,
-                                phone:info_dto.phone,
-                                firstName:info_dto.firstName,
-                                lastName:info_dto.lastName,
-                                comment: info_dto.comment
-                            }
-                        }
-                        
-                    }:{},
-                    variants: checkout_dto.variants.length>0?{
-                        deleteMany: { checkoutId: checkout.id },
-                        createMany: {
-                            data: checkout_dto.variants
-                        }
-                    }:{
-                        deleteMany: { checkoutId: checkout.id },
-                    },
+                    paymentType:checkout_dto.paymentType,
+                    infoId:info?info.id:null,
                 },
                 include:checkout_include.get_checkout_include(lang)
             })
