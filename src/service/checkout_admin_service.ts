@@ -197,7 +197,7 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                 await variant_service.move_count(variant.variantId, "decrement", variant.count)
 
             let address = address_dto?await db_connection.address.upsert({
-                where:{id: checkout.addressId || undefined},
+                where:{id: checkout.addressId || ""},
                 create:{
                     userId:req.body.authenticated_user.id,
                     mask: address_dto.mask,
@@ -228,9 +228,9 @@ export default function make_admin_checkout_service(db_connection:PrismaClient){
                     zipCode: address_dto.zipCode
                 }
             }):null
-            
+
             let info = info_dto?await db_connection.checkoutInfo.upsert({
-                where:{id:checkout.infoId || undefined},
+                where:{id:checkout.infoId || -1},
                 create:{
                     email:info_dto.email,
                     phone:info_dto.phone,
