@@ -1,22 +1,68 @@
 import Decimal from "decimal.js"
 import { ProductClientDto } from "./product"
 import { AddressDto } from "./address"
-import { DeliveryType, PaymentType } from "@prisma/client"
+import { CheckoutStatus, DeliveryType, PaymentType } from "@prisma/client"
+import { Exclude, Expose, Transform, Type } from "class-transformer"
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator"
 
-export class CheckoutInfoDto{
-    email: string
-    phone: string
-    firstName: string | null
-    lastName: string | null
-    comment: string | null
+export class CheckoutInfoDTO{
+    @IsString()
+    email!: string | ""
 
-    constructor(model:any){
-        this.email = model?.email || ""
-        this.phone = model?.phone || ""
-        this.firstName = model?.firstName
-        this.lastName = model?.lastName
-        this.comment = model?.comment
-    }
+    @IsString()
+    phone!: string | ""
+
+    @IsOptional()
+    firstName?: string | null
+
+    @IsOptional()
+    lastName?: string | null
+
+    @IsOptional()
+    comment?: string | null
+}
+
+export class CheckoutClientUpdateDTO{
+    @IsString()
+    @IsIn(Object.values(PaymentType))
+    paymentType: PaymentType = PaymentType.cash
+
+    @IsString()
+    @IsIn(Object.values(DeliveryType))
+    deliveryType: DeliveryType = DeliveryType.pickup
+}
+export class CheckoutVariantConnectDto{
+    // @Expose()
+    // id!: number
+    @Transform(({value})=>value.id)
+    @IsNotEmpty()
+    variantId!: number
+
+    @IsNotEmpty()
+    @IsInt()
+    count!: number
+}
+export class CheckoutDTO{
+    @IsString()
+    @IsIn(Object.values(CheckoutStatus))
+    status: CheckoutStatus = CheckoutStatus.pending
+
+    @Type(()=>CheckoutInfoDTO)
+    info?: CheckoutInfoDTO
+
+    @Type(()=>AddressDto)
+    address?: AddressDto
+
+    @IsString()
+    @IsIn(Object.values(PaymentType))
+    paymentType: PaymentType = PaymentType.cash
+
+    @IsString()
+    @IsIn(Object.values(DeliveryType))
+    deliveryType: DeliveryType = DeliveryType.pickup
+
+    @Type(() => CheckoutVariantConnectDto)
+    variants: CheckoutVariantConnectDto[] = []
 }
 
 export class CheckoutVariantColor{
@@ -24,7 +70,8 @@ export class CheckoutVariantColor{
     color!: string
     colorText!: string | null
 }
-export class CheckoutVariantDto{
+
+export class CheckoutVariantDTO{
     id!: number
     product!: ProductClientDto
     count!: number
@@ -33,7 +80,7 @@ export class CheckoutVariantDto{
     size!: string
 }
 
-export class CheckoutClientResponseDto{
+export class CheckoutClientResponseDTO{
     id!: string
     total: number = 0
     orderId!: number
@@ -43,6 +90,6 @@ export class CheckoutClientResponseDto{
     totalAmount: Decimal = new Decimal(0)
     currencySymbol: string = "BYN"
     address?: AddressDto
-    info?: CheckoutInfoDto
-    variants: CheckoutVariantDto[] = []
+    info?: CheckoutInfoDTO
+    variants: CheckoutVariantDTO[] = []
 }

@@ -1,10 +1,6 @@
-import { PrismaClient, DeliveryType, Prisma, PaymentType, 
-    Address, CheckoutStatus, Checkout, Token, Field, 
-    PromoCode, CheckoutVariants, AddressFields, CheckoutInfo, Variant, Product,
-    Tag, Color, ProductsImages} from '@prisma/client'
+import { PrismaClient, DeliveryType, PaymentType, Address, CheckoutStatus, Token} from '@prisma/client'
 import { Request, Response } from "express";
 
-import {RequestUser} from '../common/request_user'
 import {StatusCodes} from 'http-status-codes'
 import { BaseError } from '../exception';
 
@@ -14,11 +10,13 @@ import Decimal from 'decimal.js';
 import {alpha_payment_service} from '../helper'
 import {checkout_include} from './include/checkout'
 import generateToken from '../utils/generate_token';
-import {AddressDto} from '../model/dto'
-import { CheckoutWithExtraInfo, CheckoutWithInfo, ProductMessageDto, ValidationErrorWithConstraints } from '@abstract/types';
+import {AddressDto, CheckoutClientUpdateDTO, CheckoutInfoDTO} from '../model/dto'
+import { CheckoutVariantInfo, CheckoutWithExtraInfo, CheckoutWithInfo, ValidationErrorWithConstraints } from '@abstract/types';
 import { order_delivery_type_validator } from '../helper/validator';
 import { checkout_client_dto_mapper } from '@model/dto_mapper/checkout';
 import { product_message_dto_mapper } from '@model/dto_mapper/product';
+import { plainToClass } from 'class-transformer';
+import { validate_dto_or_reject } from '../helper/validator/dto_validator';
 
 function get_checkot_data(checkout: CheckoutWithExtraInfo):[number, Decimal, Decimal]{
     let total_products = 0;
@@ -81,11 +79,16 @@ export default function make_checkout_service(db_connection:PrismaClient){
         return await db_connection.checkoutVariants.findFirst({
             where:{checkoutId:checkout_id,variantId:variant_id},
             include:{
-                variant:{
-                    select:{
-                        count:true
-                    }
-                }
+                variant:{ select:{ count:true } }
+            }
+        })
+    }
+
+    async function get_checkout_variant_or_throw(checkout_id:string,variant_id:number) {
+        return await db_connection.checkoutVariants.findFirstOrThrow({
+            where:{checkoutId:checkout_id,variantId:variant_id},
+            include:{
+                variant:{ select:{ count:true } }
             }
         })
     }
@@ -192,79 +195,76 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function update_checkout(req:Request, res: Response) {
         let checkoutId = req.params["checkoutId"]
         let {lang = "ru"}= {...req.query}
-        let {deliveryType = "pickup", email = "", phone = "", paymentType = "cash", firstName = "", lastName = "", comment = ""} = {...req.body}
-        let address_data = req.body['address']?new AddressDto(req.body['address']):null
+        let checkout_info = plainToClass(CheckoutInfoDTO, req.body)
+        let checkout_dto = await validate_dto_or_reject(plainToClass(CheckoutClientUpdateDTO, req.body))
+        let address_data = req.body.address?plainToClass(AddressDto, req.body.address):null
        
         let checkout = await get_checkout_by_status_or_throw(checkoutId, "preprocess")
         
-        if ((!address_data) && deliveryType != "pickup")
+        if ((!address_data) && checkout_dto.deliveryType != "pickup")
             throw new BaseError(417,"address data is required",[]);
 
         let checkout_ = await db_connection.$transaction(async ()=>{
-            let address: Address | undefined;
-            if (deliveryType!="pickup"&&address_data)
-                address = await db_connection.address.upsert({
-                    where:{
-                        id:address_data.id
-                    },
-                    create:{
-                        userId:req.body.authenticated_user.id,
-                        mask: address_data.mask,
-                        apartment: address_data.apartment,
-                        building: address_data.building,
-                        city: address_data.city,
-                        comment: address_data.comment,
-                        company: address_data.company,
-                        country: address_data.country,
-                        firstName: address_data.firstName,
-                        lastName: address_data.lastName,
-                        street: address_data.street,
-                        type: address_data.type,
-                        zipCode: address_data.zipCode
-                    },
-                    update:{
-                        mask:address_data.mask,
-                        apartment: address_data.apartment,
-                        building: address_data.building,
-                        city: address_data.city,
-                        comment: address_data.comment,
-                        company: address_data.company,
-                        country: address_data.country,
-                        firstName: address_data.firstName,
-                        lastName: address_data.lastName,
-                        street: address_data.street,
-                        type: address_data.type,
-                        zipCode: address_data.zipCode
-                    }
-                })
 
             return await db_connection.checkout.update({
                 where:{
                     id:checkout!.id
                 },
                 data:{
-                    address:address?{connect:{id:address?.id}}:{},
-                    deliveryType:deliveryType as DeliveryType,
+                    address:address_data?{
+                        upsert:{
+                            create:{
+                                userId:req.body.authenticated_user.id,
+                                mask: address_data.mask,
+                                apartment: address_data.apartment,
+                                building: address_data.building,
+                                city: address_data.city,
+                                comment: address_data.comment,
+                                company: address_data.company,
+                                country: address_data.country,
+                                firstName: address_data.firstName,
+                                lastName: address_data.lastName,
+                                street: address_data.street,
+                                type: address_data.type,
+                                zipCode: address_data.zipCode
+                            },
+                            update:{
+                                mask:address_data.mask,
+                                apartment: address_data.apartment,
+                                building: address_data.building,
+                                city: address_data.city,
+                                comment: address_data.comment,
+                                company: address_data.company,
+                                country: address_data.country,
+                                firstName: address_data.firstName,
+                                lastName: address_data.lastName,
+                                street: address_data.street,
+                                type: address_data.type,
+                                zipCode: address_data.zipCode
+                            }
+                        }
+                    }:{},
+                    deliveryType:checkout_dto.deliveryType,
+                    paymentType:checkout_dto.paymentType,
                     info:{
                         upsert:{
                             create:{
-                                email:email,
-                                phone:phone,
-                                firstName:firstName,
-                                lastName:lastName,
-                                comment:comment
+                                email:checkout_info.email,
+                                phone:checkout_info.phone,
+                                firstName:checkout_info.firstName,
+                                lastName:checkout_info.lastName,
+                                comment:checkout_info.comment
                             },
                             update:{
                                 // id:checkout.infoId,
-                                email:email,
-                                phone:phone,
-                                firstName:firstName,
-                                lastName:lastName,
-                                comment: comment
+                                email:checkout_info.email,
+                                phone:checkout_info.phone,
+                                firstName:checkout_info.firstName,
+                                lastName:checkout_info.lastName,
+                                comment:checkout_info.comment
                             }
                         }
                     },
-                    paymentType:paymentType as PaymentType
                 },
                 include:checkout_include.get_checkout_include(lang)
             })
@@ -282,10 +282,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let { variantId=0, lang="ru" } = {...req.query};
         let checkout = await get_checkout_or_throw(lang,checkoutId)
         let variant = await db_connection.variant.findFirstOrThrow({
-            where:{
-                id: Number(variantId),
-                deleted:false
-            }
+            where:{ id: Number(variantId), deleted:false }
         })
         let ind = checkout.variants.findIndex(x=>x.variantId==variant.id)
         if (ind!=-1&&variant.count==checkout.variants[ind].count)
@@ -297,10 +294,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         
         let checkoutVariant = await db_connection.checkoutVariants.upsert({
             where:{
-                checkoutId_variantId:{
-                    checkoutId:checkout.id,
-                    variantId:variant.id,   
-                }
+                checkoutId_variantId:{ checkoutId:checkout.id, variantId:variant.id, }
             },
             create:{
                 checkoutId:checkout.id,
@@ -309,15 +303,13 @@ export default function make_checkout_service(db_connection:PrismaClient){
             update:{
                 count:{increment:1}
             },
-            include:{
-                variant:checkout_include.get_variant_include(lang)
-            }
+            include:{ variant:checkout_include.get_variant_include(lang) }
         })
         
         if (ind!=-1)
             checkout.variants[ind].count+=1;
         else
-            checkout.variants.push(checkoutVariant as any)
+            checkout.variants.push(checkoutVariant as CheckoutVariantInfo)
         
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
@@ -341,7 +333,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function remove_variant_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        console.log(checkoutId);
         
         let checkout = await get_checkout_or_throw(lang, checkoutId)
 
@@ -373,11 +364,9 @@ export default function make_checkout_service(db_connection:PrismaClient){
     async function decrease_from_checkout(req:Request, res: Response) {
         let {checkoutId=""} = {...req.params}
         let {variantId=0,lang="ru"} = {...req.query};
-        console.log(checkoutId);
         let checkout = await get_checkout_or_throw(lang,checkoutId)
         
-        let checkout_variant = await get_checkout_variant(checkoutId, Number(variantId));
-        if(checkout_variant == null) throw new BaseError(417,"checkout variant with this id not found",[]);
+        let checkout_variant = await get_checkout_variant_or_throw(checkoutId, Number(variantId));
 
         let ind = checkout.variants.findIndex(x=>x.variantId==variantId)
         if(checkout_variant.count==1){
@@ -429,9 +418,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             }
 
-        // if(checkout.info==null)
-        //     throw new BaseError(417, "user details is required",[]);
-        
         let order_info = await db_connection.$transaction(async ()=>{
             let order_id = checkout.orderId
             let order_info: any = {}
@@ -474,8 +460,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             })
 
-            
-
             order_info.orderId = order_id
             await publish(checkout, token)
             return order_info;
@@ -489,56 +473,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
     }
 
-    // async function place_order(req:Request, res: Response) {
-    //     let {checkoutId=""} = {...req.params}
-    //     let {lang="ru"} = {...req.query};
-        
-    //     let checkout = await get_checkout_or_throw(lang,checkoutId)
-        
-    //     // if(checkout.paymentType=="online")
-    //     //     throw new BaseError(417,"invalid payment type",[]);
-        
-    //     if(checkout.status=="pending")
-    //         return res.status(StatusCodes.CREATED).send({
-    //             status:StatusCodes.OK,
-    //             message:"success",
-    //             content: {
-    //                 orderId:checkout.orderId
-    //             }
-    //         })
-
-    //     // let [product_total, total_amount, base_total_amount] = get_checkot_data(checkout);
-            
-    //     let token = await db_connection.token.create({
-    //         data:{ 
-    //             token:generateToken(),
-    //             type:"order",
-    //             objectId:checkout.orderId.toString()
-    //         }
-    //     })
-
-    //     let result = await db_connection.$transaction(async ()=>{ 
-    //         await db_connection.checkout.update({
-    //             where:{
-    //                 id:checkout!.id
-    //             },
-    //             data:{
-    //                 status:"pending"
-    //             }
-    //         })
-    //         // let rconn = await create_message_broker_connection()
-    //         // rconn.publish_order_info()
-    //         await publish(checkout, token)
-    //         return {orderId:checkout.orderId};
-    //     })
-
-    //     return res.status(StatusCodes.CREATED).send({
-    //         status:StatusCodes.CREATED,
-    //         message:"success",
-    //         content: result
-    //     })
-    // }
-
     async function update_checkout_status(req:Request, res: Response) {
         let {orderId=""} = {...req.params}
         let {lang="ru",ct=""} = {...req.query};
@@ -548,8 +482,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 type:"order"
             }
         })
-        if(token==null)
-            throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
+        if(token==null) throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
         let order_status = await alpha_payment_service.get_payment_status(orderId);
         let checkout = await db_connection.checkout.findFirstOrThrow({
@@ -557,10 +490,8 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 orderId:Number(orderId)
             }
         })
+
         if(order_status.data.orderStatus==2){
-            // if(checkout==null)
-            //     throw new BaseError(417,"order with this id not found",[]);
-            
             checkout = await db_connection.checkout.update({
                 where:{
                     id:checkout.id
@@ -570,14 +501,10 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 },
                 include:checkout_include.get_checkout_include(lang)
             })
-
         }
         else
             throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer, message:"unsuccessful payment status"}])
-        
-        // let [totalProducts, products, totalAmount]  = get_checkot_data(checkout as CheckoutWithExtraInfo);
-        // let rconn = await create_message_broker_connection()
-        // await publish(checkout, products, totalProducts, token, totalAmount)
+
 
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,

@@ -25,38 +25,38 @@
 //     }
 // }
 class AddressDto{
-    id: string
-    userId: string | null
-    mask: string
-    type: string
-    firstName: string
-    lastName: string
-    company: string
-    street: string
-    building: string
-    apartment: string
-    comment: string
-    zipCode: string
-    city: string
-    country: string
+    id!: string | ""
+    userId!: string | ""
+    mask!: string | ""
+    type!: string | "shipping"
+    firstName!: string | ""
+    lastName!: string | ""
+    company!: string | ""
+    street!: string | ""
+    building!: string | ""
+    apartment!: string | ""
+    comment!: string | ""
+    zipCode!: string | ""
+    city!: string | ""
+    country!: string | ""
     // fields: AddressFieldDto[]
-    constructor(model: any) {
-        this.id = model?.id || ""
-        this.userId = model?.userId || ""
-        this.mask = model?.mask || ""
-        this.type = model?.type || "shipping"
-        this.firstName = model?.firstName || ""
-        this.lastName = model?.lastName || ""
-        this.company = model?.company || ""
-        this.street = model?.street || ""
-        this.building = model?.building || ""
-        this.apartment = model?.apartment || ""
-        this.comment = model?.comment || ""
-        this.zipCode = model?.zipCode || ""
-        this.city = model?.city || ""
-        this.country = model?.country || ""
-        // this.fields = model?.fields?model.fields.map((x:any)=>new AddressFieldDto(x)):[]
-    }
+    // constructor(model: any) {
+    //     this.id = model?.id || ""
+    //     this.userId = model?.userId || ""
+    //     this.mask = model?.mask || ""
+    //     this.type = model?.type || "shipping"
+    //     this.firstName = model?.firstName || ""
+    //     this.lastName = model?.lastName || ""
+    //     this.company = model?.company || ""
+    //     this.street = model?.street || ""
+    //     this.building = model?.building || ""
+    //     this.apartment = model?.apartment || ""
+    //     this.comment = model?.comment || ""
+    //     this.zipCode = model?.zipCode || ""
+    //     this.city = model?.city || ""
+    //     this.country = model?.country || ""
+    //     // this.fields = model?.fields?model.fields.map((x:any)=>new AddressFieldDto(x)):[]
+    // }
 }
 
 export {AddressDto}

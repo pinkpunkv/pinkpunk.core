@@ -125,47 +125,33 @@ export default function make_cart_service(db_connection:PrismaClient){
         })
        
         let cart = await get_cart_by_id_or_throw(lang, cart_id)
-        // if(cart==null) throw new BaseError(417,"cart with this id not found",[]);
-            
         let cart_variant = await get_cart_variant(cart.id,variantId)
         
         // if (cart_variant==null){
-            let cvariant = await db_connection.cartVariants.upsert({
-                where:{variantId_cartId:{cartId:cart_id, variantId:variant.id}},
-                create:{
-                    cartId: cart_id,
-                    variantId: variant.id,
-                    count:1
-                },
-                update:{
-                    cartId: cart_id,
-                    variantId: variant.id,
-                    count:cart_variant&&variant.count>=cart_variant.count+1?{
-                        increment:1
-                    }:{}
-                },
-            })
-            let ind = cart.variants.findIndex(x=>x.variantId==variantId)
+        let cvariant = await db_connection.cartVariants.upsert({
+            where:{variantId_cartId:{cartId:cart_id, variantId:variant.id}},
+            create:{
+                cartId: cart_id,
+                variantId: variant.id,
+                count:1
+            },
+            update:{
+                cartId: cart_id,
+                variantId: variant.id,
+                count:cart_variant&&variant.count>=cart_variant.count+1?{
+                    increment:1
+                }:{}
+            },
+            include:{
+                variant:cart_include.get_variant_include(lang)
+            }
+        }) as CartVariantWithProduct
+        let ind = cart.variants.findIndex(x=>x.variantId==variantId)
+        if (ind!=-1)
             cart.variants[ind].count+= cvariant.count;
-            //let cart  = await getUserCartWithoutVariants(variantsData.id,req.body.authenticated_user)
-        //     cart = await db_connection.cart.update({
-        //         where:{id:cart.id},
-        //         data:{
-        //             variants:{ create: {variantId:variant.id} }
-        //         },
-        //         include:{variants:cart_include.get_cart_include(lang) }
-        //     });
-        // }
-        // else{
-        //     if(cart_variant.variant.count>=cart_variant.count+1){
-        //         await db_connection.cartVariants.update({
-        //             where:{ variantId_cartId:{ cartId: cart.id, variantId: variant.id, } },
-        //             data:{ count:{ increment: 1 } }
-        //         })
-                
-        //     }
-            
-        // }
+        else
+            cart.variants.push(cvariant)
+        
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
             message:"success",
@@ -189,7 +175,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                 }
             },
             include:{variants:cart_include.get_cart_include(lang) }
-        })
+        }) as CartWithVariants
          
         return res.status(StatusCodes.OK).send({
             status:StatusCodes.OK,
@@ -216,7 +202,7 @@ export default function make_cart_service(db_connection:PrismaClient){
                     }
                 },
                 include:{variants:cart_include.get_cart_include(lang) }
-            })
+            }) as CartWithVariants 
         }
         else{
             await db_connection.cartVariants.update({
