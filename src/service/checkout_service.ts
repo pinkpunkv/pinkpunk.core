@@ -206,7 +206,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
         let checkout_ = await db_connection.$transaction(async ()=>{
             let address = address_data?await db_connection.address.upsert({
-                where:{id: checkout.addressId || undefined},
+                where:{id: checkout.addressId || ""},
                 create:{
                     userId:req.body.authenticated_user.id,
                     mask: address_data.mask,
@@ -238,7 +238,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             }):null
             let info = checkout_info?await db_connection.checkoutInfo.upsert({
-                where:{id:checkout.infoId || undefined},
+                where:{id:checkout.infoId || -1},
                 create:{
                     email:checkout_info.email,
                     phone:checkout_info.phone,
