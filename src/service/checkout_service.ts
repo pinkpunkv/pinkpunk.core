@@ -139,7 +139,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let cart = await get_user_cart_or_throw(cartId.toString())
         let checkout_ = await db_connection.$transaction(async ()=>{
             let checkout_by_cart = await db_connection.checkout.findFirst({
-                where:{cartId: cart.id}
+                where:{cartId: cart.id, status:"preprocess"}
             })
             let cid = (checkoutId?checkoutId:checkout_by_cart?.id) || ""
             return await db_connection.checkout.upsert({
