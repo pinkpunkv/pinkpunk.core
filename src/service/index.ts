@@ -42,23 +42,7 @@ let db_connection = db();
 let s3storage = file_storage(process.env.storage);
 let t_storage = token_storage()
 
-db_connection.$use(async (params, next) => {
-    if (params.model == 'Variant'||params.model=="Product") {
-      if (params.action == 'delete') {
-        params.action = 'update'
-        params.args['data'] = { deleted: true }
-      }
-      if (params.action == 'deleteMany') {
-        params.action = 'updateMany'
-        if (params.args.data != undefined) {
-          params.args.data['deleted'] = true
-        } else {
-          params.args['data'] = { deleted: true }
-        }
-      }
-    }
-    return next(params)
-  })
+
 
 const address_service = make_address_service(db_connection)
 const tag_service = make_tag_service(db_connection)

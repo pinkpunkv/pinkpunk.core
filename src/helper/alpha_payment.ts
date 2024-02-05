@@ -14,6 +14,10 @@ const alpha_payment_service = {
     get_payment_status: async function get_payment_status(orderNumber:string) {
         let url = `${config.PAYMENT_URL}rest/getOrderStatusExtended.do?userName=${config.PAYMENT_LOGIN}&password=${config.PAYMENT_PASSWORD}&orderNumber=${orderNumber}`;
         return await axios.post(url)
+    },
+
+    get_payment_status_url: function(orderNumber:string){
+        return `${config.PAYMENT_URL}rest/getOrderStatusExtended.do?userName=${config.PAYMENT_LOGIN}&password=${config.PAYMENT_PASSWORD}&orderNumber=${orderNumber}`;
     }
 }
 export {alpha_payment_service}

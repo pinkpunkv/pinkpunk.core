@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc && tsc-alias -p tsconfig.json",
     "start": "npm run build && node .",
+    "start_shedule_worker": "npm run build && node --experimental-repl-await dist/src/schedule_worker",
     "migrate": "npx prisma generate && npx prisma db push",
     "seed": "npx prisma db seed"
   },
@@ -35,6 +36,7 @@
     "amqplib": "^0.10.3",
     "apicache": "^1.6.3",
     "app-root-path": "^3.1.0",
+    "async-mutex": "^0.4.1",
     "aws-sdk": "^2.1279.0",
     "axios": "^1.6.2",
     "axios-retry": "^4.0.0",
@@ -63,6 +65,7 @@
     "passport-google-oidc-token": "^1.0.3",
     "passport-http-bearer": "^1.0.1",
     "prisma": "^4.7.1",
+    "prisma-soft-delete-middleware": "^1.3.1",
     "reflect-metadata": "^0.2.1",
     "string-template": "^1.0.0",
     "typescript": "^4.9.4",

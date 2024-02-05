@@ -1,7 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ProductPayload } from "@prisma/client";
+import { createSoftDeleteMiddleware } from "prisma-soft-delete-middleware";
 
 let conection:PrismaClient|null;
-
+const SOFT_DELETION_MODELS = []
 export function db() : PrismaClient{
     if(conection){
         return conection;
@@ -27,10 +28,19 @@ export function db() : PrismaClient{
         //     },
         //   ],
     });
-    conection.$connect().then(()=>{
+    conection.$connect().then((conn)=>{
         console.log("database connected");
     }).catch((err)=>{
         throw err;
     })
+    conection.$use(
+        createSoftDeleteMiddleware({
+            models:{
+                Variant: true,
+                Product: true,
+                Checkout: true
+            },
+        })
+    )
     return conection
 }

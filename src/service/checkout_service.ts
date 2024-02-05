@@ -135,12 +135,16 @@ export default function make_checkout_service(db_connection:PrismaClient){
     }
     
     async function preprocess_checkout(req:Request, res: Response) {
-        let {lang="ru",checkoutId="",cartId=""}= {...req.query}
+        let {lang="ru",checkoutId=null,cartId=""}= {...req.query}
         let cart = await get_user_cart_or_throw(cartId.toString())
         let checkout_ = await db_connection.$transaction(async ()=>{
+            let checkout_by_cart = await db_connection.checkout.findFirst({
+                where:{cartId: cart.id}
+            })
+            let cid = (checkoutId?checkoutId:checkout_by_cart?.id) || ""
             return await db_connection.checkout.upsert({
                 where:{
-                    id:checkoutId.toString()
+                    id: cid,
                 },
                 create:{
                     status:'preprocess',
@@ -154,7 +158,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 update:{
                     variants:{
                         deleteMany:{
-                            checkoutId:checkoutId
+                            checkoutId:cid
                         },
                         createMany:{
                             data:cart.variants.map(x=>{return {variantId:x.variantId,count:x.count}})

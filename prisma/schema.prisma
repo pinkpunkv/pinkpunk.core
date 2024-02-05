@@ -179,6 +179,7 @@ model Cart{
   userId    String?
   user      User?
   variants  CartVariants[]
+  checkouts Checkout[]
 }
 
 model Want{
@@ -320,16 +321,27 @@ model Checkout {
   deliveryType  DeliveryType @default(pickup)
   paymentType   PaymentType @default(cash)
   transactionId Int?
+  orderDate     DateTime @default(now())
+  deleted       Boolean  @default(false)
+  
   infoId        Int?
   info          CheckoutInfo? @relation(fields: [infoId], references: [id], onDelete: SetNull)
+
   userId        String?
-  user          User? @relation(fields: [userId], references: [id], onDelete: NoAction)
-  variants      CheckoutVariants[]
-  orderDate     DateTime @default(now())
+  user          User?    @relation(fields: [userId], references: [id], onDelete: NoAction)
+  
+  cartId        String?
+  cart          Cart?      @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  
   addressId     String? 
   address       Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  
   code String?
   promo PromoCode? @relation(fields: [code], references: [code], onDelete: NoAction)
+  
+  variants      CheckoutVariants[]
+  
+  @@index([cartId])
 }
 
 model CheckoutVariants {
