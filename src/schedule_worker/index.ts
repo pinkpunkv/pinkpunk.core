@@ -18,11 +18,21 @@ function process_unpayed_orders(db_connection: PrismaClient){
         }
     }).then(async (checkouts)=>{
         for(let checkout of checkouts){
-            order_status = await alpha_payment_service.get_payment_status(checkout.orderId.toString())
+            order_status = await alpha_payment_service.get_payment_status(checkout.orderId)
             if (order_status.data.orderStatus == 6){
                 console.log(`order ${checkout.orderId} payment is failed`);    
                 await db_connection.checkout.delete({
                     where: {id: checkout.id},
+                })
+            }
+            if(order_status.data.orderStatus==2){
+                checkout = await db_connection.checkout.update({
+                    where:{
+                        id:checkout.id
+                    },
+                    data:{
+                        status:"completed"
+                    },
                 })
             }
             execSync('sleep 1')

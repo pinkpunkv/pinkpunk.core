@@ -36,7 +36,7 @@ export function db() : PrismaClient{
     conection.$use(
         createSoftDeleteMiddleware({
             models:{
-                Variant: true,
+                // Variant: true,
                 Product: true,
                 Checkout: true
             },

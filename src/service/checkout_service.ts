@@ -417,12 +417,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 status:StatusCodes.OK,
                 message:"success",
                 content: {
-                    orderId:checkout.orderId
+                    orderId:checkout.paymentOrderId
                 }
             }
 
         let order_info = await db_connection.$transaction(async ()=>{
-            let order_id = checkout.orderId
+            let payment_order_id = checkout.paymentOrderId
             let order_info: any = {}
             let total_amount = get_checkot_data(checkout)[2];
             let token = await db_connection.token.create({
@@ -433,12 +433,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             })
             if (checkout.paymentType == PaymentType.online){
-                let order_status = await alpha_payment_service.get_payment_status(order_id.toString());
+                let order_status = await alpha_payment_service.get_payment_status(payment_order_id);
                 if(order_status.data.orderStatus==2) return order_info
-                order_id = Number(
-                    (await db_connection.$queryRaw<{nextval:Number}[]>`SELECT nextval('"public"."Checkout_orderId_seq"')`)[0].nextval
+                payment_order_id = Number(
+                    (await db_connection.$queryRaw<{nextval:Number}[]>`SELECT nextval('"public"."Checkout_paymentOrderId_seq"')`)[0].nextval
                 );
-                let payres = await alpha_payment_service.create_payment(order_id.toString(), total_amount.mul(new Decimal(100)), token.token)
+                let payres = await alpha_payment_service.create_payment(checkout.orderId, payment_order_id, total_amount.mul(new Decimal(100)), token.token)
                 if( payres.data.errorCode ) throw new BaseError(500, "something went wrong", payres.data);
                 
                 order_info.formUrl = payres.data.formUrl!
@@ -457,13 +457,13 @@ export default function make_checkout_service(db_connection:PrismaClient){
             await db_connection.checkout.update({
                 where:{ id:checkout!.id },
                 data:{
-                    orderId: order_id,
+                    orderId: payment_order_id,
                     status:"pending",
                     orderDate:new Date(),
                 }
             })
 
-            order_info.orderId = order_id
+            order_info.orderId = payment_order_id
             await publish(checkout, token)
             return order_info;
         })
@@ -487,12 +487,12 @@ export default function make_checkout_service(db_connection:PrismaClient){
         })
         if(token==null) throw new BaseError(StatusCodes.EXPECTATION_FAILED,'',[{code:CustomerErrorCode.UnidentifiedCustomer,message:"invalid token"}])
 
-        let order_status = await alpha_payment_service.get_payment_status(orderId);
         let checkout = await db_connection.checkout.findFirstOrThrow({
             where:{
                 orderId:Number(orderId)
             }
         })
+        let order_status = await alpha_payment_service.get_payment_status(checkout.paymentOrderId);
 
         if(order_status.data.orderStatus==2){
             checkout = await db_connection.checkout.update({

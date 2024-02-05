@@ -317,10 +317,12 @@ model CheckoutInfo {
 model Checkout {
   id            String      @id @default(uuid())
   status        CheckoutStatus 
-  orderId       Int @default(autoincrement())
+  orderId       Int @default(autoincrement()) @unique
   deliveryType  DeliveryType @default(pickup)
   paymentType   PaymentType @default(cash)
-  transactionId Int?
+  
+  paymentOrderId Int @default(autoincrement()) @unique
+
   orderDate     DateTime @default(now())
   deleted       Boolean  @default(false)
   
@@ -341,6 +343,8 @@ model Checkout {
   
   variants      CheckoutVariants[]
   
+  @@index([paymentOrderId])
+  @@index([orderId])
   @@index([cartId])
 }
 
