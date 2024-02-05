@@ -1,4 +1,4 @@
-import { PrismaClient, ProductPayload } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { createSoftDeleteMiddleware } from "prisma-soft-delete-middleware";
 
 let conection:PrismaClient|null;
