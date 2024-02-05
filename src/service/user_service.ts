@@ -9,12 +9,9 @@ import { BaseError } from '../exception';
 import {StatusCodes} from 'http-status-codes'
 import {CustomerErrorCode} from '../common'
 import { create_message_broker_connection } from '../helper';
-import { set_cookie } from '../helper/cookie_setter';
 import { checkout_include } from './include/checkout';
 import { checkout_client_dto_mapper } from '@model/dto_mapper/checkout';
 import { CheckoutWithExtraInfo } from '@abstract/types';
-
-export const excludedFields = ['password', 'verified', 'verificationCode'];
 
 
 export default function make_user_service(db_connection:PrismaClient){
@@ -146,7 +143,7 @@ export default function make_user_service(db_connection:PrismaClient){
 
         // Sign Tokens
         const { access_token, refresh_token } = await signTokens(user);
-        set_cookie(res, access_token, refresh_token)
+        // set_cookie(res, access_token, refresh_token)
         return res.status(StatusCodes.CREATED).send({
             status:StatusCodes.CREATED,
             message:"success",
