@@ -1,4 +1,4 @@
-import { Address, AddressFields, Cart, CartVariants, Checkout, CheckoutInfo, CheckoutVariants, Color, Field, Prisma, Product, ProductsImages, PromoCode, Tag, Variant } from "@prisma/client"
+import { Address, Cart, Checkout, CheckoutInfo, CheckoutVariants, Color, Field, Prisma, Product, PromoCode, Tag, Variant } from "@prisma/client"
 import { ValidationError } from "class-validator"
 
 export interface ProductNameDto {

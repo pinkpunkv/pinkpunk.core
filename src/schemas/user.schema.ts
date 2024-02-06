@@ -1,5 +1,5 @@
 import { object, string, TypeOf } from 'zod';
-import {CustomerErrorCode} from '../common'
+import {CustomerErrorCode} from '../public_api/common'
 enum RoleEnumType {
   ADMIN = 'admin',
   USER = 'user',

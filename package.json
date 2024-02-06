@@ -2,12 +2,15 @@
   "name": "pinkpunk.core",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/src/app.js",
+  "main": "dist/src/public_api/app.js",
   "scripts": {
+    "docker_build": "prisma generate && tsc && tsc-alias -p tsconfig.json",
     "build": "tsc && tsc-alias -p tsconfig.json",
     "start": "npm run build && node .",
-    "start_shedule_worker": "npm run build && node --experimental-repl-await dist/src/schedule_worker",
     "migrate": "npx prisma generate && npx prisma db push",
+    "start_shedule_worker_build": "npm run build && node --experimental-repl-await dist/src/schedule_worker",
+    "start_shedule_worker": "node --experimental-repl-await dist/src/schedule_worker",
+    "start_public_api": "node dist/src/public_api/app.js",
     "seed": "npx prisma db seed"
   },
   "repository": {
@@ -51,6 +54,7 @@
     "express-async-errors": "^3.1.1",
     "express-fileupload": "^1.4.0",
     "express-session": "^1.17.3",
+    "handlebars": "^4.7.8",
     "http-status-codes": "^2.2.0",
     "jsonwebtoken": "^9.0.0",
     "middleware-async": "^1.4.0",

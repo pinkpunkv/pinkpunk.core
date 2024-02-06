@@ -1,4 +1,4 @@
-import { HttpValidationException } from "@common/index"
+import { HttpValidationException } from "src/public_api/common/index"
 import { ValidationError, validate } from "class-validator"
 
 export async function validate_dto_or_reject<T extends object>(entity:T): Promise<T>{
