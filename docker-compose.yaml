@@ -2,8 +2,20 @@ version: '3'
 
 volumes:
   file_storage_data:
+  message_broker_data: 
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - ./deployment/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${KC_DB_USERNAME}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+
   file_storage:
     container_name: file_storage 
     # command: []
@@ -33,6 +45,9 @@ services:
       - ${PWD}/static:/static
     ports:
       - "${PUBLIC_API_PORT}:${PUBLIC_API_PORT}"
+    # depends_on:
+    #   - postgres
+    #   - file_storage
   
   schedule_worker:
     image: schedule_worker
@@ -43,3 +58,18 @@ services:
     command: ["npm", "run", "start_shedule_worker"]
     env_file:
       - .env
+
+  message_broker:
+    image: 'rabbitmq:3-management'
+    volumes:
+      - message_broker_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    container_name: message_broker
+    environment:
+      RABBITMQ_DEFAULT_USER: ${MESSAGE_BROKER_USER}
+      RABBITMQ_DEFAULT_PASS: ${MESSAGE_BROKER_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
