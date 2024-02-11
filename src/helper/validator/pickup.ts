@@ -1,4 +1,4 @@
-import { HttpValidationException } from "../../common";
+import { HttpValidationException } from "../../public_api/common";
 import { IValidate } from "../../abstract/types";
 import { Checkout, DeliveryType } from "@prisma/client";
 import { ValidationError } from "class-validator";

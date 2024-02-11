@@ -1,0 +1,8 @@
+import { ENV } from "@abstract/env"
+
+const PAYMENT_LOGIN = ENV.get("PAYMENT_LOGIN")
+const PAYMENT_PASSWORD = ENV.get("PAYMENT_PASSWORD")
+const PAYMENT_URL = ENV.get("PAYMENT_URL")
+const PAYMENT_CALL_BACK_BASE_URL = "https://pinkpunk.by"
+
+export {PAYMENT_LOGIN, PAYMENT_PASSWORD, PAYMENT_URL, PAYMENT_CALL_BACK_BASE_URL}

@@ -1,0 +1,77 @@
+version: '3'
+
+volumes:
+  file_storage_data:
+  message_broker_data: 
+  data_storage_data:
+
+services:
+  data_storage:
+    container_name: data_storage
+    image: postgres:15-alpine
+    volumes:
+      - ./deployment/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - data_storage_data:/var/lib/postgresql/data
+    environment:
+      # POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${KC_DB_USERNAME}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    ports:
+      - "5432:${KC_DB_PORT}"
+
+  file_storage:
+    container_name: file_storage 
+    image: docker.io/bitnami/minio:2024
+    ports:
+      - "${S3_CONSOLE_PORT}:9000"
+      - "${S3_ADMIN_PORT}:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD}
+      # MINIO_ACCESS_KEY: ${S3_ACCESS_KEY}
+      # MINIO_SECRET_KEY: ${S3_SECRET_KEY}
+      MINIO_DEFAULT_BUCKETS: ${S3_BUCKET_NAME}
+    volumes:
+      - file_storage_data:/data
+
+  public_api:
+    image: public_api
+    container_name: public_api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start_public_api"]
+    env_file:
+      - .env
+    volumes:
+      - ${PWD}/static:/static
+    ports:
+      - "${PUBLIC_API_PORT}:${PUBLIC_API_PORT}"
+    # depends_on:
+    #   - postgres
+    #   - file_storage
+  
+  schedule_worker:
+    image: schedule_worker
+    container_name: schedule_worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start_shedule_worker"]
+    env_file:
+      - .env
+
+  message_broker:
+    image: 'rabbitmq:3-management'
+    volumes:
+      - message_broker_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    container_name: message_broker
+    environment:
+      RABBITMQ_DEFAULT_USER: ${MESSAGE_BROKER_USER}
+      RABBITMQ_DEFAULT_PASS: ${MESSAGE_BROKER_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5

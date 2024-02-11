@@ -1,4 +1,4 @@
-import { HttpValidationException } from "@common/index"
+import { HttpValidationException } from "src/public_api/common/index"
 import { Type } from "class-transformer"
 import { IsNotEmpty, validate } from "class-validator"
 import Decimal from "decimal.js"

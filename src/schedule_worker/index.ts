@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { db } from "src/database"
-import { alpha_payment_service } from "src/helper"
+import { alpha_payment_service } from "src/helper/alpha_payment_provider"
 const {execSync} = require('child_process');
 
 const CHECK_TIME_INTERVAL = 2*1000
@@ -17,6 +17,8 @@ function process_unpayed_orders(db_connection: PrismaClient){
             }
         }
     }).then(async (checkouts)=>{
+        console.log(`checking for checkouts`);
+        
         for(let checkout of checkouts){
             order_status = await alpha_payment_service.get_payment_status(checkout.orderId)
             if (order_status.data.orderStatus == 6){
