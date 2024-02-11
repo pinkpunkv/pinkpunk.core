@@ -3,22 +3,24 @@ version: '3'
 volumes:
   file_storage_data:
   message_broker_data: 
+  data_storage_data:
 
 services:
-  postgres:
-    image: postgres:16-alpine
+  data_storage:
+    container_name: data_storage
+    image: postgres:15-alpine
     volumes:
       - ./deployment/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - data_storage_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: ${DATABASE_NAME}
+      # POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${KC_DB_USERNAME}
       POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5432:${KC_DB_PORT}"
 
   file_storage:
     container_name: file_storage 
-    # command: []
     image: docker.io/bitnami/minio:2024
     ports:
       - "${S3_CONSOLE_PORT}:9000"
@@ -26,8 +28,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${S3_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD}
-      MINIO_ACCESS_KEY: ${S3_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${S3_SECRET_KEY}
+      # MINIO_ACCESS_KEY: ${S3_ACCESS_KEY}
+      # MINIO_SECRET_KEY: ${S3_SECRET_KEY}
       MINIO_DEFAULT_BUCKETS: ${S3_BUCKET_NAME}
     volumes:
       - file_storage_data:/data
