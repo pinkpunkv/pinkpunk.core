@@ -12,7 +12,7 @@ const alpha_payment_service = {
             orderNumber=${payment_order_id}&
             amount=${order_amount}&
             returnUrl=${PAYMENT_CALL_BACK_BASE_URL}/success?ct=${ct}&orderId=${internal_order_id}&
-            failUrl=${PAYMENT_CALL_BACK_BASE_URL}/fail?ct=${ct}&orderId=${internal_order_id}`.replace("\n","")
+            failUrl=${PAYMENT_CALL_BACK_BASE_URL}/fail?ct=${ct}&orderId=${internal_order_id}`.trim()
         )
     },
 
@@ -23,7 +23,7 @@ const alpha_payment_service = {
             userName=${PAYMENT_LOGIN}&
             password=${PAYMENT_PASSWORD}&
             orderNumber=${payment_order_id}
-        `.replace("\n",""))
+        `.trim())
     },
 }
 export {alpha_payment_service}
