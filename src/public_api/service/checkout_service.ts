@@ -455,7 +455,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             await db_connection.checkout.update({
                 where:{ id:checkout!.id },
                 data:{
-                    orderId: payment_order_id,
+                    paymentOrderId: payment_order_id,
                     status:"pending",
                     orderDate:new Date(),
                 }
