@@ -49,6 +49,7 @@ export class TokenStorage {
         let token = await this.renew_token(this.token!.access_token)
         let c = 1
         while(!token && c <10){
+            c+=1
             token = await this.renew_token(this.token!.access_token)
         }
         if (token){
