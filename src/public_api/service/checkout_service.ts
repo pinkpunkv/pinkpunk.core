@@ -411,17 +411,20 @@ export default function make_checkout_service(db_connection:PrismaClient){
         let checkout = await get_checkout_or_throw(lang, checkoutId)
         await order_delivery_type_validator[checkout.deliveryType].validate_or_reject(checkout, [])
 
-        if(checkout.status=="pending")
-            return {
+        let payment_order_id = checkout.paymentOrderId
+        let order_status = await alpha_payment_service.get_payment_status(payment_order_id);
+        if(checkout.status=="pending" || order_status.data.orderStatus==2)
+            return res.status(StatusCodes.OK).send({
                 status:StatusCodes.OK,
                 message:"success",
                 content: {
-                    orderId:checkout.paymentOrderId
+                    orderId:checkout.paymentOrderId,
+                    formUrl:alpha_payment_service.configure_payment_form_url(order_status.data.attributes[0].value)
                 }
-            }
-
+            })
+            // merchants/ecom2/payment_ru.html?mdOrder=bc2e1aec-3633-70f4-b056-d40407c2b9a0
         let order_info = await db_connection.$transaction(async ()=>{
-            let payment_order_id = checkout.paymentOrderId
+            
             let order_info: any = {}
             let total_amount = get_checkot_data(checkout)[2];
             let token = await db_connection.token.create({
@@ -432,8 +435,6 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 }
             })
             if (checkout.paymentType == PaymentType.online){
-                let order_status = await alpha_payment_service.get_payment_status(payment_order_id);
-                if(order_status.data.orderStatus==2) return order_info
                 payment_order_id = Number(
                     (await db_connection.$queryRaw<{nextval:Number}[]>`SELECT nextval('"public"."Checkout_paymentOrderId_seq"')`)[0].nextval
                 );

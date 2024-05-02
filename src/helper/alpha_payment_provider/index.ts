@@ -17,5 +17,9 @@ const alpha_payment_service = {
         
         return await axios.post(`${PAYMENT_URL}rest/getOrderStatusExtended.do?userName=${PAYMENT_LOGIN}&password=${PAYMENT_PASSWORD}&orderNumber=${payment_order_id}`)
     },
+
+    configure_payment_form_url(mdOrder: string){
+        return `${PAYMENT_URL}merchants/ecom2/payment_ru.html?mdOrder=${mdOrder}`
+    }
 }
 export {alpha_payment_service}
