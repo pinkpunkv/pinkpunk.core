@@ -439,7 +439,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
                 );
                 let payres = await alpha_payment_service.create_payment(checkout.orderId, payment_order_id, total_amount.mul(new Decimal(100)), token.token)
                 if( payres.data.errorCode ){
-                    console.log(payres);
+                    console.log(payres.data);
                     throw new BaseError(500, "something went wrong", payres.data);
                 }
                 order_info.formUrl = payres.data.formUrl!
