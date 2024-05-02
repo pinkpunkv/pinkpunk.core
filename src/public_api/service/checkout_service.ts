@@ -413,7 +413,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
 
         let payment_order_id = checkout.paymentOrderId
         let order_status = await alpha_payment_service.get_payment_status(payment_order_id);
-        if(checkout.status=="pending" || order_status.data.orderStatus==2)
+        if(checkout.status=="pending" && order_status.data.orderStatus==2)
             return res.status(StatusCodes.OK).send({
                 status:StatusCodes.OK,
                 message:"success",
