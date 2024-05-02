@@ -12,6 +12,7 @@ import { create_message_broker_connection } from 'src/helper';
 import { sign_jwt, verify_jwt } from 'src/helper/utils/jwt';
 import { SECRET } from '../env';
 import { ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN } from '../const';
+import { generate_random_sha256 } from 'src/helper/utils/generate_token';
 
 
 export default function make_user_service(db_connection:PrismaClient){
@@ -74,7 +75,7 @@ export default function make_user_service(db_connection:PrismaClient){
             });
             let token = await db_connection.token.create({
                 data:{
-                    token:generateToken(),
+                    token:generate_random_sha256(),
                     type:"confirm",
                     objectId:user.id
                 }
@@ -178,7 +179,7 @@ export default function make_user_service(db_connection:PrismaClient){
 
         token = await db_connection.token.create({
             data:{
-                token:generateToken(),
+                token:generate_random_sha256(),
                 type:"forgot",
                 objectId:user.id,
                 createdAt:new Date().toISOString()
@@ -341,8 +342,5 @@ export default function make_user_service(db_connection:PrismaClient){
         })
 
     }
-}
-function generateToken(): any {
-    throw new Error('Function not implemented.');
 }
 

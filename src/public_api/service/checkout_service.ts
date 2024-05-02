@@ -15,6 +15,7 @@ import { plainToClass } from 'class-transformer';
 import { validate_dto_or_reject } from 'src/helper/validator/dto_validator';
 import { order_delivery_type_validator } from 'src/helper/validator';
 import { alpha_payment_service, create_message_broker_connection } from 'src/helper';
+import { generate_random_sha256 } from 'src/helper/utils/generate_token';
 
 function get_checkot_data(checkout: CheckoutWithExtraInfo):[number, Decimal, Decimal]{
     let total_products = 0;
@@ -425,7 +426,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             let total_amount = get_checkot_data(checkout)[2];
             let token = await db_connection.token.create({
                 data:{ 
-                    token:generateToken(),
+                    token:generate_random_sha256(),
                     type:"order",
                     objectId:checkout!.orderId.toString()
                 }
@@ -515,6 +516,3 @@ export default function make_checkout_service(db_connection:PrismaClient){
     }
 }
 
-function generateToken(): any {
-    throw new Error('Function not implemented.');
-}
