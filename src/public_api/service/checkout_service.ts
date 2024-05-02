@@ -467,7 +467,7 @@ export default function make_checkout_service(db_connection:PrismaClient){
             order_info.orderId = payment_order_id
             await publish(checkout, token)
             return order_info;
-        })
+        }, {timeout: 60000})
         
         
         return res.status(StatusCodes.OK).send({
