@@ -20,7 +20,7 @@ function process_unpayed_orders(db_connection: PrismaClient){
         console.log(`checking for checkouts`);
         
         for(let checkout of checkouts){
-            order_status = await alpha_payment_service.get_payment_status(checkout.orderId)
+            order_status = await alpha_payment_service.get_payment_status(checkout.paymentOrderId)
             if (order_status.data.orderStatus == 6){
                 console.log(`order ${checkout.orderId} payment is failed`);    
                 await db_connection.checkout.delete({
