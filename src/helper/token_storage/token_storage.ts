@@ -35,17 +35,29 @@ export class TokenStorage {
     async start(): Promise<void>{
         this.token = this.load_token()
         let now = new Date().getTime()
-        if (!this.token || this.token.expires_at - now < RENEW_DIFFERENCE_MILLS){
-            this.token = await this.renew_token()
+        if (!this.token){
+            this.token = await this.renew_token(PRIMARY_TOKEN)
+        }
+        if(this.token && (this.token.expires_at - now < RENEW_DIFFERENCE_MILLS)){
+            this.token = await this.renew_token(this.token.access_token)
         }
         if (this.token)
         schedule.scheduleJob(new Date(this.token.expires_at - RENEW_DIFFERENCE_MILLS), this.shedule_renew_token)
     }
 
     private async shedule_renew_token(){
-        this.token = await this.renew_token()
-        if (this.token)
-        schedule.scheduleJob(new Date(this.token.expires_at - RENEW_DIFFERENCE_MILLS), this.shedule_renew_token)
+        let token = await this.renew_token(this.token!.access_token)
+        let c = 1
+        while(!token && c <10){
+            token = await this.renew_token(this.token!.access_token)
+        }
+        if (token){
+            this.token = token
+            schedule.scheduleJob(new Date(this.token.expires_at - RENEW_DIFFERENCE_MILLS), this.shedule_renew_token)
+        }
+        else{
+            console.log("cant renew access instagram token!");
+        }
     }
 
     private load_token() : undefined | TokenData {
@@ -54,9 +66,9 @@ export class TokenStorage {
         }
     }
 
-    private async renew_token(): Promise<TokenData | undefined> {
+    private async renew_token(refresh_access_token: any): Promise<TokenData | undefined> {
         try{
-            let renew_response = await axios.get(format(RENEW_TOKEN_URL, {access_token: PRIMARY_TOKEN}));
+            let renew_response = await axios.get(format(RENEW_TOKEN_URL, {access_token: refresh_access_token}));
             let {expires_in=0, access_token="", token_type=""} = {...renew_response.data}
             expires_in = expires_in * 1000
             let token_data = {
@@ -69,7 +81,7 @@ export class TokenStorage {
             return token_data
         }
         catch(err){
-            console.log("something went wrong while trying to request instagram data");
+            console.log(`something went wrong while trying to request instagram data ${err}`);
         }
     }
 
