@@ -31,20 +31,24 @@
 ### Вариант 1: Docker (рекомендуется)
 
 ```bash
-# Распаковать архив
-tar -xzf S3.tar.gz
 cd S3
 
-# Запустить контейнер
+# Собрать образ
+docker build -t pinkpunk-s3 .
+
+# Запустить с монтированием config.json
 docker run -d \
-  --name cloudserver \
+  --name pinkpunk-s3 \
   -p 8000:8000 \
-  -e SCALITY_ACCESS_KEY_ID=accessKey1 \
-  -e SCALITY_SECRET_ACCESS_KEY=verySecretKey1 \
+  -e SCALITY_ACCESS_KEY_ID=tYAcwBdPUGARViJU \
+  -e SCALITY_SECRET_ACCESS_KEY=0LHC1Xs77wU6k6e4Ve2EFEqOnwR9z2GB \
+  -v $(pwd)/config.json:/usr/src/app/config.json \
+  -v $(pwd)/conf/authdata.json:/usr/src/app/conf/authdata.json \
   -v $(pwd)/localData:/usr/src/app/localData \
   -v $(pwd)/localMetadata:/usr/src/app/localMetadata \
-  zenko/cloudserver
+  pinkpunk-s3
 ```
+
 
 ### Вариант 2: Сборка своего образа
 
