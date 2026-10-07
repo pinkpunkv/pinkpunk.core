@@ -21,7 +21,7 @@ services:
 
   file_storage:
     container_name: file_storage 
-    image: docker.io/bitnami/minio:2024
+    image: docker.io/soldevelo/minio:2024.12
     ports:
       - "${S3_CONSOLE_PORT}:9000"
       - "${S3_ADMIN_PORT}:9001"
